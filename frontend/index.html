@@ -1,945 +1,414 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>Reward Hub</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.js"></script>
+<!-- AdsGram SDK -->
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --deep:#1B0E1E; --mid:#2B1330; --panel:#341A3A; --panel-2:#402146;
-    --line: rgba(255,255,255,0.09);
-    --lime:#3FE6B4; --gem:#B98CFF; --gold:#FFB627; --coral:#FF5C77; --sky:#5FD3E8;
-    --text:#FBF1E0; --muted:#C7A8CE;
-    --ink:#1B0E1E;
+    --bg-0:#0B2E22; --bg-1:#0F3D2E;
+    --emerald:#12B886; --amethyst:#9B6BFF; --gold:#F2B705;
+    --ink:#EFF6F0; --ink-dim:#9FC2AE; --facet-border: rgba(255,255,255,0.08);
   }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; display:flex; justify-content:center;}
-  .device{width:100%; max-width:420px; min-height:100vh; position:relative; overflow-x:hidden; padding-bottom:88px;
-    background: radial-gradient(ellipse 700px 420px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
-
-  header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 16px; position:relative; margin-bottom:8px;}
-  header::after{content:''; position:absolute; left:0; right:0; bottom:0; height:9px;
-    background-image: radial-gradient(circle 5px, var(--deep) 5px, transparent 5.5px);
-    background-size: 18px 9px; background-position: 5px 0; background-repeat: repeat-x;}
-  .who{display:flex; align-items:center; gap:10px;}
-  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 0 0 2px rgba(255,182,39,0.25); position:relative; overflow:hidden;}
-  .avatar img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none;}
-  .avatar img.loaded{display:block;}
-  .avatar span{position:relative; z-index:1;}
-  .who .name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px;}
-  .who .sub{font-size:10.5px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
-  .currencies{display:flex; gap:6px;}
-  .chip{display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid var(--line); padding:6px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;}
-
-  /* ---- Global animated toast (top-down) ---- */
-  .gtoast-wrap{position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px;
-    z-index:60; display:flex; flex-direction:column; align-items:center; pointer-events:none;
-    padding-top:max(14px, env(safe-area-inset-top,0px));}
-  .gtoast{pointer-events:auto; margin-top:8px; max-width:90%; padding:12px 16px; border-radius:14px;
-    background:var(--panel-2); border:1px solid var(--line); box-shadow:0 10px 28px rgba(0,0,0,0.4);
-    font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:8px;
-    transform:translateY(-130%); opacity:0; transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .25s;}
-  .gtoast.show{transform:translateY(0); opacity:1;}
-  .gtoast.ok{border-color:var(--lime); color:var(--lime);}
-  .gtoast.err{border-color:var(--coral); color:var(--coral);}
-  .gtoast.info{border-color:var(--gold); color:var(--gold);}
-
-  /* ---- "Open in Telegram" gate ---- */
-  .tg-gate{position:fixed; inset:0; background:rgba(10,5,12,0.94); backdrop-filter:blur(8px);
-    display:none; align-items:center; justify-content:center; z-index:100; padding:24px;}
-  .tg-gate.show{display:flex; animation:fadeIn .3s ease;}
-  .tg-gate-card{max-width:320px; text-align:center; background:linear-gradient(160deg,var(--panel-2),var(--panel));
-    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:34px 26px; animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
-  .tg-gate-ic{font-size:42px; margin-bottom:12px;}
-  .tg-gate-card h2{font-size:18px; margin-bottom:8px;}
-  .tg-gate-card p{font-size:12.5px; color:var(--muted); margin-bottom:22px; line-height:1.55;}
-  .tg-gate-btn{display:inline-block; padding:13px 24px; border-radius:100px; background:linear-gradient(90deg,var(--lime),var(--gold));
-    color:var(--ink); font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px; text-decoration:none;}
-  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
-  @keyframes popIn{from{opacity:0; transform:scale(.92) translateY(8px)} to{opacity:1; transform:scale(1) translateY(0)}}
-  @keyframes fadeSlideIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
-
-  main{padding:14px 16px 0;}
-  .tabpane{display:none;}
-  .tabpane.active{display:block; animation:fadeSlideIn .32s ease;}
-
-  .section-title{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px; margin:24px 2px 10px; display:flex; align-items:center; gap:6px; letter-spacing:.01em;}
-
-  /* ===== HOME ===== */
-  .bal-banner{text-align:center; margin:6px 0 4px; position:relative; padding:22px 16px 18px;
-    background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px;}
-  .bal-banner::before, .bal-banner::after{content:''; position:absolute; top:50%; width:18px; height:18px; border-radius:50%;
-    background:var(--deep); transform:translateY(-50%);}
-  .bal-banner::before{left:-9px;} .bal-banner::after{right:-9px;}
-  .bal-banner .eyebrow{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px;}
-  .bal-banner .amt{font-family:'Fredoka',sans-serif; font-weight:600; font-size:32px; color:var(--gold);}
-  .bal-banner .amt span{font-size:14px; color:var(--muted); font-weight:600; margin-left:4px; font-family:'JetBrains Mono',monospace;}
-  .track{position:relative; height:8px; border-radius:100px; background:rgba(255,255,255,0.08); margin:14px auto 6px; max-width:280px; overflow:hidden;}
-  .track-fill{position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg,var(--coral),var(--gold)); width:0%;}
-  .track-label{text-align:center; font-size:11px; color:var(--muted);}
-
-  .daily{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:18px; padding:16px;}
-  .daily-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
-  .daily-row .t{font-family:'Fredoka',sans-serif; font-weight:700; font-size:14px;}
-  .daily-row .n{font-size:11px; color:var(--muted);}
-  .daily-actions{display:flex; gap:8px;}
-  .btn-claim{flex:1; padding:12px; border:none; border-radius:12px; font-weight:700; font-size:12.5px; background:var(--lime); color:#1B0E1E; cursor:pointer;}
-  .btn-claim:disabled{opacity:0.5; pointer-events:none;}
-  .btn-boost{flex:1; padding:12px; border:1px solid var(--gold); border-radius:12px; font-weight:700; font-size:12.5px; background:transparent; color:var(--gold); cursor:pointer;}
-
-  .rail{display:flex; justify-content:space-between; gap:8px; margin-top:18px;}
-  .rail-btn{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 6px; text-align:center; cursor:pointer;}
-  .rail-btn .ic{font-size:18px; margin-bottom:6px;}
-  .rail-btn p{font-size:10.5px; font-weight:700;}
-
-  .timeline{position:relative; margin-top:4px; padding-left:26px;}
-  .timeline::before{content:''; position:absolute; left:11px; top:4px; bottom:4px; width:2px; background:linear-gradient(180deg,var(--lime),var(--gem),transparent);}
-  .tl-item{position:relative; padding-bottom:18px;}
-  .tl-item:last-child{padding-bottom:0;}
-  .tl-dot{position:absolute; left:-24px; top:0; width:20px; height:20px; border-radius:50%; background:var(--panel); border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; font-size:10px;}
-  .tl-dot.done{border-color:var(--lime); background:var(--lime); color:#1B0E1E;}
-  .tl-title{font-size:12.5px; font-weight:600;}
-  .tl-sub{font-size:10.5px; color:var(--muted); margin-top:2px;}
-  .tl-item{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
-  .tl-body{flex:1; min-width:0;}
-  .tl-amt{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; white-space:nowrap; padding-top:1px;}
-  .tl-amt.pos{color:var(--lime);}
-  .tl-amt.neg{color:var(--coral);}
-
-  /* ===== GAMES ===== */
-  .wheel-wrap{position:relative; width:250px; height:250px; margin:16px auto 8px;}
-  svg.wheel{width:100%; height:100%; transition: transform 4.2s cubic-bezier(.17,.67,.14,1);}
-  .seg-label{font-family:'Fredoka',sans-serif; font-weight:700; font-size:13px; fill:#1B0E1E; text-anchor:middle;}
-  .wheel-center{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:104px; height:56px; border-radius:14px;
-    background: rgba(27,14,30,0.94); border:1.5px solid rgba(255,255,255,0.18);
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    font-family:'Fredoka',sans-serif; font-weight:700; font-size:10.5px; line-height:1.3; pointer-events:none; z-index:2;}
-  .wheel-pointer{position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:3;
-    width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-top:18px solid var(--gold);}
-  .spin-cta{display:block; width:200px; margin:14px auto 4px; padding:14px; text-align:center; border:none; border-radius:100px;
-    font-family:'Fredoka',sans-serif; font-weight:700; font-size:14px; background:linear-gradient(90deg,var(--lime),var(--gold)); color:#1B0E1E; cursor:pointer;}
-  .spin-cta:disabled{opacity:.45; pointer-events:none;}
-  .spin-sub{text-align:center; font-size:11px; color:var(--muted); margin-top:6px;}
-  .result-toast{max-width:260px; margin:12px auto 0; padding:10px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
-    text-align:center; font-family:'Fredoka',sans-serif; font-weight:700; font-size:12.5px; opacity:0; transform:translateY(-6px); transition:.25s;}
-  .result-toast.show{opacity:1; transform:translateY(0); color:var(--lime);}
-
-  .scratch-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:260px; margin:16px auto;}
-  .scratch-cell{aspect-ratio:1; border-radius:14px; background:var(--panel); border:1.5px solid var(--line);
-    display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer;}
-  .scratch-cell.picked{border-color:var(--gem); background:linear-gradient(145deg, rgba(180,140,255,0.25), var(--panel));}
-  .scratch-cell.revealed.win{background:rgba(63,230,180,0.16); border-color:var(--lime);}
-  .scratch-cell.revealed.missed{opacity:0.55;}
-
-  /* ===== TASKS ===== */
-  .task{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:13px 14px; margin-bottom:8px;}
-  .task .icn{width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
-  .task .body{flex:1; min-width:0;}
-  .task .t{font-size:13px; font-weight:600;}
-  .task .r{font-size:11px; color:var(--gem); margin-top:2px; font-family:'JetBrains Mono',monospace;}
-  .task .go{padding:8px 16px; border-radius:100px; border:none; font-weight:700; font-size:11.5px; background:var(--lime); color:#1B0E1E; cursor:pointer;}
-  .task .go.done{background:transparent; border:1px solid var(--line); color:var(--muted);}
-
-  /* ===== WALLET ===== */
-  .wallet-hero{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:20px; padding:22px; text-align:center; margin-top:8px;}
-  .wallet-hero .lbl{font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);}
-  .wallet-hero .val{font-family:'Fredoka',sans-serif; font-weight:800; font-size:32px; color:var(--gold); margin-top:6px;}
-  .wallet-hero .disc{font-size:10.5px; color:var(--muted); margin-top:8px;}
-  .field{margin-top:16px;}
-  .field label{font-size:11px; color:var(--muted); display:block; margin-bottom:6px;}
-  .field input, .field select{
-    width:100%; padding:12px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
-    color:var(--text); font-size:13px; font-family:'Manrope',sans-serif;
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg-0); color:var(--ink); font-family:'Inter',sans-serif; overscroll-behavior:none;}
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+  .app{max-width:480px; margin:0 auto; padding:16px 16px 96px;}
+  .facet{
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    background: linear-gradient(155deg, var(--bg-1), #0A2A20);
+    border: 1px solid var(--facet-border);
   }
-  .withdraw-btn{width:100%; margin-top:16px; padding:14px; border:none; border-radius:12px;
-    background:linear-gradient(90deg,var(--lime),var(--gold)); color:#1B0E1E; font-family:'Fredoka',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
-  .min-note{text-align:center; font-size:10.5px; color:var(--muted); margin-top:8px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 4px 20px;}
+  .brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:20px; letter-spacing:-0.02em;}
+  .brand .gem-icon{width:22px; height:22px; background:conic-gradient(from 45deg, var(--emerald), var(--amethyst), var(--emerald)); clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+  .vip-badge{background:linear-gradient(90deg,var(--gold),#D9A203); color:#1A1200; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; margin-left:6px; letter-spacing:0.04em;}
+  .balance-pill{display:flex; align-items:center; gap:6px; background:rgba(18,184,134,0.12); border:1px solid rgba(18,184,134,0.35); padding:6px 12px; border-radius:999px; font-weight:600; font-size:14px;}
 
-  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px;
-    background: rgba(43,19,48,0.92); backdrop-filter: blur(14px); border-top:1px solid var(--line);
-    display:flex; justify-content:space-around; padding:14px 6px 18px; z-index:5;}
-  nav::before{content:''; position:absolute; left:0; right:0; top:-5px; height:9px;
-    background-image: radial-gradient(circle 5px, var(--deep) 5px, transparent 5.5px);
-    background-size: 18px 9px; background-position: 5px 0; background-repeat: repeat-x;}
-  .navbtn{display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:10px; font-weight:600; cursor:pointer; background:none; border:none; position:relative; padding:4px 10px;}
-  .navbtn.active{color:var(--gold);}
-  .navbtn.active::after{content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; border-radius:2px; background:var(--gold);}
-  /* Modern tactile feedback on every tappable control */
-  .spin-cta, .withdraw-btn, .go, .navbtn, .tg-gate-btn, .claim-btn, #boostBtn, #crewBtn{transition:transform .12s ease, opacity .15s ease;}
-  .spin-cta:active, .withdraw-btn:active, .go:active:not(:disabled), .navbtn:active, .tg-gate-btn:active, #boostBtn:active, #crewBtn:active{transform:scale(.95);}
+  .hero{padding:22px 20px; margin-bottom:16px;}
+  .hero .label{color:var(--ink-dim); font-size:13px; text-transform:uppercase; letter-spacing:0.08em;}
+  .hero .amount{font-size:40px; font-weight:700; margin-top:4px; display:flex; align-items:baseline; gap:8px;}
+  .hero .usdt{font-size:15px; color:var(--ink-dim); font-weight:500;}
+  .hero .row{display:flex; gap:10px; margin-top:14px;}
+  .hero .row button{flex:1; border:none; border-radius:10px; padding:10px; font-weight:700; font-size:13px; cursor:pointer;}
+  .btn-convert{background:rgba(155,107,255,0.18); color:#C9B5FF; border:1px solid rgba(155,107,255,0.4) !important;}
+  .btn-withdraw{background:var(--gold); color:#1A1200;}
 
-  /* ---- Invite bottom sheet ---- */
-  .sheet-overlay{position:fixed; inset:0; background:rgba(10,5,12,0.7); backdrop-filter:blur(4px);
-    display:none; align-items:flex-end; justify-content:center; z-index:80;}
-  .sheet-overlay.show{display:flex; animation:fadeIn .25s ease;}
-  .sheet{width:100%; max-width:420px; background:linear-gradient(170deg,var(--panel-2),var(--panel));
-    border:1px solid var(--line); border-bottom:none; border-radius:22px 22px 0 0; padding:10px 22px 28px;
-    animation:sheetUp .35s cubic-bezier(.22,1,.36,1);}
-  @keyframes sheetUp{from{transform:translateY(100%)} to{transform:translateY(0)}}
-  .sheet-handle{width:36px; height:4px; border-radius:100px; background:var(--line); margin:6px auto 16px;}
-  .sheet-header{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-  .sheet-ic{font-size:24px;}
-  .sheet-header h2{font-size:17px;}
-  .sheet-desc{font-size:12.5px; color:var(--muted); line-height:1.55; margin-bottom:18px;}
-  .invite-stats{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
-  .invite-stat{background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center;}
-  .invite-stat .v{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:17px; color:var(--gold);}
-  .invite-stat .l{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
-  .invite-link-box{display:flex; align-items:center; background:var(--mid); border:1.5px dashed rgba(255,182,39,0.4);
-    border-radius:14px; padding:12px 14px; margin-bottom:14px; overflow:hidden;}
-  .invite-link-box span{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text); white-space:nowrap;
-    overflow:hidden; text-overflow:ellipsis;}
-  .invite-actions{display:flex; gap:10px; margin-bottom:14px;}
-  .invite-btn{flex:1; padding:13px; border-radius:12px; border:none; font-family:'Fredoka',sans-serif; font-weight:600;
-    font-size:13.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;}
-  .invite-btn.ghost{background:rgba(255,255,255,0.06); border:1px solid var(--line); color:var(--text);}
-  .invite-btn.primary{background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink);}
-  .sheet-close{width:100%; background:none; border:none; color:var(--muted); font-size:12.5px; font-weight:600; padding:8px; cursor:pointer;}
+  .section-title{display:flex; align-items:center; justify-content:space-between; margin:22px 4px 10px;}
+  .section-title h2{font-size:16px; margin:0; letter-spacing:-0.01em;}
+  .section-title .eyebrow{font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.1em;}
 
-  /* ---- "Watch Ad & Claim" ticket CTA (spin + scratch) ---- */
-  .spin-cta.ad-required{background:transparent; border:2px dashed var(--gold); color:var(--gold); box-shadow:none;}
-  .ticket-cta{display:block; width:220px; margin:14px auto 4px; padding:13px; text-align:center; border-radius:100px;
-    background:transparent; border:2px dashed var(--gold); color:var(--gold); font-family:'Fredoka',sans-serif;
-    font-weight:600; font-size:14px; cursor:pointer;}
-  .ticket-cta:disabled{opacity:.5; pointer-events:none;}
+  .daily-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .day-cell{padding:10px 4px; text-align:center; font-size:12px; color:var(--ink-dim);}
+  .day-cell.done{background:linear-gradient(155deg, rgba(18,184,134,0.25), rgba(18,184,134,0.08));}
+  .day-cell.today{background:linear-gradient(155deg, rgba(155,107,255,0.3), rgba(155,107,255,0.1)); border-color:rgba(155,107,255,0.5);}
+  .day-cell .d{font-weight:600; color:var(--ink); margin-bottom:6px;}
+  .day-cell .r{font-weight:700; color:var(--gold);}
+  .ad-btn{width:100%; margin-top:10px; padding:12px; background:transparent; border:1px dashed var(--amethyst); color:#C9B5FF; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer;}
+
+  .wheel-wrap{display:flex; flex-direction:column; align-items:center; padding:24px 16px;}
+  .wheel-outer{position:relative; width:230px; height:230px;}
+  .wheel{width:230px; height:230px; border-radius:50%; position:relative;
+    border: 4px solid var(--bg-1); box-shadow: 0 0 0 2px rgba(255,255,255,0.06), 0 12px 30px rgba(0,0,0,0.4);
+    transition: transform 4s cubic-bezier(.12,.67,.1,1);
+  }
+  .wheel-pointer{position:absolute; top:-4px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-top:16px solid var(--ink); z-index:3;}
+  .wheel-label{position:absolute; font-size:11px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+  .spin-btn{margin-top:18px; background:linear-gradient(180deg, var(--gold), #C99200); color:#1A1200; font-weight:700; border:none; padding:13px 30px; border-radius:999px; font-size:15px; cursor:pointer;}
+  .spin-btn:disabled{opacity:0.5;}
+  .spins-left{margin-top:10px; font-size:12px; color:var(--ink-dim);}
+  .bonus-spin-link{font-size:12px; color:var(--amethyst); margin-top:4px; text-decoration:underline; cursor:pointer;}
+
+  .task-card{display:flex; align-items:center; justify-content:space-between; padding:14px; margin-bottom:8px;}
+  .task-info{display:flex; flex-direction:column; gap:4px;}
+  .task-title{font-size:14px; font-weight:600;}
+  .task-reward{font-size:12px; color:var(--gold); font-weight:600;}
+  .task-btn{background:var(--emerald); color:#062018; border:none; padding:9px 16px; border-radius:999px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;}
+  .task-btn.claimed{background:transparent; border:1px solid var(--facet-border); color:var(--ink-dim);}
+
+  .ref-card{padding:20px; text-align:center;}
+  .ref-count{font-size:28px; font-weight:700; font-family:'Space Grotesk',sans-serif;}
+  .ref-code{margin-top:10px; font-family:monospace; font-size:14px; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:8px; display:inline-block; letter-spacing:0.05em;}
+  .ref-btn{margin-top:14px; background:var(--amethyst); color:#fff; border:none; padding:11px 24px; border-radius:999px; font-weight:700; font-size:14px; cursor:pointer; width:100%;}
+
+  .gift-row{display:flex; gap:8px; padding:14px;}
+  .gift-row input{flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--facet-border); border-radius:8px; padding:10px; color:var(--ink); font-size:14px;}
+  .gift-row button{background:var(--emerald); color:#062018; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer;}
+
+  .toast{position:fixed; left:16px; right:16px; bottom:20px; max-width:448px; margin:0 auto; background:var(--bg-1); border:1px solid var(--emerald); padding:14px 16px; border-radius:12px; font-size:14px; font-weight:600; text-align:center; transform:translateY(120%); transition:transform 0.3s ease; z-index:50;}
+  .toast.show{transform:translateY(0);}
+
+  .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:flex-end; z-index:60;}
+  .modal-backdrop.show{display:flex;}
+  .modal{background:var(--bg-1); width:100%; max-width:480px; margin:0 auto; border-radius:20px 20px 0 0; padding:20px; border:1px solid var(--facet-border);}
+  .modal h3{margin:0 0 14px;}
+  .modal input, .modal select{width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--facet-border); border-radius:8px; padding:11px; color:var(--ink); font-size:14px; margin-bottom:10px;}
+  .modal button.primary{width:100%; background:var(--gold); color:#1A1200; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer;}
+  .modal .close{float:right; color:var(--ink-dim); cursor:pointer;}
 </style>
 </head>
 <body>
-<div class="gtoast-wrap" id="gtoastWrap"></div>
-<div class="tg-gate" id="telegramGate">
-  <div class="tg-gate-card">
-    <div class="tg-gate-ic">🎪</div>
-    <h2>Open in Telegram</h2>
-    <p>Reward Hub runs inside Telegram — spins, tasks, and payouts only work there. Tap below to launch it in the app.</p>
-    <a id="telegramGateLink" href="https://telegram.org" class="tg-gate-btn">Open in Telegram</a>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand"><span class="gem-icon"></span> Reward Hub <span class="vip-badge" id="vipBadge" style="display:none;">VIP</span></div>
+    <div class="balance-pill">💎 <span id="gemsBalance">0</span></div>
   </div>
-</div>
-<div class="sheet-overlay" id="inviteOverlay">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-ic">👥</div><h2>Invite Friends</h2></div>
-    <p class="sheet-desc" id="inviteDesc">Loading…</p>
-    <div class="invite-stats">
-      <div class="invite-stat"><div class="v" id="inviteCount">0</div><div class="l">Invited</div></div>
-      <div class="invite-stat"><div class="v" id="inviteEarned">$0.0000</div><div class="l">Earned</div></div>
+
+  <div class="hero facet">
+    <div class="label">Cash-out balance</div>
+    <div class="amount" id="usdtBalance">$0.00 <span class="usdt">USDT</span></div>
+    <div class="row">
+      <button class="btn-convert" id="convertBtn">Convert gems</button>
+      <button class="btn-withdraw" id="withdrawBtn">Withdraw</button>
     </div>
-    <div class="invite-link-box"><span id="inviteLinkText">Loading…</span></div>
-    <div class="invite-actions">
-      <button class="invite-btn ghost" id="inviteCopyBtn">📋 Copy</button>
-      <button class="invite-btn primary" id="inviteShareBtn">↗ Share</button>
-    </div>
-    <button class="sheet-close" id="inviteCloseBtn">Close</button>
   </div>
+
+  <div class="section-title"><h2>Daily Rewards</h2><span class="eyebrow" id="streakLabel">Streak: 0</span></div>
+  <div class="daily-grid" id="dailyGrid"></div>
+  <button class="task-btn" id="claimDailyBtn" style="width:100%; margin-top:10px; padding:12px;">Claim today's reward</button>
+  <button class="ad-btn" id="watchAdDailyBtn">▶ Watch ad for +40 bonus gems</button>
+
+  <div class="section-title"><h2>Spin the Wheel</h2><span class="eyebrow" id="spinsLeftLabel">— left today</span></div>
+  <div class="wheel-wrap facet">
+    <div class="wheel-outer">
+      <div class="wheel-pointer"></div>
+      <div class="wheel" id="wheel"></div>
+    </div>
+    <button class="spin-btn" id="spinBtn">Spin for Gems</button>
+    <div class="bonus-spin-link" id="watchAdSpinBtn">▶ Watch ad for +1 spin</div>
+  </div>
+
+  <div class="section-title"><h2>Tasks</h2><span class="eyebrow">Earn more gems</span></div>
+  <div id="taskList"></div>
+
+  <div class="section-title"><h2>Gift Code</h2><span class="eyebrow">Redeem</span></div>
+  <div class="gift-row facet">
+    <input type="text" id="giftInput" placeholder="Enter code" />
+    <button id="giftBtn">Redeem</button>
+  </div>
+
+  <div class="section-title"><h2>Invite Friends</h2><span class="eyebrow">Referral</span></div>
+  <div class="ref-card facet">
+    <div class="ref-count" id="refCount">0</div>
+    <div style="font-size:12px; color:var(--ink-dim); margin-top:2px;">friends invited</div>
+    <div class="ref-code" id="refCode">—</div>
+    <button class="ref-btn" id="shareBtn">Share invite link</button>
+  </div>
+
 </div>
-<div class="device">
-  <header>
-    <div class="who">
-      <div class="avatar" id="userAvatar"><img id="userAvatarImg" alt="" /><span>🎪</span></div>
-      <div><div class="name" id="userName">Loading...</div><div class="sub" id="userSub">#...</div></div>
-    </div>
-    <div class="currencies">
-      <div class="chip">⚡ <span id="energy">0</span></div>
-      <div class="chip">💎 <span id="gems">0</span> 🎫</div>
-    </div>
-  </header>
+<div class="toast" id="toast"></div>
 
-  <main>
-    <!-- ================= HOME ================= -->
-    <section class="tabpane active" id="tab-home">
-      <div class="bal-banner">
-        <div class="eyebrow">🎟️ Your winnings</div>
-        <span class="amt" id="homeBalance">$0.0000<span>USDT</span></span>
-        <div class="track"><div class="track-fill" id="trackFill" style="width:0%"></div></div>
-        <div class="track-label" id="trackLabel">Loading payout progress...</div>
-      </div>
-
-      <div class="daily">
-        <div class="daily-row">
-          <div><div class="t" id="streakTitle">Daily Streak</div><div class="n" id="streakSub">Claim your daily reward</div></div>
-        </div>
-        <div class="daily-actions">
-          <button class="btn-claim" id="claimBtn">Claim Streak</button>
-          <button class="btn-boost" id="boostBtn">▶ 2x with ad</button>
-        </div>
-      </div>
-
-      <div class="rail">
-        <div class="rail-btn" data-goto="games"><div class="ic">🎡</div><p>Games</p></div>
-        <div class="rail-btn" data-goto="tasks"><div class="ic">📋</div><p>Tasks</p></div>
-        <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Payout</p></div>
-        <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Invite</p></div>
-      </div>
-
-      <div class="section-title">📜 Recent Activity</div>
-      <div class="timeline" id="missionLog">
-        <div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">Loading…</div>
-      </div>
-    </section>
-
-    <!-- ================= GAMES ================= -->
-    <section class="tabpane" id="tab-games">
-      <div class="section-title">🎡 Spin Wheel</div>
-      <div class="wheel-wrap">
-        <div class="wheel-pointer"></div>
-        <svg class="wheel" id="wheel" viewBox="0 0 200 200"></svg>
-        <div class="wheel-center">SPIN &amp;<br>WIN USDT</div>
-      </div>
-      <button class="spin-cta" id="spinBtn">🎡 Spin Now</button>
-      <div class="spin-sub" id="spinSub">Loading plays...</div>
-      <div class="result-toast" id="spinToast"></div>
-
-      <div class="section-title">🎫 Scratch &amp; Win</div>
-      <p style="font-size:11.5px; color:var(--muted); text-align:center; margin-bottom:4px;">Pick any 3 boxes — diamonds shuffle every round.</p>
-      <div class="scratch-grid" id="scratchGrid"></div>
-      <button class="ticket-cta" id="scratchAdBtn" style="display:none;">🎫 Watch Ad &amp; Claim</button>
-      <div class="result-toast" id="scratchToast"></div>
-    </section>
-
-    <!-- ================= TASKS ================= -->
-    <section class="tabpane" id="tab-tasks">
-      <div class="section-title">🔥 Available Tasks</div>
-      <div id="tasksList" style="display:flex; flex-direction:column; gap:8px;">
-        <div style="text-align:center; color:var(--muted); padding:20px;">Loading tasks...</div>
-      </div>
-    </section>
-
-    <!-- ================= WALLET ================= -->
-    <section class="tabpane" id="tab-wallet">
-      <div class="wallet-hero">
-        <div class="lbl">Available to Withdraw</div>
-        <div class="val" id="walletBalance">$0.0000</div>
-        <div class="disc" id="walletDisc">1,000 Gems = 1 USDT</div>
-      </div>
-      <div class="field">
-        <label>Payout method</label>
-        <select id="payoutMethod"><option value="USDT (BEP20)">USDT (BEP20)</option><option value="Binance Pay ID">Binance Pay ID</option></select>
-      </div>
-      <div class="field">
-        <label>Wallet address / Pay ID</label>
-        <input type="text" id="walletAddress" placeholder="0x..." />
-      </div>
-      <button class="withdraw-btn" id="withdrawBtn">Withdraw</button>
-      <div class="min-note" id="minWithdrawNote">Minimum withdrawal: $10.00 USDT</div>
-    </section>
-  </main>
-
-  <nav>
-    <button class="navbtn active" data-goto="home"><div>🏠</div>Home</button>
-    <button class="navbtn" data-goto="games"><div>🎡</div>Games</button>
-    <button class="navbtn" data-goto="tasks"><div>📋</div>Tasks</button>
-    <button class="navbtn" data-goto="wallet"><div>💳</div>Payout</div>
-  </nav>
+<div class="modal-backdrop" id="withdrawModal">
+  <div class="modal">
+    <span class="close" id="closeWithdraw">✕</span>
+    <h3>Withdraw USDT</h3>
+    <input type="number" id="wdAmount" placeholder="Amount (USDT)" step="0.01" />
+    <select id="wdMethod">
+      <option value="binance_pay">Binance Pay</option>
+      <option value="usdt_address">USDT Address (TRC20)</option>
+    </select>
+    <input type="text" id="wdDestination" placeholder="Binance Pay ID or wallet address" />
+    <button class="primary" id="wdSubmit">Request withdrawal</button>
+  </div>
 </div>
 
 <script>
-const API_BASE = window.location.hostname.includes("localhost") ? "" : "https://reward-hub-production.up.railway.app";
-const initData = window.Telegram?.WebApp?.initData || "review";
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
 
-async function apiFetch(endpoint, options = {}) {
-  const headers = {
-    "Content-Type": "application/json",
-    "X-Telegram-Init-Data": initData,
-    ...(options.headers || {})
-  };
-  let res;
+const API_BASE = "https://YOUR-RAILWAY-BACKEND.up.railway.app"; // TODO: set deployed backend URL — this one value stays in code
+
+const urlParams = new URLSearchParams(window.location.search);
+const refFromLink = urlParams.get("ref");
+
+// AdsGram block id and bot username are admin-configurable (Settings tab in admin.html) —
+// fetched from the backend at boot instead of being hardcoded here.
+let APP_SETTINGS = { adsgram_block_id: "", bot_username: "", app_name: "Reward Hub" };
+let AdController = null;
+
+async function loadAppSettings() {
   try {
-    res = await fetch(API_BASE + endpoint, { ...options, headers });
-  } catch (networkErr) {
-    throw new Error(`Network error connecting to backend: ${networkErr.message}`);
-  }
-  
-  if (!res.ok) {
-    let errDetail = `HTTP ${res.status} ${res.statusText}`;
-    try {
-      const errJson = await res.json();
-      if (errJson.detail) {
-        errDetail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
-      }
-    } catch(e) {
-      const text = await res.text().catch(() => "");
-      if (text) errDetail = text.slice(0, 150);
+    const res = await fetch(`${API_BASE}/api/settings`);
+    APP_SETTINGS = await res.json();
+  } catch (e) { console.warn("Could not load app settings", e); }
+
+  document.title = APP_SETTINGS.app_name || "Reward Hub";
+  try {
+    if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
+      AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
     }
-    throw new Error(errDetail);
-  }
-  return res.json();
+  } catch (e) { console.warn("AdsGram init failed", e); }
 }
 
-let currentUser = null;
-let spinStatus = null;
-let scratchStatus = null;
-let adsgramConfig = { blockId: "int-37596", debug: false };
-
-/* ---- Global toast (slides down from the top) ---- */
-function showToast(msg, type = 'info', duration = 3200) {
-  const wrap = document.getElementById('gtoastWrap');
-  const el = document.createElement('div');
-  el.className = 'gtoast ' + type;
-  const icon = type === 'ok' ? '✅' : type === 'err' ? '⚠️' : 'ℹ️';
-  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
-  wrap.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => {
-    el.classList.remove('show');
-    setTimeout(() => el.remove(), 400);
-  }, duration);
+function authHeaders() {
+  const h = { "Content-Type": "application/json", "X-Init-Data": tg?.initData || "" };
+  if (refFromLink) h["X-Ref-Code"] = refFromLink;
+  return h;
 }
 
-/* ---- "Open in Telegram" gate ---- */
-async function checkTelegramLaunch() {
-  const hasRealInitData = !!(window.Telegram?.WebApp?.initData);
-  const bypass = new URLSearchParams(window.location.search).get('preview') === '1';
-  if (hasRealInitData || bypass) return false;
-  try {
-    const cfg = await fetch(API_BASE + "/api/config").then(r => r.json());
-    document.getElementById('telegramGateLink').href = `https://t.me/${cfg.bot_username}/${cfg.mini_app_short_name}`;
-  } catch (e) { /* keep the generic telegram.org fallback link */ }
-  document.getElementById('telegramGate').classList.add('show');
-  return true;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-/* ---- Adsgram SDK Helper ---- */
-async function loadAdsgramConfig() {
-  try {
-    const s = await apiFetch("/api/ads/status");
-    adsgramConfig.blockId = s.adsgram_block_id || "int-37596";
-    adsgramConfig.debug = !!s.adsgram_debug;
-  } catch (e) {
-    console.warn("Could not load Adsgram config:", e);
-    if (!adsgramConfig.blockId) adsgramConfig.blockId = "int-37596";
-  }
+let me = null;
+let wheelSegments = [];
+
+async function loadMe() {
+  const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
+  me = await res.json();
+  document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
+  document.getElementById("usdtBalance").innerHTML = `$${me.balance_usdt.toFixed(2)} <span class="usdt">USDT</span>`;
+  document.getElementById("streakLabel").textContent = `Streak: ${me.daily_streak}`;
+  document.getElementById("refCode").textContent = me.referral_code;
+  document.getElementById("vipBadge").style.display = me.is_vip ? "inline-block" : "none";
 }
 
-async function ensureAdsgramLoaded() {
-  if (window.Adsgram) return;
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://sad.adsgram.ai/js/sad.js';
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => resolve();
-    document.head.appendChild(script);
+async function loadDaily() {
+  const res = await fetch(`${API_BASE}/api/daily-reward/status`, { headers: authHeaders() });
+  const data = await res.json();
+  const grid = document.getElementById("dailyGrid");
+  grid.innerHTML = "";
+  data.ladder.forEach((reward, i) => {
+    const day = i + 1;
+    const done = day <= data.current_streak && !data.claimable;
+    const isToday = data.claimable && day === Math.min(data.current_streak + 1, data.ladder.length);
+    const cell = document.createElement("div");
+    cell.className = "day-cell facet" + (done ? " done" : "") + (isToday ? " today" : "");
+    cell.innerHTML = `<div class="d">Day ${day}</div><div class="r">+${reward}</div>`;
+    grid.appendChild(cell);
   });
+  document.getElementById("claimDailyBtn").disabled = !data.claimable;
+  document.getElementById("claimDailyBtn").textContent = data.claimable ? "Claim today's reward" : "Come back tomorrow";
 }
 
-async function triggerAdsgramAd() {
-  if (!adsgramConfig.blockId) {
-    await loadAdsgramConfig();
-  }
-  if (!adsgramConfig.blockId) {
-    adsgramConfig.blockId = "int-37596";
-  }
-
-  await ensureAdsgramLoaded();
-
-  // Wait up to 5 seconds for window.Adsgram to load if it's still loading
-  let attempts = 0;
-  while (!window.Adsgram && attempts < 10) {
-    await new Promise(r => setTimeout(r, 500));
-    attempts++;
-  }
-
-  return new Promise((resolve) => {
-    if (window.Adsgram && adsgramConfig.blockId) {
-      try {
-        window.Adsgram.init({ blockId: adsgramConfig.blockId, debug: adsgramConfig.debug }).show()
-          .then((result) => {
-            if (result && result.done) {
-              resolve(true);
-            } else {
-              showToast("Ad was closed before completion. Watch the full ad to earn.", 'err', 4000);
-              resolve(false);
-            }
-          })
-          .catch((err) => {
-            console.error("Adsgram ad error:", err);
-            let detail = "Adsgram error";
-            if (typeof err === 'string') detail = err;
-            else if (err?.description) detail = err.description;
-            else if (err?.message) detail = err.message;
-            else if (err?.error) detail = err.error;
-            else detail = JSON.stringify(err);
-            
-            showToast(`Adsgram Error: ${detail}`, 'err', 6000);
-            resolve(false);
-          });
-      } catch (err) {
-        // Adsgram.init() itself can throw synchronously for a malformed/invalid
-        // Block ID, before any promise even exists — that case bypassed the
-        // .catch() above entirely and silently did nothing.
-        console.error("Adsgram init error:", err);
-        showToast(err?.message || "Couldn't start the ad — check the Adsgram Block ID in the admin dashboard.", 'err');
-        resolve(false);
-      }
-    } else if (window.Adsgram) {
-      console.warn("No Adsgram Block ID is configured — set one in the admin dashboard's Settings page.");
-      showToast("Ads aren't configured yet. Please try again later.", 'err');
-      resolve(false);
-    } else {
-      // The Adsgram SDK script failed to load or hasn't finished loading yet
-      // (slow connection, blocked request, etc). This must FAIL CLOSED — a
-      // permissive "assume watched" fallback here means anyone whose network
-      // blocks sad.adsgram.ai gets rewards without ever seeing an ad.
-      console.warn("Adsgram SDK not available — cannot verify an ad was watched.");
-      showToast("Ads aren't ready yet — please wait a moment and try again.", 'err');
-      resolve(false);
-    }
-  });
-}
-
-async function loadUser() {
-  try {
-    const data = await apiFetch("/api/users/me");
-    currentUser = data.user;
-    
-    // Update header
-    document.getElementById('userName').textContent = currentUser.first_name || "User";
-    document.getElementById('userSub').textContent = `#${currentUser.telegram_id}`;
-    const avatarImg = document.getElementById('userAvatarImg');
-    avatarImg.onload = () => avatarImg.classList.add('loaded');
-    avatarImg.onerror = () => avatarImg.classList.remove('loaded');
-    avatarImg.src = `${API_BASE}/api/users/avatar/${currentUser.telegram_id}`;
-    document.getElementById('energy').textContent = currentUser.ads_watched_today ?? 0;
-    document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
-    loadActivity();
-    
-    // Home banner
-    const bal = currentUser.balance || 0;
-    document.getElementById('homeBalance').innerHTML = `$${bal.toFixed(4)}<span>USDT</span>`;
-    document.getElementById('walletBalance').textContent = `$${bal.toFixed(4)}`;
-    
-    // Progress toward payout (assume $10 min or tier)
-    const pct = Math.min(100, (bal / 10.0) * 100);
-    document.getElementById('trackFill').style.width = pct + '%';
-    document.getElementById('trackLabel').textContent = `${pct.toFixed(0)}% toward $10.00 minimum payout tier`;
-
-    // Streak / Daily
-    if(currentUser.streak_claimed_today) {
-      document.getElementById('claimBtn').textContent = '✓ Claimed Today';
-      document.getElementById('claimBtn').disabled = true;
-    } else {
-      document.getElementById('claimBtn').textContent = `Claim Streak (${currentUser.streak_count || 1}d)`;
-      document.getElementById('claimBtn').disabled = false;
-    }
-    document.getElementById('streakTitle').textContent = `Day ${currentUser.streak_count || 1} Streak`;
-
-  } catch (e) {
-    console.error("Failed to load user:", e);
-  }
-}
-
-const ACTIVITY_META = {
-  ad_reward: { icon: '📺', label: 'Watched an ad' },
-  task_reward: { icon: '📋', label: 'Completed a task' },
-  referral_commission: { icon: '👥', label: 'Referral commission' },
-  referral_bonus: { icon: '👥', label: 'Referral bonus' },
-  signup_bonus: { icon: '🎁', label: 'Welcome bonus' },
-  spin_reward: { icon: '🎡', label: 'Spin the wheel' },
-  scratch_reward: { icon: '💎', label: 'Scratch card' },
-  checkin: { icon: '📅', label: 'Daily check-in' },
-  withdrawal: { icon: '💸', label: 'Withdrawal requested' },
-  admin_adjust: { icon: '⚙️', label: 'Balance adjusted' },
+document.getElementById("claimDailyBtn").onclick = async () => {
+  const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) return toast((await res.json()).detail || "Could not claim");
+  const data = await res.json();
+  toast(`+${data.reward_gems} gems! Streak: ${data.new_streak}`);
+  await Promise.all([loadMe(), loadDaily()]);
 };
 
-function timeAgo(iso) {
-  const diffSec = Math.max(0, (Date.now() - new Date(iso + (iso.endsWith('Z') ? '' : 'Z')).getTime()) / 1000);
-  if (diffSec < 60) return 'just now';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-  return `${Math.floor(diffSec / 86400)}d ago`;
-}
-
-async function loadActivity() {
-  const wrap = document.getElementById('missionLog');
+async function showAd(placement) {
+  if (!AdController) { toast("Ads not available right now"); return false; }
   try {
-    const rows = await apiFetch("/api/users/activity");
-    if (!rows.length) {
-      wrap.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">No activity yet — go watch an ad or spin the wheel! 🎡</div>';
-      return;
-    }
-    wrap.innerHTML = rows.map(r => {
-      const meta = ACTIVITY_META[r.type] || { icon: '💰', label: r.type };
-      const positive = r.amount >= 0;
-      return `<div class="tl-item">
-        <div class="tl-dot done">${meta.icon}</div>
-        <div class="tl-body">
-          <div class="tl-title">${meta.label}</div>
-          <div class="tl-sub">${timeAgo(r.created_at)}</div>
-        </div>
-        <div class="tl-amt ${positive ? 'pos' : 'neg'}">${positive ? '+' : ''}$${Math.abs(r.amount).toFixed(4)}</div>
-      </div>`;
-    }).join('');
+    await AdController.show();
+    const res = await fetch(`${API_BASE}/api/ads/reward`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ placement }),
+    });
+    const data = await res.json();
+    if (data.reward_gems) toast(`+${data.reward_gems} gems from ad!`);
+    if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
+    await loadMe();
+    return true;
   } catch (e) {
-    wrap.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">Couldn\'t load activity.</div>';
+    toast("Ad was skipped or failed");
+    return false;
   }
 }
 
-async function loadGamesStatus() {
-  try {
-    spinStatus = await apiFetch("/api/games/spin/status");
-    buildWheel(spinStatus);
-    const spinSub = document.getElementById('spinSub');
-    const spinBtn = document.getElementById('spinBtn');
-    if(spinStatus.max_reached) {
-      spinSub.textContent = "Daily spin limit reached";
-      spinBtn.disabled = true;
-      spinBtn.textContent = "🎡 Spin Now";
-      spinBtn.classList.remove('ad-required');
-    } else if(spinStatus.needs_ad) {
-      spinSub.textContent = "Free spins used — watch an ad for another spin";
-      spinBtn.textContent = "🎫 Watch Ad & Claim";
-      spinBtn.classList.add('ad-required');
-    } else {
-      spinSub.textContent = `${spinStatus.free_spins_left} free spin(s) left today`;
-      spinBtn.textContent = "🎡 Spin Now";
-      spinBtn.classList.remove('ad-required');
-    }
-  } catch (e) {
-    console.error("Failed to load spin status:", e);
-  }
+document.getElementById("watchAdDailyBtn").onclick = () => showAd("daily_bonus");
+document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("spin_bonus"); await loadSpinStatus(); };
+
+// ---------------- Spin wheel: renders REAL backend segments (incl. decorative ones) ----------------
+
+function renderWheel(segments) {
+  const wheel = document.getElementById("wheel");
+  wheel.innerHTML = "";
+  const n = segments.length;
+  const slice = 360 / n;
+  const gradientStops = segments.map((s, i) => `${s.color} ${i * slice}deg ${(i + 1) * slice}deg`).join(", ");
+  wheel.style.background = `conic-gradient(${gradientStops})`;
+
+  segments.forEach((s, i) => {
+    const angle = i * slice + slice / 2;
+    const label = document.createElement("div");
+    label.className = "wheel-label";
+    label.textContent = s.label;
+    label.style.left = "50%";
+    label.style.top = "50%";
+    label.style.transform = `rotate(${angle}deg) translate(0, -85px) rotate(${-angle}deg) translate(-50%, -50%)`;
+    wheel.appendChild(label);
+  });
 }
+
+async function loadSpinStatus() {
+  const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
+  const data = await res.json();
+  wheelSegments = data.segments;
+  renderWheel(wheelSegments);
+  const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
+  document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+}
+
+let currentRotation = 0;
+
+document.getElementById("spinBtn").onclick = async () => {
+  const btn = document.getElementById("spinBtn");
+  btn.disabled = true;
+
+  const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) { toast((await res.json()).detail || "Could not spin"); btn.disabled = false; return; }
+  const data = await res.json();
+
+  // Rotate so the pointer (fixed at top) ends exactly on the winning segment.
+  const slice = 360 / data.total_segments;
+  const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
+  currentRotation += 360 - ((currentRotation) % 360) + targetAngle; // always spin forward
+  const wheel = document.getElementById("wheel");
+  wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+  setTimeout(async () => {
+    toast(`You won +${data.reward_gems} gems!`);
+    document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
+    btn.disabled = data.spins_left <= 0;
+    await loadMe();
+  }, 4100);
+};
+
+// ---------------------------------------------------------------- tasks --
 
 async function loadTasks() {
-  try {
-    const tasks = await apiFetch("/api/tasks");
-    const container = document.getElementById('tasksList');
-    if(!tasks || tasks.length === 0) {
-      container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">No tasks available right now.</div>';
-      return;
-    }
-    container.innerHTML = tasks.map(t => `
-      <div class="task">
-        <div class="icn">📋</div>
-        <div class="body">
-          <div class="t">${t.title}</div>
-          <div class="r">+${t.reward} USDT</div>
-        </div>
-        <button class="go ${t.completed ? 'done' : ''}" ${t.completed ? 'disabled' : `onclick="claimTask(${t.id}, this)"`}>${t.completed ? 'Done' : 'Claim'}</button>
+  const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
+  const tasks = await res.json();
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+  tasks.forEach(t => {
+    const claimed = t.status === "claimed";
+    const card = document.createElement("div");
+    card.className = "task-card facet";
+    card.innerHTML = `
+      <div class="task-info">
+        <div class="task-title">${t.title}</div>
+        <div class="task-reward">+${t.reward_gems} gems</div>
       </div>
-    `).join('');
-  } catch (e) {
-    console.error("Failed to load tasks:", e);
-  }
-}
-
-window.claimTask = async function(taskId, btn) {
-  try {
-    btn.disabled = true;
-    const res = await apiFetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
-    btn.textContent = "Done";
-    btn.classList.add("done");
-    showToast(`Task complete! +${res.reward} USDT`, 'ok');
-    loadUser();
-  } catch (e) {
-    showToast(e.message, 'err');
-    btn.disabled = false;
-  }
-};
-
-/* ---- Tab navigation ---- */
-function goto(tab){
-  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  document.querySelectorAll(`[data-goto="${tab}"]`).forEach(el=>el.classList.add('active'));
-  if(tab === 'tasks') loadTasks();
-  if(tab === 'games') loadGamesStatus();
-}
-document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.goto)));
-
-/* ---- Daily claim ---- */
-document.getElementById('claimBtn').addEventListener('click', async () => {
-  try {
-    const res = await apiFetch("/api/users/streak/claim", { method: "POST" });
-    showToast(`Streak claimed! +${res.reward} USDT`, 'ok');
-    loadUser();
-  } catch(e) {
-    showToast(e.message, 'err');
-  }
-});
-
-document.getElementById('boostBtn').addEventListener('click', async () => {
-  const watched = await triggerAdsgramAd();
-  if(watched) {
-    try {
-      const res = await apiFetch("/api/ads/claim", {
-        method: "POST",
-        body: JSON.stringify({ reward_event: "daily_boost_" + Date.now() })
+      <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Claimed" : "Claim"}</button>
+    `;
+    card.querySelector("button").onclick = async () => {
+      if (t.link) window.open(t.link, "_blank");
+      const r = await fetch(`${API_BASE}/api/tasks/claim`, {
+        method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
       });
-      showToast(`Ad watched! Rewarded $${res.reward} USDT`, 'ok');
-      loadUser();
-    } catch(e) {
-      showToast(e.message, 'err');
-    }
-  }
-});
-
-/* ---- Spin Wheel ---- */
-const palette = ['#B98CFF','#FF5C77','#FFB627','#3FE6B4','#5FD3E8','#B98CFF','#FF5C77','#FFB627'];
-
-function buildWheel(status){
-  const svg = document.getElementById('wheel');
-  const segments = status.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
-  const min_reward = status.min_reward || 0.09;
-  const max_reward = status.max_reward || 0.5;
-  const n = segments.length, cx=100, cy=100, r=96;
-  let html='';
-  for(let i=0;i<n;i++){
-    const a0=(i/n)*2*Math.PI-Math.PI/2, a1=((i+1)/n)*2*Math.PI-Math.PI/2;
-    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
-    const midA=(a0+a1)/2, lx=cx+(r*0.66)*Math.cos(midA), ly=cy+(r*0.66)*Math.sin(midA);
-    const val=segments[i];
-    const eligible = val>=Math.min(min_reward,max_reward) && val<=Math.max(min_reward,max_reward);
-    html+=`<path d="M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${palette[i%palette.length]}" opacity="${eligible?1:0.35}" stroke="#1B0E1E" stroke-width="1.5"/>`;
-    html+=`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" class="seg-label" transform="rotate(${(midA*180/Math.PI)+90} ${lx.toFixed(2)} ${ly.toFixed(2)})">$${val.toFixed(2)}</text>`;
-  }
-  svg.innerHTML = html;
-}
-
-function spinTo(index,total,svg){
-  const wedgeDeg=360/total, targetMid=index*wedgeDeg+wedgeDeg/2;
-  svg.style.transform = `rotate(${5*360+(360-targetMid)}deg)`;
-}
-
-document.getElementById('spinBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('spinBtn'), svg = document.getElementById('wheel'), toast = document.getElementById('spinToast');
-  btn.disabled = true; toast.classList.remove('show');
-
-  let rewardEvent = null;
-  if (spinStatus && spinStatus.needs_ad) {
-    const watched = await triggerAdsgramAd();
-    if (!watched) {
-      btn.disabled = false;
-      return;
-    }
-    rewardEvent = "spin_ad_" + Date.now();
-  }
-
-  try {
-    const res = await apiFetch("/api/games/spin/play", {
-      method: "POST",
-      body: JSON.stringify({ reward_event: rewardEvent })
-    });
-    
-    const segments = spinStatus.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
-    // Find index of winning reward in segments
-    let segIndex = segments.findIndex(s => Math.abs(s - res.reward) < 0.001);
-    if(segIndex < 0) segIndex = 0;
-
-    spinTo(segIndex, segments.length, svg);
-
-    setTimeout(() => {
-      toast.textContent = `🎉 You won $${res.reward.toFixed(4)} USDT!`;
-      toast.classList.add('show');
-      btn.disabled = false;
-      loadUser();
-      loadGamesStatus();
-    }, 4300);
-
-  } catch (e) {
-    showToast(e.message, 'err');
-    btn.disabled = false;
-  }
-});
-
-/* ---- Scratch Card ---- */
-const TAPS_ALLOWED = 3;
-let selected = [];
-let scratchData = null;
-
-async function initScratch() {
-  try {
-    scratchStatus = await apiFetch("/api/games/scratch/status");
-  } catch(e) {
-    console.error("Failed to load scratch status", e);
-  }
-  renderScratch();
-}
-
-function renderScratch(){
-  const grid = document.getElementById('scratchGrid');
-  document.getElementById('scratchAdBtn').style.display = 'none';
-  grid.innerHTML = Array.from({length:9},(_,i)=>{
-    const picked = selected.includes(i);
-    return `<div class="scratch-cell ${picked?'picked':''}" data-cell="${i}">${picked?'👆':'❓'}</div>`;
-  }).join('');
-  grid.querySelectorAll('.scratch-cell').forEach(cell=>{
-    cell.addEventListener('click', async () => {
-      const i = Number(cell.dataset.cell);
-      if(selected.includes(i) || selected.length>=TAPS_ALLOWED) return;
-      selected.push(i);
-      renderScratch();
-      if(selected.length===TAPS_ALLOWED) {
-        if (scratchStatus && scratchStatus.needs_ad) {
-          // Explicit ticket CTA instead of silently launching an ad the instant
-          // the 3rd cell is tapped — the user should see what's about to happen.
-          document.getElementById('scratchAdBtn').style.display = 'block';
-        } else {
-          await resolveScratch(null);
-        }
-      }
-    });
+      if (!r.ok) return toast((await r.json()).detail || "Could not claim");
+      const d = await r.json();
+      toast(`+${d.reward_gems} gems!`);
+      await Promise.all([loadMe(), loadTasks()]);
+    };
+    list.appendChild(card);
   });
 }
 
-document.getElementById('scratchAdBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('scratchAdBtn');
-  btn.disabled = true;
-  btn.textContent = "Loading ad…";
-  const watched = await triggerAdsgramAd();
-  btn.disabled = false;
-  btn.textContent = "🎫 Watch Ad & Claim";
-  btn.style.display = 'none';
-  if (!watched) {
-    selected = [];
-    renderScratch();
-    return;
-  }
-  await resolveScratch("scratch_ad_" + Date.now());
-});
+// -------------------------------------------------------------- referral --
 
-async function resolveScratch(rewardEvent){
-  try {
-    const res = await apiFetch("/api/games/scratch/play", {
-      method: "POST",
-      body: JSON.stringify({ reward_event: rewardEvent, cells: selected })
-    });
-
-    const diamonds = new Set(res.diamond_cells || []);
-    const hits = res.hits || 0;
-    const reward = res.reward || 0;
-
-    const grid = document.getElementById('scratchGrid');
-    grid.innerHTML = Array.from({length:9},(_,i)=>{
-      const isDiamond = diamonds.has(i), isSel = selected.includes(i);
-      const cls = isSel&&isDiamond ? 'revealed win' : isDiamond ? 'revealed missed' : isSel ? 'revealed' : '';
-      return `<div class="scratch-cell ${cls}">${isDiamond?'💎':'✖'}</div>`;
-    }).join('');
-
-    const toast = document.getElementById('scratchToast');
-    toast.textContent = reward>0 ? `🎉 ${hits} diamond(s) — $${reward.toFixed(4)} USDT!` : 'No diamonds this round — try again!';
-    toast.classList.add('show');
-
-    setTimeout(()=>{ 
-      selected=[]; 
-      renderScratch(); 
-      toast.classList.remove('show'); 
-      loadUser();
-      initScratch();
-    }, 2500);
-
-  } catch(e) {
-    showToast(e.message, 'err');
-    selected = [];
-    renderScratch();
-  }
+async function loadReferral() {
+  const res = await fetch(`${API_BASE}/api/referral`, { headers: authHeaders() });
+  const data = await res.json();
+  document.getElementById("refCount").textContent = data.invited_count;
+  document.getElementById("refCode").textContent = data.referral_code;
+  document.getElementById("shareBtn").onclick = () => {
+    const username = APP_SETTINGS.bot_username || "";
+    const link = `https://t.me/${username}?start=${data.referral_code}`;
+    const appName = APP_SETTINGS.app_name || "Reward Hub";
+    tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems 🎁`)}`);
+  };
 }
 
-async function loadWalletStatus() {
-  try {
-    const s = await apiFetch("/api/wallet/status");
-    document.getElementById('minWithdrawNote').textContent = `Minimum withdrawal: $${Number(s.min_withdrawal_usdt).toFixed(2)} USDT`;
-  } catch (e) {
-    console.warn("Could not load wallet status:", e);
-  }
-}
+// ------------------------------------------------------------- gift code --
 
-/* ---- Wallet / Withdraw ---- */
-document.getElementById('withdrawBtn').addEventListener('click', async () => {
-  const method = document.getElementById('payoutMethod').value;
-  const address = document.getElementById('walletAddress').value.trim();
-  if(!address) {
-    showToast("Please enter your wallet address or Pay ID", 'err');
-    return;
-  }
-  try {
-    const res = await apiFetch("/api/wallet/withdraw", {
-      method: "POST",
-      body: JSON.stringify({ method, address })
-    });
-    showToast(`Withdrawal requested — $${res.amount} USDT pending review`, 'ok');
-    document.getElementById('walletAddress').value = "";
-    loadUser();
-  } catch(e) {
-    showToast(e.message, 'err');
-  }
-});
+document.getElementById("giftBtn").onclick = async () => {
+  const code = document.getElementById("giftInput").value.trim();
+  if (!code) return;
+  const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
+  });
+  if (!res.ok) return toast((await res.json()).detail || "Invalid code");
+  const data = await res.json();
+  toast(`+${data.reward_gems} gems, +${data.reward_spins} spins!`);
+  document.getElementById("giftInput").value = "";
+  await Promise.all([loadMe(), loadSpinStatus()]);
+};
 
-/* ---- Invite / Referral bottom sheet ---- */
-let inviteData = null;
+// -------------------------------------------------------------- withdraw --
 
-async function openInviteSheet() {
-  document.getElementById('inviteOverlay').classList.add('show');
-  document.getElementById('inviteDesc').textContent = 'Loading…';
-  document.getElementById('inviteLinkText').textContent = 'Loading…';
-  try {
-    const data = await apiFetch("/api/referral/info");
-    inviteData = data;
-    document.getElementById('inviteCount').textContent = data.total_referred;
-    document.getElementById('inviteEarned').textContent = `$${Number(data.total_earned).toFixed(4)}`;
-    document.getElementById('inviteLinkText').textContent = data.referral_link;
+document.getElementById("convertBtn").onclick = async () => {
+  const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) return toast((await res.json()).detail || "Nothing to convert");
+  const data = await res.json();
+  toast(`Converted to $${data.converted_usdt.toFixed(2)} USDT`);
+  await loadMe();
+};
 
-    // These numbers come straight from the admin dashboard's settings, so the
-    // copy here always matches whatever the admin has actually configured.
-    const parts = [];
-    if (data.signup_bonus > 0) parts.push(`you earn $${data.signup_bonus.toFixed(3)} USDT the moment a friend joins`);
-    if (data.commission_percent > 0) parts.push(`${data.commission_percent}% of everything they earn after that, for as long as they play`);
-    document.getElementById('inviteDesc').textContent = parts.length
-      ? `Share your link — ${parts.join(', plus ')}.`
-      : 'Share your link to invite friends and grow Reward Hub together!';
-  } catch (e) {
-    document.getElementById('inviteDesc').textContent = "Couldn't load your invite details.";
-  }
-}
-function closeInviteSheet() {
-  document.getElementById('inviteOverlay').classList.remove('show');
-}
-document.getElementById('crewBtn').addEventListener('click', openInviteSheet);
-document.getElementById('inviteCloseBtn').addEventListener('click', closeInviteSheet);
-document.getElementById('inviteOverlay').addEventListener('click', (e) => {
-  if (e.target.id === 'inviteOverlay') closeInviteSheet();
-});
+document.getElementById("withdrawBtn").onclick = () => document.getElementById("withdrawModal").classList.add("show");
+document.getElementById("closeWithdraw").onclick = () => document.getElementById("withdrawModal").classList.remove("show");
+document.getElementById("wdSubmit").onclick = async () => {
+  const amount_usdt = parseFloat(document.getElementById("wdAmount").value);
+  const method = document.getElementById("wdMethod").value;
+  const destination = document.getElementById("wdDestination").value.trim();
+  if (!amount_usdt || !destination) return toast("Fill in all fields");
 
-document.getElementById('inviteCopyBtn').addEventListener('click', async () => {
-  if (!inviteData) return;
-  try {
-    await navigator.clipboard.writeText(inviteData.referral_link);
-    showToast('Invite link copied!', 'ok');
-  } catch (e) {
-    showToast('Could not copy — long-press the link above to copy it', 'err');
-  }
-});
+  const res = await fetch(`${API_BASE}/api/withdraw`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
+  });
+  if (!res.ok) return toast((await res.json()).detail || "Could not submit");
+  toast("Withdrawal requested — pending review");
+  document.getElementById("withdrawModal").classList.remove("show");
+  await loadMe();
+};
 
-document.getElementById('inviteShareBtn').addEventListener('click', () => {
-  if (!inviteData) return;
-  const text = "Join me on Reward Hub and start earning USDT! 🎟️";
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteData.referral_link)}&text=${encodeURIComponent(text)}`;
-  if (window.Telegram?.WebApp?.openTelegramLink) {
-    window.Telegram.WebApp.openTelegramLink(shareUrl);
-  } else if (navigator.share) {
-    navigator.share({ title: 'Reward Hub', text, url: inviteData.referral_link }).catch(() => {});
-  } else {
-    window.open(shareUrl, '_blank');
-  }
-});
-
-// Initialize app on load
-window.addEventListener('load', async () => {
-  if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-  }
-  const gated = await checkTelegramLaunch();
-  if (gated) return; // don't burn API calls on a screen the user can't use yet
-  loadUser();
-  loadGamesStatus();
-  loadAdsgramConfig();
-  loadWalletStatus();
-  initScratch();
-});
+(async function init() {
+  await loadAppSettings();
+  await loadMe();
+  await Promise.all([loadDaily(), loadSpinStatus(), loadTasks(), loadReferral()]);
+})();
 </script>
 </body>
 </html>

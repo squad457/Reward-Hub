@@ -1,538 +1,222 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Reward Hub — Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --deep:#1B0E1E; --mid:#2B1330; --panel:#341A3A; --panel-2:#402146;
-    --line: rgba(255,255,255,0.09);
-    --lime:#3FE6B4; --gem:#B98CFF; --gold:#FFB627; --coral:#FF5C77; --sky:#5FD3E8;
-    --text:#FBF1E0; --muted:#C7A8CE; --ink:#1B0E1E;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; min-height:100vh;
-    background: radial-gradient(ellipse 900px 500px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
-  h1,h2,h3{font-family:'Fredoka',sans-serif; font-weight:600;}
-  a{color:inherit;}
-  input,select,textarea,button{font-family:'Manrope',sans-serif;}
-
-  /* ---- Login ---- */
-  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
-  .login-card{width:100%; max-width:360px; background:linear-gradient(160deg,var(--panel-2),var(--panel));
-    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:32px 26px; text-align:center;
-    animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes popIn{from{opacity:0; transform:scale(.94) translateY(10px)} to{opacity:1; transform:scale(1) translateY(0)}}
-  .boot-loader{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:var(--muted); font-size:12.5px;}
-  .spinner{width:26px; height:26px; border-radius:50%; border:3px solid rgba(255,255,255,0.15); border-top-color:var(--gold); animation:spin .7s linear infinite;}
-  .btn-spinner{width:14px; height:14px; border-radius:50%; border:2px solid rgba(27,14,30,0.3); border-top-color:var(--ink); display:inline-block; vertical-align:-2px; margin-right:6px; animation:spin .6s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .login-card button:disabled{opacity:.75; cursor:default;}
-  .login-card .ic{font-size:34px; margin-bottom:10px;}
-  .login-card h1{font-size:20px; margin-bottom:4px;}
-  .login-card p{font-size:12.5px; color:var(--muted); margin-bottom:20px;}
-  .login-card input{width:100%; padding:12px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
-    color:var(--text); font-size:13px; margin-bottom:10px;}
-  .login-card button{width:100%; padding:13px; border:none; border-radius:12px; font-family:'Fredoka',sans-serif;
-    font-weight:600; font-size:14px; background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink); cursor:pointer;}
-  .login-err{color:var(--coral); font-size:12px; margin-top:10px; min-height:14px;}
-
-  /* ---- Shell ---- */
-  #app{display:none;}
-  #app.show{display:flex; min-height:100vh;}
-  aside{width:210px; flex-shrink:0; background:rgba(0,0,0,0.18); border-right:1px solid var(--line);
-    padding:22px 14px; position:sticky; top:0; height:100vh;}
-  .brand{display:flex; align-items:center; gap:8px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; margin-bottom:24px; padding:0 6px;}
-  .navitem{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; font-size:13px; font-weight:600;
-    color:var(--muted); cursor:pointer; margin-bottom:4px;}
-  .navitem.active{background:rgba(255,182,39,0.12); color:var(--gold);}
-  .navitem:hover:not(.active){background:rgba(255,255,255,0.05);}
-  main{flex:1; padding:28px 32px; max-width:1000px;}
-  .page{display:none;}
-  .page.active{display:block;}
-  .page-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:20px;}
-  .page-head h2{font-size:20px;}
-  .page-head .sub{font-size:12px; color:var(--muted);}
-
-  /* ---- Cards / stats ---- */
-  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:26px;}
-  .stat-card{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:16px; padding:18px;}
-  .stat-card .lbl{font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;}
-  .stat-card .val{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:600; color:var(--gold);}
-
-  /* ---- Table ---- */
-  table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
-  th,td{text-align:left; padding:11px 14px; font-size:12.5px; border-bottom:1px solid var(--line);}
-  th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:rgba(0,0,0,0.15);}
-  tr:last-child td{border-bottom:none;}
-  td.mono{font-family:'JetBrains Mono',monospace;}
-  .badge{display:inline-block; padding:3px 9px; border-radius:100px; font-size:10.5px; font-weight:700;}
-  .badge.pending{background:rgba(255,182,39,0.15); color:var(--gold);}
-  .badge.approved{background:rgba(63,230,180,0.15); color:var(--lime);}
-  .badge.rejected{background:rgba(255,92,119,0.15); color:var(--coral);}
-  .badge.banned{background:rgba(255,92,119,0.15); color:var(--coral);}
-  .badge.active{background:rgba(63,230,180,0.15); color:var(--lime);}
-  .btn{padding:7px 13px; border-radius:100px; border:none; font-weight:700; font-size:11px; cursor:pointer; margin-right:6px;}
-  .btn-ok{background:var(--lime); color:var(--ink);}
-  .btn-no{background:var(--coral); color:var(--ink);}
-  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text);}
-  .empty{padding:26px; text-align:center; color:var(--muted); font-size:12.5px;}
-
-  /* ---- Forms ---- */
-  .toolbar{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
-  .toolbar input, .toolbar select{padding:9px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--text); font-size:12.5px;}
-  .card-form{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:22px;}
-  .card-form h3{font-size:14px; margin-bottom:14px;}
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .field{margin-bottom:12px;}
-  .field label{display:block; font-size:11px; color:var(--muted); margin-bottom:5px;}
-  .field input, .field select, .field textarea{width:100%; padding:10px 12px; border-radius:10px; background:var(--mid); border:1px solid var(--line); color:var(--text); font-size:12.5px;}
-  .field.check{display:flex; align-items:center; gap:8px;}
-  .field.check input{width:auto;}
-  .save-row{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
-  .btn-save{padding:11px 20px; border:none; border-radius:12px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
-    background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink); cursor:pointer;}
-  .toast{position:fixed; top:0; left:50%; padding:12px 20px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line);
-    font-size:12.5px; font-weight:600; opacity:0; transform:translate(-50%,-130%); transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .25s;
-    z-index:30; margin-top:16px; box-shadow:0 10px 28px rgba(0,0,0,0.4);}
-  .toast.show{opacity:1; transform:translate(-50%,0);}
-  .toast.err{border-color:var(--coral); color:var(--coral);}
-  .toast.ok{border-color:var(--lime); color:var(--lime);}
-  .page.active{animation:fadeSlideIn .3s ease;}
-  @keyframes fadeSlideIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
-  .navitem, .btn, .btn-save{transition:transform .12s ease;}
-  .navitem:active, .btn:active, .btn-save:active{transform:scale(.96);}
+  body{font-family:system-ui,sans-serif; background:#0B2E22; color:#EFF6F0; margin:0; padding:20px;}
+  h1{font-size:20px;} h2{font-size:15px; margin-top:32px; border-bottom:1px solid #234; padding-bottom:6px;}
+  input,select{background:#0F3D2E; border:1px solid #234; color:#EFF6F0; padding:8px; border-radius:6px; margin:4px 4px 4px 0;}
+  button{background:#12B886; color:#062018; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer;}
+  table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;}
+  td,th{padding:6px 8px; border-bottom:1px solid #234; text-align:left;}
+  .warn{color:#F2B705; font-size:13px; margin-top:6px;}
+  .card{background:#0F3D2E; border:1px solid #234; border-radius:10px; padding:16px; margin-top:10px;}
+  #loginBox{max-width:320px; margin:80px auto;}
 </style>
 </head>
 <body>
 
-<!-- ================= BOOT LOADER (checking a saved session) ================= -->
-<div id="bootLoader" class="boot-loader">
-  <div class="spinner"></div>
-  <div>Checking your session…</div>
+<div id="loginBox">
+  <h1>Reward Hub Admin</h1>
+  <input type="password" id="adminKeyInput" placeholder="Admin key" style="width:100%;" />
+  <button id="loginBtn" style="width:100%; margin-top:8px;">Enter</button>
 </div>
 
-<!-- ================= LOGIN ================= -->
-<div id="loginScreen" style="display:none;">
-  <div class="login-card">
-    <div class="ic">🎟️</div>
-    <h1>Reward Hub Admin</h1>
-    <p>Enter your admin key to manage the app.</p>
-    <input type="password" id="adminKeyInput" placeholder="Admin API key" />
-    <button id="loginBtn">Enter dashboard</button>
-    <div class="login-err" id="loginErr"></div>
+<div id="dash" style="display:none;">
+  <h1>Reward Hub — Admin</h1>
+
+  <h2>Stats</h2>
+  <div class="card" id="statsCard">—</div>
+
+  <h2>App Settings</h2>
+  <div class="card">
+    <div>AdsGram Block ID <input id="setAdsgram" style="width:220px;" placeholder="from AdsGram dashboard"></div>
+    <div style="margin-top:8px;">Bot username (no @) <input id="setBotUsername" style="width:220px;" placeholder="RewardHubBot"></div>
+    <div style="margin-top:8px;">App name <input id="setAppName" style="width:220px;" placeholder="Reward Hub"></div>
+    <div style="margin-top:8px;">Gems per 1 USDT <input id="setGemsPerUsdt" type="number" style="width:120px;" placeholder="1000"></div>
+    <div style="margin-top:10px;"><button id="saveSettings">Save settings</button></div>
+    <div class="warn" id="settingsMsg"></div>
+  </div>
+
+  <h2>Spin Wheel — Payout Range</h2>
+  <div class="card">
+    <div>Only wheel segments whose value falls in this range can ever be the actual payout. Segments outside it stay on the wheel for excitement but never pay.</div>
+    <div style="margin-top:10px;">
+      Min <input type="number" id="minReward" style="width:90px;">
+      Max <input type="number" id="maxReward" style="width:90px;">
+      Max spins/day <input type="number" id="maxSpins" style="width:70px;">
+      <button id="saveSpinConfig">Save</button>
+    </div>
+    <div class="warn" id="spinWarn"></div>
+  </div>
+
+  <h2>Wheel Segments</h2>
+  <div class="card">
+    <table id="segTable"><thead><tr><th>Label</th><th>Value</th><th>Color</th><th>Real?</th><th></th></tr></thead><tbody></tbody></table>
+    <div style="margin-top:10px;">
+      <input placeholder="Label" id="segLabel" style="width:80px;">
+      <input placeholder="Value" type="number" id="segValue" style="width:80px;">
+      <input placeholder="#RRGGBB" id="segColor" style="width:90px;">
+      <select id="segReal"><option value="1">Real (payable)</option><option value="0">Decorative only</option></select>
+      <button id="addSegment">Add segment</button>
+    </div>
+  </div>
+
+  <h2>Tasks</h2>
+  <div class="card">
+    <div>
+      <input placeholder="Title" id="taskTitle" style="width:160px;">
+      <input placeholder="Reward gems" type="number" id="taskReward" style="width:100px;">
+      <input placeholder="Link (optional)" id="taskLink" style="width:200px;">
+      <button id="addTask">Add task</button>
+    </div>
+  </div>
+
+  <h2>Gift Codes</h2>
+  <div class="card">
+    <input placeholder="CODE" id="gcCode" style="width:120px;">
+    <input placeholder="Gems" type="number" id="gcGems" style="width:80px;">
+    <input placeholder="Spins" type="number" id="gcSpins" style="width:70px;">
+    <input placeholder="Max uses" type="number" id="gcMaxUses" style="width:80px;" value="1">
+    <input placeholder="Expires in days (opt)" type="number" id="gcExpires" style="width:150px;">
+    <button id="addGiftCode">Create</button>
+  </div>
+
+  <h2>Pending Withdrawals</h2>
+  <div class="card">
+    <table id="wdTable"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th></th></tr></thead><tbody></tbody></table>
   </div>
 </div>
 
-<!-- ================= APP ================= -->
-<div id="app">
-  <aside>
-    <div class="brand">🎪 Reward Hub</div>
-    <div class="navitem active" data-page="overview">📊 Overview</div>
-    <div class="navitem" data-page="withdrawals">💸 Withdrawals</div>
-    <div class="navitem" data-page="users">👥 Users</div>
-    <div class="navitem" data-page="tasks">📋 Tasks</div>
-    <div class="navitem" data-page="settings">⚙️ Settings</div>
-    <div class="navitem" id="logoutBtn" style="margin-top:24px; color:var(--coral);">↩ Log out</div>
-  </aside>
-
-  <main>
-    <!-- Overview -->
-    <section class="page active" id="page-overview">
-      <div class="page-head"><h2>Overview</h2><div class="sub" id="overviewRefreshed"></div></div>
-      <div class="stat-grid" id="statGrid">
-        <div class="stat-card"><div class="lbl">Total users</div><div class="val">—</div></div>
-        <div class="stat-card"><div class="lbl">Pending withdrawals</div><div class="val">—</div></div>
-        <div class="stat-card"><div class="lbl">Total ever paid out</div><div class="val">—</div></div>
-      </div>
-    </section>
-
-    <!-- Withdrawals -->
-    <section class="page" id="page-withdrawals">
-      <div class="page-head"><h2>Withdrawals</h2></div>
-      <div class="toolbar">
-        <select id="wdStatusFilter">
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
-      <div id="wdTableWrap"><div class="empty">Loading…</div></div>
-    </section>
-
-    <!-- Users -->
-    <section class="page" id="page-users">
-      <div class="page-head"><h2>Users</h2></div>
-      <div class="toolbar">
-        <input type="text" id="userSearch" placeholder="Search by username or Telegram ID" />
-        <button class="btn btn-ghost" id="userSearchBtn">Search</button>
-      </div>
-      <div id="usersTableWrap"><div class="empty">Loading…</div></div>
-    </section>
-
-    <!-- Tasks -->
-    <section class="page" id="page-tasks">
-      <div class="page-head"><h2>Tasks</h2></div>
-      <div class="card-form">
-        <h3>Add a task</h3>
-        <div class="grid2">
-          <div class="field"><label>Title</label><input id="taskTitle" placeholder="Join our channel" /></div>
-          <div class="field"><label>Reward (USDT)</label><input id="taskReward" type="number" step="0.001" placeholder="0.02" /></div>
-        </div>
-        <div class="field"><label>URL / channel link</label><input id="taskUrl" placeholder="https://t.me/..." /></div>
-        <div class="field"><label>Description (optional)</label><input id="taskDesc" placeholder="Short description shown to users" /></div>
-        <div class="field"><label>Type</label>
-          <select id="taskType"><option value="link">Visit link</option><option value="telegram_join">Join Telegram channel</option></select>
-        </div>
-        <div class="save-row"><button class="btn-save" id="addTaskBtn">Add task</button></div>
-      </div>
-      <div id="tasksTableWrap"><div class="empty">Loading…</div></div>
-    </section>
-
-    <!-- Settings -->
-    <section class="page" id="page-settings">
-      <div class="page-head"><h2>Live settings</h2><div class="sub">Changes apply immediately — no redeploy needed</div></div>
-
-      <div class="card-form">
-        <h3>Maintenance</h3>
-        <div class="field check"><input type="checkbox" id="s_maintenance_mode" /><label for="s_maintenance_mode">Maintenance mode (blocks all non-admins)</label></div>
-        <div class="field"><label>Maintenance message</label><input id="s_maintenance_message" /></div>
-      </div>
-
-      <div class="card-form">
-        <h3>Ads &amp; Adsgram</h3>
-        <div class="field check"><input type="checkbox" id="s_ads_enabled" /><label for="s_ads_enabled">Ads enabled</label></div>
-        <div class="field">
-          <label>Adsgram Block ID</label>
-          <input id="s_adsgram_block_id" placeholder="e.g. 12345" />
-        </div>
-        <div class="field check"><input type="checkbox" id="s_adsgram_debug" /><label for="s_adsgram_debug">Debug mode (test ads — Adsgram does NOT count these or send Reward URL callbacks; turn off before going live)</label></div>
-        <div class="field">
-          <label>Reward URL to paste into your Adsgram campaign</label>
-          <input readonly id="adsgramRewardUrlPreview" onclick="this.select()" />
-          <div style="font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5;">
-            Adsgram replaces <code>[userId]</code> in this URL with the viewer's Telegram ID and calls it after a completed view — paste it exactly as shown into your block's Reward URL field in the Adsgram dashboard.
-          </div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Reward per ad (USDT)</label><input id="s_ad_reward_usdt" type="number" step="0.0001" /></div>
-          <div class="field"><label>Daily ad limit</label><input id="s_ad_daily_limit" type="number" /></div>
-        </div>
-        <div class="field"><label>Cooldown between ads (seconds)</label><input id="s_ad_cooldown_seconds" type="number" /></div>
-      </div>
-
-      <div class="card-form">
-        <h3>Spin wheel</h3>
-        <div class="field check"><input type="checkbox" id="s_spin_enabled" /><label for="s_spin_enabled">Spin enabled</label></div>
-        <div class="grid2">
-          <div class="field"><label>Min reward</label><input id="s_spin_min_reward" type="number" step="0.001" /></div>
-          <div class="field"><label>Max reward</label><input id="s_spin_max_reward" type="number" step="0.001" /></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Free spins / day</label><input id="s_spin_daily_free_spins" type="number" /></div>
-          <div class="field"><label>Max spins / day (0 = unlimited)</label><input id="s_spin_max_daily_spins" type="number" /></div>
-        </div>
-      </div>
-
-      <div class="card-form">
-        <h3>Scratch card</h3>
-        <div class="field check"><input type="checkbox" id="s_scratch_enabled" /><label for="s_scratch_enabled">Scratch card enabled</label></div>
-        <div class="grid2">
-          <div class="field"><label>Min reward</label><input id="s_scratch_min_reward" type="number" step="0.001" /></div>
-          <div class="field"><label>Max reward</label><input id="s_scratch_max_reward" type="number" step="0.001" /></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>Free plays / day</label><input id="s_scratch_daily_free" type="number" /></div>
-          <div class="field"><label>Max plays / day</label><input id="s_scratch_max_daily" type="number" /></div>
-        </div>
-      </div>
-
-      <div class="card-form">
-        <h3>Referrals &amp; withdrawals</h3>
-        <div class="grid2">
-          <div class="field"><label>Referral commission (%)</label><input id="s_referral_commission_percent" type="number" step="0.1" /></div>
-          <div class="field"><label>Referral signup bonus (USDT)</label><input id="s_referral_fixed_reward" type="number" step="0.001" /></div>
-        </div>
-        <div class="field"><label>Minimum withdrawal (USDT)</label><input id="s_min_withdrawal_usdt" type="number" step="0.5" /></div>
-      </div>
-
-      <div class="save-row"><button class="btn-save" id="saveSettingsBtn">Save all settings</button></div>
-    </section>
-  </main>
-</div>
-
-<div class="toast" id="toast"></div>
-
 <script>
-const API_BASE = window.location.hostname.includes("localhost") ? "" : "https://reward-hub-production.up.railway.app";
-let ADMIN_KEY = localStorage.getItem("rh_admin_key") || "";
+const API_BASE = "https://YOUR-RAILWAY-BACKEND.up.railway.app"; // TODO
+let ADMIN_KEY = localStorage.getItem("rh_admin_key") || ""; // note: fine for a trusted admin-only page
 
-function showToast(msg, isErr=false){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + (isErr ? 'err' : 'ok');
-  setTimeout(()=> t.classList.remove('show'), 2600);
-}
+function headers() { return { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY }; }
 
-async function adminFetch(endpoint, options = {}) {
-  const headers = { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY, ...(options.headers||{}) };
-  const res = await fetch(API_BASE + endpoint, { ...options, headers });
-  if (res.status === 403) { logout(); throw new Error("Invalid admin key"); }
-  if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
-    try { const j = await res.json(); if (j.detail) detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch(e){}
-    throw new Error(detail);
-  }
-  return res.status === 204 ? null : res.json();
-}
-
-function logout(){
-  localStorage.removeItem("rh_admin_key");
-  ADMIN_KEY = "";
-  document.getElementById('app').classList.remove('show');
-  document.getElementById('loginScreen').style.display = 'flex';
-}
-
-function setLoginLoading(loading){
-  const btn = document.getElementById('loginBtn');
-  const input = document.getElementById('adminKeyInput');
-  btn.disabled = loading;
-  input.disabled = loading;
-  btn.innerHTML = loading ? '<span class="btn-spinner"></span>Verifying…' : 'Enter dashboard';
-}
-
-async function tryLogin(key, isSilentCheck = false){
-  ADMIN_KEY = key;
-  if (!isSilentCheck) setLoginLoading(true);
-  try {
-    await adminFetch("/api/admin/stats");
-    localStorage.setItem("rh_admin_key", key);
-    document.getElementById('bootLoader').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').classList.add('show');
-    initApp();
-  } catch(e) {
-    document.getElementById('bootLoader').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-    if (!isSilentCheck || e.message !== "Invalid admin key") {
-      document.getElementById('loginErr').textContent = isSilentCheck
-        ? "Your saved session expired — please sign in again."
-        : "Couldn't verify that key — check it and try again.";
-    }
-  } finally {
-    setLoginLoading(false);
-  }
-}
-
-document.getElementById('loginBtn').addEventListener('click', () => {
-  const key = document.getElementById('adminKeyInput').value.trim();
-  if (!key) return;
-  tryLogin(key);
-});
-document.getElementById('adminKeyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
-document.getElementById('logoutBtn').addEventListener('click', logout);
-
-/* ---- Nav ---- */
-document.querySelectorAll('.navitem[data-page]').forEach(el => {
-  el.addEventListener('click', () => {
-    document.querySelectorAll('.navitem[data-page]').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('page-' + el.dataset.page).classList.add('active');
-    if (el.dataset.page === 'withdrawals') loadWithdrawals();
-    if (el.dataset.page === 'users') loadUsers();
-    if (el.dataset.page === 'tasks') loadTasks();
-    if (el.dataset.page === 'settings') loadSettings();
-  });
-});
-
-/* ---- Overview ---- */
-async function loadOverview(){
-  try {
-    const s = await adminFetch("/api/admin/stats");
-    const cards = document.querySelectorAll('#statGrid .val');
-    cards[0].textContent = s.total_users;
-    cards[1].textContent = s.pending_withdrawals;
-    cards[2].textContent = `$${Number(s.total_earned_all_users).toFixed(4)}`;
-    document.getElementById('overviewRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch(e) { showToast(e.message, true); }
-}
-
-/* ---- Withdrawals ---- */
-async function loadWithdrawals(){
-  const wrap = document.getElementById('wdTableWrap');
-  const status = document.getElementById('wdStatusFilter').value;
-  wrap.innerHTML = '<div class="empty">Loading…</div>';
-  try {
-    const rows = await adminFetch(`/api/admin/withdrawals?status=${status}`);
-    if (!rows.length) { wrap.innerHTML = '<div class="empty">No withdrawals in this state.</div>'; return; }
-    wrap.innerHTML = `<table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Payout ID</th><th>Requested</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rows.map(w => `<tr>
-        <td>${w.first_name || ''} ${w.username ? '@'+w.username : '#'+w.telegram_id}</td>
-        <td class="mono">$${Number(w.amount).toFixed(4)}</td>
-        <td>${w.method}</td>
-        <td class="mono">${w.payout_id}</td>
-        <td>${new Date(w.requested_at).toLocaleString()}</td>
-        <td><span class="badge ${w.status}">${w.status}</span></td>
-        <td>${w.status === 'pending' ? `
-          <button class="btn btn-ok" onclick="resolveWithdrawal(${w.id}, true)">Approve</button>
-          <button class="btn btn-no" onclick="resolveWithdrawal(${w.id}, false)">Reject</button>` : ''}</td>
-      </tr>`).join('')}
-    </tbody></table>`;
-  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
-}
-window.resolveWithdrawal = async function(id, approve){
-  if (!approve && !confirm("Reject this withdrawal and refund the balance to the user?")) return;
-  try {
-    await adminFetch(`/api/admin/withdrawals/${id}/resolve?approve=${approve}`, { method: "POST" });
-    showToast(approve ? "Withdrawal approved" : "Withdrawal rejected & refunded");
-    loadWithdrawals();
-  } catch(e) { showToast(e.message, true); }
+document.getElementById("loginBtn").onclick = async () => {
+  ADMIN_KEY = document.getElementById("adminKeyInput").value.trim();
+  const res = await fetch(`${API_BASE}/api/admin/stats`, { headers: headers() });
+  if (!res.ok) return alert("Invalid admin key");
+  localStorage.setItem("rh_admin_key", ADMIN_KEY);
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("dash").style.display = "block";
+  loadAll();
 };
-document.getElementById('wdStatusFilter').addEventListener('change', loadWithdrawals);
 
-/* ---- Users ---- */
-async function loadUsers(){
-  const wrap = document.getElementById('usersTableWrap');
-  const q = document.getElementById('userSearch').value.trim();
-  wrap.innerHTML = '<div class="empty">Loading…</div>';
-  try {
-    const rows = await adminFetch(`/api/admin/users?q=${encodeURIComponent(q)}`);
-    if (!rows.length) { wrap.innerHTML = '<div class="empty">No users found.</div>'; return; }
-    wrap.innerHTML = `<table><thead><tr><th>User</th><th>Telegram ID</th><th>Balance</th><th>Total earned</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rows.map(u => `<tr>
-        <td>${u.first_name || ''} ${u.username ? '@'+u.username : ''}</td>
-        <td class="mono">${u.telegram_id}</td>
-        <td class="mono">$${Number(u.balance).toFixed(4)}</td>
-        <td class="mono">$${Number(u.total_earned).toFixed(4)}</td>
-        <td><span class="badge ${u.is_banned ? 'banned' : 'active'}">${u.is_banned ? 'Banned' : 'Active'}</span></td>
-        <td><button class="btn ${u.is_banned ? 'btn-ok' : 'btn-no'}" onclick="toggleBan(${u.telegram_id}, ${u.is_banned ? 'false' : 'true'})">${u.is_banned ? 'Unban' : 'Ban'}</button></td>
-      </tr>`).join('')}
-    </tbody></table>`;
-  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
-}
-window.toggleBan = async function(telegramId, banned){
-  try {
-    await adminFetch(`/api/admin/users/${telegramId}/ban?banned=${banned}`, { method: "POST" });
-    showToast(banned ? "User banned" : "User unbanned");
-    loadUsers();
-  } catch(e) { showToast(e.message, true); }
-};
-document.getElementById('userSearchBtn').addEventListener('click', loadUsers);
-document.getElementById('userSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadUsers(); });
+if (ADMIN_KEY) document.getElementById("loginBtn").click(), document.getElementById("adminKeyInput").value = ADMIN_KEY;
 
-/* ---- Tasks ---- */
-async function loadTasks(){
-  const wrap = document.getElementById('tasksTableWrap');
-  wrap.innerHTML = '<div class="empty">Loading…</div>';
-  try {
-    const rows = await adminFetch("/api/admin/tasks");
-    if (!rows.length) { wrap.innerHTML = '<div class="empty">No tasks yet — add one above.</div>'; return; }
-    wrap.innerHTML = `<table><thead><tr><th>Title</th><th>Reward</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rows.map(t => `<tr>
-        <td>${t.title}</td>
-        <td class="mono">$${Number(t.reward).toFixed(4)}</td>
-        <td>${t.task_type}</td>
-        <td><span class="badge ${t.is_active ? 'active' : 'banned'}">${t.is_active ? 'Active' : 'Disabled'}</span></td>
-        <td><button class="btn ${t.is_active ? 'btn-no' : 'btn-ok'}" onclick="toggleTask(${t.id}, ${t.is_active ? 'false' : 'true'})">${t.is_active ? 'Disable' : 'Enable'}</button></td>
-      </tr>`).join('')}
-    </tbody></table>`;
-  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
+async function loadSettings() {
+  const s = await (await fetch(`${API_BASE}/api/admin/settings`, { headers: headers() })).json();
+  document.getElementById("setAdsgram").value = s.adsgram_block_id || "";
+  document.getElementById("setBotUsername").value = s.bot_username || "";
+  document.getElementById("setAppName").value = s.app_name || "";
+  document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "";
 }
-window.toggleTask = async function(id, active){
-  try {
-    await adminFetch(`/api/admin/tasks/${id}/toggle?active=${active}`, { method: "POST" });
-    loadTasks();
-  } catch(e) { showToast(e.message, true); }
-};
-document.getElementById('addTaskBtn').addEventListener('click', async () => {
-  const title = document.getElementById('taskTitle').value.trim();
-  const url = document.getElementById('taskUrl').value.trim();
-  const reward = parseFloat(document.getElementById('taskReward').value);
-  const description = document.getElementById('taskDesc').value.trim();
-  const task_type = document.getElementById('taskType').value;
-  if (!title || !url || !reward) { showToast("Title, URL and reward are required", true); return; }
-  try {
-    await adminFetch("/api/admin/tasks", { method: "POST", body: JSON.stringify({ title, url, reward, description, task_type }) });
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskUrl').value = '';
-    document.getElementById('taskReward').value = '';
-    document.getElementById('taskDesc').value = '';
-    showToast("Task added");
-    loadTasks();
-  } catch(e) { showToast(e.message, true); }
-});
 
-/* ---- Settings ---- */
-async function loadSettings(){
-  try {
-    const s = await adminFetch("/api/admin/settings");
-    document.getElementById('adsgramRewardUrlPreview').value = `${API_BASE || window.location.origin}/api/ads/p?userid=[userId]`;
-    document.getElementById('s_maintenance_mode').checked = s.maintenance_mode;
-    document.getElementById('s_maintenance_message').value = s.maintenance_message || '';
-    document.getElementById('s_ads_enabled').checked = s.ads_enabled;
-    document.getElementById('s_adsgram_block_id').value = s.adsgram_block_id || '';
-    document.getElementById('s_adsgram_debug').checked = s.adsgram_debug;
-    document.getElementById('s_ad_reward_usdt').value = s.ad_reward_usdt;
-    document.getElementById('s_ad_daily_limit').value = s.ad_daily_limit;
-    document.getElementById('s_ad_cooldown_seconds').value = s.ad_cooldown_seconds;
-    document.getElementById('s_spin_enabled').checked = s.spin_enabled;
-    document.getElementById('s_spin_min_reward').value = s.spin_min_reward;
-    document.getElementById('s_spin_max_reward').value = s.spin_max_reward;
-    document.getElementById('s_spin_daily_free_spins').value = s.spin_daily_free_spins;
-    document.getElementById('s_spin_max_daily_spins').value = s.spin_max_daily_spins;
-    document.getElementById('s_scratch_enabled').checked = s.scratch_enabled;
-    document.getElementById('s_scratch_min_reward').value = s.scratch_min_reward;
-    document.getElementById('s_scratch_max_reward').value = s.scratch_max_reward;
-    document.getElementById('s_scratch_daily_free').value = s.scratch_daily_free;
-    document.getElementById('s_scratch_max_daily').value = s.scratch_max_daily;
-    document.getElementById('s_referral_commission_percent').value = s.referral_commission_percent;
-    document.getElementById('s_referral_fixed_reward').value = s.referral_fixed_reward;
-    document.getElementById('s_min_withdrawal_usdt').value = s.min_withdrawal_usdt;
-  } catch(e) { showToast(e.message, true); }
-}
-document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
-  const values = {
-    maintenance_mode: document.getElementById('s_maintenance_mode').checked ? "1" : "0",
-    maintenance_message: document.getElementById('s_maintenance_message').value,
-    ads_enabled: document.getElementById('s_ads_enabled').checked ? "1" : "0",
-    adsgram_block_id: document.getElementById('s_adsgram_block_id').value.trim(),
-    adsgram_debug: document.getElementById('s_adsgram_debug').checked ? "1" : "0",
-    ad_reward_usdt: document.getElementById('s_ad_reward_usdt').value,
-    ad_daily_limit: document.getElementById('s_ad_daily_limit').value,
-    ad_cooldown_seconds: document.getElementById('s_ad_cooldown_seconds').value,
-    spin_enabled: document.getElementById('s_spin_enabled').checked ? "1" : "0",
-    spin_min_reward: document.getElementById('s_spin_min_reward').value,
-    spin_max_reward: document.getElementById('s_spin_max_reward').value,
-    spin_daily_free_spins: document.getElementById('s_spin_daily_free_spins').value,
-    spin_max_daily_spins: document.getElementById('s_spin_max_daily_spins').value,
-    scratch_enabled: document.getElementById('s_scratch_enabled').checked ? "1" : "0",
-    scratch_min_reward: document.getElementById('s_scratch_min_reward').value,
-    scratch_max_reward: document.getElementById('s_scratch_max_reward').value,
-    scratch_daily_free: document.getElementById('s_scratch_daily_free').value,
-    scratch_max_daily: document.getElementById('s_scratch_max_daily').value,
-    referral_commission_percent: document.getElementById('s_referral_commission_percent').value,
-    referral_fixed_reward: document.getElementById('s_referral_fixed_reward').value,
-    min_withdrawal_usdt: document.getElementById('s_min_withdrawal_usdt').value,
+document.getElementById("saveSettings").onclick = async () => {
+  const body = {
+    adsgram_block_id: document.getElementById("setAdsgram").value.trim(),
+    bot_username: document.getElementById("setBotUsername").value.trim(),
+    app_name: document.getElementById("setAppName").value.trim(),
+    gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),
   };
-  try {
-    await adminFetch("/api/admin/settings", { method: "POST", body: JSON.stringify({ values }) });
-    showToast("Settings saved");
-  } catch(e) { showToast(e.message, true); }
-});
+  await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  document.getElementById("settingsMsg").textContent = "Saved. Reload the Mini App to pick up AdsGram/bot changes.";
+};
 
-/* ---- Boot ---- */
-function initApp(){
-  loadOverview();
+async function loadStats() {
+  const r = await (await fetch(`${API_BASE}/api/admin/stats`, { headers: headers() })).json();
+  document.getElementById("statsCard").innerHTML =
+    `Total users: <b>${r.total_users}</b> · Pending withdrawals: <b>${r.pending_withdrawals}</b> ($${r.pending_withdrawal_usdt.toFixed(2)})`;
 }
-if (ADMIN_KEY) {
-  tryLogin(ADMIN_KEY, true);
-} else {
-  document.getElementById('bootLoader').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
+
+async function loadSpinConfig() {
+  const r = await (await fetch(`${API_BASE}/api/admin/spin-config`, { headers: headers() })).json();
+  document.getElementById("minReward").value = r.min_reward;
+  document.getElementById("maxReward").value = r.max_reward;
+  document.getElementById("maxSpins").value = r.max_spins_per_day;
+}
+
+document.getElementById("saveSpinConfig").onclick = async () => {
+  const body = {
+    min_reward: parseInt(document.getElementById("minReward").value),
+    max_reward: parseInt(document.getElementById("maxReward").value),
+    max_spins_per_day: parseInt(document.getElementById("maxSpins").value),
+  };
+  const r = await (await fetch(`${API_BASE}/api/admin/spin-config`, { method: "POST", headers: headers(), body: JSON.stringify(body) })).json();
+  document.getElementById("spinWarn").textContent = r.warning || `Saved. ${r.eligible_segments} segment(s) currently payable.`;
+};
+
+async function loadSegments() {
+  const segs = await (await fetch(`${API_BASE}/api/admin/wheel-segments`, { headers: headers() })).json();
+  const tbody = document.querySelector("#segTable tbody");
+  tbody.innerHTML = "";
+  segs.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.label}</td><td>${s.value_gems}</td><td><span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:3px;vertical-align:middle;"></span> ${s.color}</td><td>${s.is_real ? "Real" : "Decorative"}</td><td><button data-id="${s.id}">Delete</button></td>`;
+    tr.querySelector("button").onclick = async () => {
+      await fetch(`${API_BASE}/api/admin/wheel-segments/${s.id}`, { method: "DELETE", headers: headers() });
+      loadSegments();
+    };
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById("addSegment").onclick = async () => {
+  const body = {
+    label: document.getElementById("segLabel").value,
+    value_gems: parseInt(document.getElementById("segValue").value),
+    color: document.getElementById("segColor").value || "#12B886",
+    is_real: document.getElementById("segReal").value === "1",
+    sort_order: 99,
+  };
+  await fetch(`${API_BASE}/api/admin/wheel-segments`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  loadSegments();
+};
+
+document.getElementById("addTask").onclick = async () => {
+  const body = {
+    title: document.getElementById("taskTitle").value,
+    reward_gems: parseInt(document.getElementById("taskReward").value),
+    link: document.getElementById("taskLink").value || null,
+  };
+  await fetch(`${API_BASE}/api/admin/tasks`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  alert("Task added");
+};
+
+document.getElementById("addGiftCode").onclick = async () => {
+  const body = {
+    code: document.getElementById("gcCode").value,
+    reward_gems: parseInt(document.getElementById("gcGems").value) || 0,
+    reward_spins: parseInt(document.getElementById("gcSpins").value) || 0,
+    max_uses: parseInt(document.getElementById("gcMaxUses").value) || 1,
+    expires_in_days: document.getElementById("gcExpires").value ? parseInt(document.getElementById("gcExpires").value) : null,
+  };
+  const res = await fetch(`${API_BASE}/api/admin/gift-codes`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  alert(res.ok ? "Gift code created" : "Could not create (duplicate code?)");
+};
+
+async function loadWithdrawals() {
+  const rows = await (await fetch(`${API_BASE}/api/admin/withdrawals?status=pending`, { headers: headers() })).json();
+  const tbody = document.querySelector("#wdTable tbody");
+  tbody.innerHTML = "";
+  rows.forEach(w => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>@${w.username || w.telegram_id}</td><td>$${w.amount_usdt.toFixed(2)}</td><td>${w.method}</td><td>${w.destination}</td>
+      <td><button data-a="paid">Mark paid</button> <button data-a="rejected">Reject</button></td>`;
+    tr.querySelectorAll("button").forEach(btn => btn.onclick = async () => {
+      await fetch(`${API_BASE}/api/admin/withdrawals/${w.id}`, { method: "POST", headers: headers(), body: JSON.stringify({ status: btn.dataset.a }) });
+      loadWithdrawals();
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function loadAll() {
+  loadStats(); loadSettings(); loadSpinConfig(); loadSegments(); loadWithdrawals();
 }
 </script>
 </body>
