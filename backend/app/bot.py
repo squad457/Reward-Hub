@@ -70,20 +70,25 @@ def _webapp_keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
     ])
 
 
-@dp.message(CommandStart()) if dp else lambda f: f
-async def start_handler(message: Message):
-    # Deep link referrals arrive as /start <referrer_telegram_id>
-    referrer_id = None
-    parts = message.text.split(maxsplit=1)
-    if len(parts) > 1 and parts[1].strip().isdigit():
-        referrer_id = parts[1].strip()
+if dp:
+    @dp.message(CommandStart())
+    async def start_handler(message: Message):
+        # Deep link referrals arrive as /start <referrer_telegram_id>
+        referrer_id = None
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1 and parts[1].strip().isdigit():
+            referrer_id = parts[1].strip()
 
-    text = (
-        f"🎯 Welcome to Reward Hub{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\n\n"
-        "🎡 Spin the wheel, scratch for diamonds, and keep your daily earnings streak alive.\n"
-        "🎫 Tap below to open your dashboard."
-    )
-    await message.answer(text, reply_markup=_webapp_keyboard(referrer_id))
+        text = (
+            f"🎯 Welcome to Reward Hub{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\\n\\n"
+            "🎡 Spin the wheel, scratch for diamonds, and keep your daily earnings streak alive.\\n"
+            "🎫 Tap below to open your dashboard."
+        )
+        await message.answer(text, reply_markup=_webapp_keyboard(referrer_id))
+else:
+    async def start_handler(message: Message):
+        # Fallback when bot is not initialized
+        pass
 
 
 async def run_bot():
