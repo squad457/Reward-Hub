@@ -64,3 +64,16 @@ app.include_router(admin.router)
 @app.get("/")
 async def health_check():
     return {"status": "ok", "service": "usdt-rewards-api", "bot": "running in-process"}
+
+
+@app.get("/api/config")
+async def public_config():
+    """
+    Unauthenticated — the frontend needs this before it has any Telegram
+    initData (e.g. to build the "Open in Telegram" deep link when the mini
+    app is opened directly in a normal browser tab).
+    """
+    return {
+        "bot_username": settings.BOT_USERNAME,
+        "mini_app_short_name": settings.MINI_APP_SHORT_NAME,
+    }

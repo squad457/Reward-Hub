@@ -1,11 +1,19 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+import aiohttp
+from fastapi import APIRouter, Depends, HTTPException, Response
 from app.auth import get_current_user
+from app.bot import fetch_avatar_file_path, bot
+from app.config import settings
 from app.database import get_db, get_settings
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+# How long a cached Telegram file_path is trusted before we re-resolve it via
+# getUserProfilePhotos. Telegram file_paths themselves can go stale after a
+# while, so this isn't "forever" even for users who never change their photo.
+AVATAR_CACHE_TTL = timedelta(hours=6)
 
 
 def _today_str():
@@ -72,3 +80,51 @@ async def claim_streak(user: dict = Depends(get_current_user)):
         await db.commit()
 
     return {"reward": reward, "streak_count": new_streak, "new_balance": round(new_balance, 4)}
+
+
+@router.get("/avatar/{telegram_id}")
+async def get_avatar(telegram_id: int):
+    """
+    Proxies the user's Telegram profile photo. The bot token must never reach
+    the browser, so this fetches the image bytes server-side and streams them
+    back — the frontend only ever sees this URL, never a t.me/file link.
+    Cached in the users table (photo_file_path/photo_synced_at) so we don't
+    call getUserProfilePhotos on every single avatar load.
+    """
+    async with get_db() as db:
+        cursor = await db.execute(
+            "SELECT photo_file_path, photo_synced_at FROM users WHERE telegram_id = ?",
+            (telegram_id,),
+        )
+        row = await cursor.fetchone()
+        file_path = row["photo_file_path"] if row else None
+        synced_at = row["photo_synced_at"] if row else None
+
+        stale = True
+        if synced_at:
+            try:
+                stale = datetime.fromisoformat(synced_at) < datetime.now(timezone.utc) - AVATAR_CACHE_TTL
+            except ValueError:
+                stale = True
+
+        if stale or not file_path:
+            file_path = await fetch_avatar_file_path(telegram_id)
+            if row is not None:
+                await db.execute(
+                    "UPDATE users SET photo_file_path = ?, photo_synced_at = ? WHERE telegram_id = ?",
+                    (file_path, datetime.now(timezone.utc).isoformat(), telegram_id),
+                )
+                await db.commit()
+
+    if not bot or not file_path:
+        raise HTTPException(status_code=404, detail="No profile photo available")
+
+    file_url = f"https://api.telegram.org/file/bot{settings.BOT_TOKEN}/{file_path}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(file_url) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=404, detail="Could not fetch profile photo")
+            content = await resp.read()
+            content_type = resp.headers.get("Content-Type", "image/jpeg")
+
+    return Response(content=content, media_type=content_type, headers={"Cache-Control": "public, max-age=21600"})

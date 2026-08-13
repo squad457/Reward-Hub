@@ -26,15 +26,46 @@
     background-image: radial-gradient(circle 5px, var(--deep) 5px, transparent 5.5px);
     background-size: 18px 9px; background-position: 5px 0; background-repeat: repeat-x;}
   .who{display:flex; align-items:center; gap:10px;}
-  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 0 0 2px rgba(255,182,39,0.25);}
+  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 0 0 2px rgba(255,182,39,0.25); position:relative; overflow:hidden;}
+  .avatar img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none;}
+  .avatar img.loaded{display:block;}
+  .avatar span{position:relative; z-index:1;}
   .who .name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px;}
   .who .sub{font-size:10.5px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
   .currencies{display:flex; gap:6px;}
   .chip{display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid var(--line); padding:6px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;}
 
+  /* ---- Global animated toast (top-down) ---- */
+  .gtoast-wrap{position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px;
+    z-index:60; display:flex; flex-direction:column; align-items:center; pointer-events:none;
+    padding-top:max(14px, env(safe-area-inset-top,0px));}
+  .gtoast{pointer-events:auto; margin-top:8px; max-width:90%; padding:12px 16px; border-radius:14px;
+    background:var(--panel-2); border:1px solid var(--line); box-shadow:0 10px 28px rgba(0,0,0,0.4);
+    font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:8px;
+    transform:translateY(-130%); opacity:0; transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .25s;}
+  .gtoast.show{transform:translateY(0); opacity:1;}
+  .gtoast.ok{border-color:var(--lime); color:var(--lime);}
+  .gtoast.err{border-color:var(--coral); color:var(--coral);}
+  .gtoast.info{border-color:var(--gold); color:var(--gold);}
+
+  /* ---- "Open in Telegram" gate ---- */
+  .tg-gate{position:fixed; inset:0; background:rgba(10,5,12,0.94); backdrop-filter:blur(8px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:24px;}
+  .tg-gate.show{display:flex; animation:fadeIn .3s ease;}
+  .tg-gate-card{max-width:320px; text-align:center; background:linear-gradient(160deg,var(--panel-2),var(--panel));
+    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:34px 26px; animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
+  .tg-gate-ic{font-size:42px; margin-bottom:12px;}
+  .tg-gate-card h2{font-size:18px; margin-bottom:8px;}
+  .tg-gate-card p{font-size:12.5px; color:var(--muted); margin-bottom:22px; line-height:1.55;}
+  .tg-gate-btn{display:inline-block; padding:13px 24px; border-radius:100px; background:linear-gradient(90deg,var(--lime),var(--gold));
+    color:var(--ink); font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px; text-decoration:none;}
+  @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+  @keyframes popIn{from{opacity:0; transform:scale(.92) translateY(8px)} to{opacity:1; transform:scale(1) translateY(0)}}
+  @keyframes fadeSlideIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+
   main{padding:14px 16px 0;}
   .tabpane{display:none;}
-  .tabpane.active{display:block;}
+  .tabpane.active{display:block; animation:fadeSlideIn .32s ease;}
 
   .section-title{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px; margin:24px 2px 10px; display:flex; align-items:center; gap:6px; letter-spacing:.01em;}
 
@@ -132,13 +163,25 @@
   .navbtn{display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:10px; font-weight:600; cursor:pointer; background:none; border:none; position:relative; padding:4px 10px;}
   .navbtn.active{color:var(--gold);}
   .navbtn.active::after{content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; border-radius:2px; background:var(--gold);}
+  /* Modern tactile feedback on every tappable control */
+  .spin-cta, .withdraw-btn, .go, .navbtn, .tg-gate-btn, .claim-btn, #boostBtn, #crewBtn{transition:transform .12s ease, opacity .15s ease;}
+  .spin-cta:active, .withdraw-btn:active, .go:active:not(:disabled), .navbtn:active, .tg-gate-btn:active, #boostBtn:active, #crewBtn:active{transform:scale(.95);}
 </style>
 </head>
 <body>
+<div class="gtoast-wrap" id="gtoastWrap"></div>
+<div class="tg-gate" id="telegramGate">
+  <div class="tg-gate-card">
+    <div class="tg-gate-ic">🎪</div>
+    <h2>Open in Telegram</h2>
+    <p>Reward Hub runs inside Telegram — spins, tasks, and payouts only work there. Tap below to launch it in the app.</p>
+    <a id="telegramGateLink" href="https://telegram.org" class="tg-gate-btn">Open in Telegram</a>
+  </div>
+</div>
 <div class="device">
   <header>
     <div class="who">
-      <div class="avatar" id="userAvatar">🎪</div>
+      <div class="avatar" id="userAvatar"><img id="userAvatarImg" alt="" /><span>🎪</span></div>
       <div><div class="name" id="userName">Loading...</div><div class="sub" id="userSub">#...</div></div>
     </div>
     <div class="currencies">
@@ -270,24 +313,67 @@ async function apiFetch(endpoint, options = {}) {
 let currentUser = null;
 let spinStatus = null;
 let scratchStatus = null;
+let adsgramConfig = { blockId: "", debug: false };
+
+/* ---- Global toast (slides down from the top) ---- */
+function showToast(msg, type = 'info', duration = 3200) {
+  const wrap = document.getElementById('gtoastWrap');
+  const el = document.createElement('div');
+  el.className = 'gtoast ' + type;
+  const icon = type === 'ok' ? '✅' : type === 'err' ? '⚠️' : 'ℹ️';
+  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 400);
+  }, duration);
+}
+
+/* ---- "Open in Telegram" gate ---- */
+async function checkTelegramLaunch() {
+  const hasRealInitData = !!(window.Telegram?.WebApp?.initData);
+  const bypass = new URLSearchParams(window.location.search).get('preview') === '1';
+  if (hasRealInitData || bypass) return false;
+  try {
+    const cfg = await fetch(API_BASE + "/api/config").then(r => r.json());
+    document.getElementById('telegramGateLink').href = `https://t.me/${cfg.bot_username}/${cfg.mini_app_short_name}`;
+  } catch (e) { /* keep the generic telegram.org fallback link */ }
+  document.getElementById('telegramGate').classList.add('show');
+  return true;
+}
 
 /* ---- Adsgram SDK Helper ---- */
-async function triggerAdsgramAd(blockId = "") {
+async function loadAdsgramConfig() {
+  try {
+    const s = await apiFetch("/api/ads/status");
+    adsgramConfig.blockId = s.adsgram_block_id || "";
+    adsgramConfig.debug = !!s.adsgram_debug;
+  } catch (e) {
+    console.warn("Could not load Adsgram config:", e);
+  }
+}
+
+async function triggerAdsgramAd() {
   return new Promise((resolve) => {
-    if (window.Adsgram) {
-      window.Adsgram.init({ blockId: blockId || undefined }).show()
+    if (window.Adsgram && adsgramConfig.blockId) {
+      window.Adsgram.init({ blockId: adsgramConfig.blockId, debug: adsgramConfig.debug }).show()
         .then((result) => {
-          // result = { done: true, description: "...", ... }
-          resolve(result.done || true);
+          // result.done is false when the user skips or the ad errors out —
+          // only a true "watched to the end" should ever unlock a reward.
+          resolve(!!result.done);
         })
         .catch((err) => {
           console.error("Adsgram ad error:", err);
-          alert("Ad failed or was skipped. Please watch the full ad to earn.");
+          showToast("Ad failed or was skipped — watch the full ad to earn.", 'err');
           resolve(false);
         });
+    } else if (window.Adsgram) {
+      console.warn("No Adsgram Block ID is configured — set one in the admin dashboard's Settings page.");
+      showToast("Ads aren't configured yet. Please try again later.", 'err');
+      resolve(false);
     } else {
-      // Fallback for browser testing
-      console.warn("Adsgram SDK not loaded, bypassing ad for testing.");
+      console.warn("Adsgram SDK not loaded, bypassing ad for local testing.");
       resolve(true);
     }
   });
@@ -301,6 +387,10 @@ async function loadUser() {
     // Update header
     document.getElementById('userName').textContent = currentUser.first_name || "User";
     document.getElementById('userSub').textContent = `#${currentUser.telegram_id}`;
+    const avatarImg = document.getElementById('userAvatarImg');
+    avatarImg.onload = () => avatarImg.classList.add('loaded');
+    avatarImg.onerror = () => avatarImg.classList.remove('loaded');
+    avatarImg.src = `${API_BASE}/api/users/avatar/${currentUser.telegram_id}`;
     document.getElementById('energy').textContent = currentUser.ads_watched_today ?? 0;
     document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
     
@@ -376,10 +466,10 @@ window.claimTask = async function(taskId, btn) {
     const res = await apiFetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
     btn.textContent = "Done";
     btn.classList.add("done");
-    alert(`Successfully claimed +${res.reward} USDT!`);
+    showToast(`Task complete! +${res.reward} USDT`, 'ok');
     loadUser();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, 'err');
     btn.disabled = false;
   }
 };
@@ -399,10 +489,10 @@ document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click'
 document.getElementById('claimBtn').addEventListener('click', async () => {
   try {
     const res = await apiFetch("/api/users/streak/claim", { method: "POST" });
-    alert(`Streak claimed! +${res.reward} USDT`);
+    showToast(`Streak claimed! +${res.reward} USDT`, 'ok');
     loadUser();
   } catch(e) {
-    alert(e.message);
+    showToast(e.message, 'err');
   }
 });
 
@@ -414,10 +504,10 @@ document.getElementById('boostBtn').addEventListener('click', async () => {
         method: "POST",
         body: JSON.stringify({ reward_event: "daily_boost_" + Date.now() })
       });
-      alert(`Ad watched! Rewarded $${res.reward} USDT`);
+      showToast(`Ad watched! Rewarded $${res.reward} USDT`, 'ok');
       loadUser();
     } catch(e) {
-      alert(e.message);
+      showToast(e.message, 'err');
     }
   }
 });
@@ -485,7 +575,7 @@ document.getElementById('spinBtn').addEventListener('click', async () => {
     }, 4300);
 
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, 'err');
     btn.disabled = false;
   }
 });
@@ -565,7 +655,7 @@ async function resolveScratch(){
     }, 2500);
 
   } catch(e) {
-    alert(e.message);
+    showToast(e.message, 'err');
     selected = [];
     renderScratch();
   }
@@ -576,7 +666,7 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
   const method = document.getElementById('payoutMethod').value;
   const address = document.getElementById('walletAddress').value.trim();
   if(!address) {
-    alert("Please enter your wallet address or Pay ID");
+    showToast("Please enter your wallet address or Pay ID", 'err');
     return;
   }
   try {
@@ -584,11 +674,11 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
       method: "POST",
       body: JSON.stringify({ method, address })
     });
-    alert(`Withdrawal request submitted successfully! Amount: $${res.amount} USDT`);
+    showToast(`Withdrawal requested — $${res.amount} USDT pending review`, 'ok');
     document.getElementById('walletAddress').value = "";
     loadUser();
   } catch(e) {
-    alert(e.message);
+    showToast(e.message, 'err');
   }
 });
 
@@ -596,21 +686,29 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
 document.getElementById('crewBtn').addEventListener('click', async () => {
   try {
     const data = await apiFetch("/api/referral/info");
-    alert(`Your Referral Link:\n${data.referral_link}\n\nReferred Friends: ${data.total_referred}\nEarned Commission: $${data.total_earned}`);
+    try {
+      await navigator.clipboard.writeText(data.referral_link);
+      showToast(`Link copied! ${data.total_referred} friend(s) invited — $${data.total_earned} earned`, 'ok', 4200);
+    } catch (copyErr) {
+      showToast(`${data.referral_link} — ${data.total_referred} invited, $${data.total_earned} earned`, 'info', 4800);
+    }
   } catch(e) {
-    alert("Failed to load referral info");
+    showToast("Failed to load referral info", 'err');
   }
 });
 
 // Initialize app on load
-window.addEventListener('load', () => {
-  loadUser();
-  loadGamesStatus();
-  initScratch();
+window.addEventListener('load', async () => {
   if (window.Telegram?.WebApp) {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
   }
+  const gated = await checkTelegramLaunch();
+  if (gated) return; // don't burn API calls on a screen the user can't use yet
+  loadUser();
+  loadGamesStatus();
+  loadAdsgramConfig();
+  initScratch();
 });
 </script>
 </body>

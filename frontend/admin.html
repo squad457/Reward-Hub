@@ -23,7 +23,14 @@
   /* ---- Login ---- */
   #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
   .login-card{width:100%; max-width:360px; background:linear-gradient(160deg,var(--panel-2),var(--panel));
-    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:32px 26px; text-align:center;}
+    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:32px 26px; text-align:center;
+    animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes popIn{from{opacity:0; transform:scale(.94) translateY(10px)} to{opacity:1; transform:scale(1) translateY(0)}}
+  .boot-loader{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:var(--muted); font-size:12.5px;}
+  .spinner{width:26px; height:26px; border-radius:50%; border:3px solid rgba(255,255,255,0.15); border-top-color:var(--gold); animation:spin .7s linear infinite;}
+  .btn-spinner{width:14px; height:14px; border-radius:50%; border:2px solid rgba(27,14,30,0.3); border-top-color:var(--ink); display:inline-block; vertical-align:-2px; margin-right:6px; animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .login-card button:disabled{opacity:.75; cursor:default;}
   .login-card .ic{font-size:34px; margin-bottom:10px;}
   .login-card h1{font-size:20px; margin-bottom:4px;}
   .login-card p{font-size:12.5px; color:var(--muted); margin-bottom:20px;}
@@ -88,17 +95,28 @@
   .save-row{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
   .btn-save{padding:11px 20px; border:none; border-radius:12px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
     background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink); cursor:pointer;}
-  .toast{position:fixed; top:18px; right:18px; padding:12px 18px; border-radius:12px; background:var(--panel-2); border:1px solid var(--line);
-    font-size:12.5px; font-weight:600; opacity:0; transform:translateY(-8px); transition:.25s; z-index:20;}
-  .toast.show{opacity:1; transform:translateY(0);}
+  .toast{position:fixed; top:0; left:50%; padding:12px 20px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line);
+    font-size:12.5px; font-weight:600; opacity:0; transform:translate(-50%,-130%); transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+    z-index:30; margin-top:16px; box-shadow:0 10px 28px rgba(0,0,0,0.4);}
+  .toast.show{opacity:1; transform:translate(-50%,0);}
   .toast.err{border-color:var(--coral); color:var(--coral);}
   .toast.ok{border-color:var(--lime); color:var(--lime);}
+  .page.active{animation:fadeSlideIn .3s ease;}
+  @keyframes fadeSlideIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+  .navitem, .btn, .btn-save{transition:transform .12s ease;}
+  .navitem:active, .btn:active, .btn-save:active{transform:scale(.96);}
 </style>
 </head>
 <body>
 
+<!-- ================= BOOT LOADER (checking a saved session) ================= -->
+<div id="bootLoader" class="boot-loader">
+  <div class="spinner"></div>
+  <div>Checking your session…</div>
+</div>
+
 <!-- ================= LOGIN ================= -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none;">
   <div class="login-card">
     <div class="ic">🎟️</div>
     <h1>Reward Hub Admin</h1>
@@ -185,8 +203,20 @@
       </div>
 
       <div class="card-form">
-        <h3>Ads</h3>
+        <h3>Ads &amp; Adsgram</h3>
         <div class="field check"><input type="checkbox" id="s_ads_enabled" /><label for="s_ads_enabled">Ads enabled</label></div>
+        <div class="field">
+          <label>Adsgram Block ID</label>
+          <input id="s_adsgram_block_id" placeholder="e.g. 12345" />
+        </div>
+        <div class="field check"><input type="checkbox" id="s_adsgram_debug" /><label for="s_adsgram_debug">Debug mode (test ads — Adsgram does NOT count these or send Reward URL callbacks; turn off before going live)</label></div>
+        <div class="field">
+          <label>Reward URL to paste into your Adsgram campaign</label>
+          <input readonly id="adsgramRewardUrlPreview" onclick="this.select()" />
+          <div style="font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5;">
+            Adsgram replaces <code>[userId]</code> in this URL with the viewer's Telegram ID and calls it after a completed view — paste it exactly as shown into your block's Reward URL field in the Adsgram dashboard.
+          </div>
+        </div>
         <div class="grid2">
           <div class="field"><label>Reward per ad (USDT)</label><input id="s_ad_reward_usdt" type="number" step="0.0001" /></div>
           <div class="field"><label>Daily ad limit</label><input id="s_ad_daily_limit" type="number" /></div>
@@ -266,16 +296,34 @@ function logout(){
   document.getElementById('loginScreen').style.display = 'flex';
 }
 
-async function tryLogin(key){
+function setLoginLoading(loading){
+  const btn = document.getElementById('loginBtn');
+  const input = document.getElementById('adminKeyInput');
+  btn.disabled = loading;
+  input.disabled = loading;
+  btn.innerHTML = loading ? '<span class="btn-spinner"></span>Verifying…' : 'Enter dashboard';
+}
+
+async function tryLogin(key, isSilentCheck = false){
   ADMIN_KEY = key;
+  if (!isSilentCheck) setLoginLoading(true);
   try {
     await adminFetch("/api/admin/stats");
     localStorage.setItem("rh_admin_key", key);
+    document.getElementById('bootLoader').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').classList.add('show');
     initApp();
   } catch(e) {
-    document.getElementById('loginErr').textContent = "Couldn't verify that key — check it and try again.";
+    document.getElementById('bootLoader').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    if (!isSilentCheck || e.message !== "Invalid admin key") {
+      document.getElementById('loginErr').textContent = isSilentCheck
+        ? "Your saved session expired — please sign in again."
+        : "Couldn't verify that key — check it and try again.";
+    }
+  } finally {
+    setLoginLoading(false);
   }
 }
 
@@ -422,9 +470,12 @@ document.getElementById('addTaskBtn').addEventListener('click', async () => {
 async function loadSettings(){
   try {
     const s = await adminFetch("/api/admin/settings");
+    document.getElementById('adsgramRewardUrlPreview').value = `${API_BASE || window.location.origin}/api/ads/p?userid=[userId]`;
     document.getElementById('s_maintenance_mode').checked = s.maintenance_mode;
     document.getElementById('s_maintenance_message').value = s.maintenance_message || '';
     document.getElementById('s_ads_enabled').checked = s.ads_enabled;
+    document.getElementById('s_adsgram_block_id').value = s.adsgram_block_id || '';
+    document.getElementById('s_adsgram_debug').checked = s.adsgram_debug;
     document.getElementById('s_ad_reward_usdt').value = s.ad_reward_usdt;
     document.getElementById('s_ad_daily_limit').value = s.ad_daily_limit;
     document.getElementById('s_ad_cooldown_seconds').value = s.ad_cooldown_seconds;
@@ -448,6 +499,8 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     maintenance_mode: document.getElementById('s_maintenance_mode').checked ? "1" : "0",
     maintenance_message: document.getElementById('s_maintenance_message').value,
     ads_enabled: document.getElementById('s_ads_enabled').checked ? "1" : "0",
+    adsgram_block_id: document.getElementById('s_adsgram_block_id').value.trim(),
+    adsgram_debug: document.getElementById('s_adsgram_debug').checked ? "1" : "0",
     ad_reward_usdt: document.getElementById('s_ad_reward_usdt').value,
     ad_daily_limit: document.getElementById('s_ad_daily_limit').value,
     ad_cooldown_seconds: document.getElementById('s_ad_cooldown_seconds').value,
@@ -475,7 +528,12 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
 function initApp(){
   loadOverview();
 }
-if (ADMIN_KEY) { tryLogin(ADMIN_KEY); } else { document.getElementById('loginScreen').style.display = 'flex'; }
+if (ADMIN_KEY) {
+  tryLogin(ADMIN_KEY, true);
+} else {
+  document.getElementById('bootLoader').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
 </script>
 </body>
 </html>
