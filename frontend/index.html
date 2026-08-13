@@ -371,7 +371,7 @@ async function apiFetch(endpoint, options = {}) {
 let currentUser = null;
 let spinStatus = null;
 let scratchStatus = null;
-let adsgramConfig = { blockId: "", debug: false };
+let adsgramConfig = { blockId: "int-37596", debug: false };
 
 /* ---- Global toast (slides down from the top) ---- */
 function showToast(msg, type = 'info', duration = 3200) {
@@ -405,10 +405,11 @@ async function checkTelegramLaunch() {
 async function loadAdsgramConfig() {
   try {
     const s = await apiFetch("/api/ads/status");
-    adsgramConfig.blockId = s.adsgram_block_id || "";
+    adsgramConfig.blockId = s.adsgram_block_id || "int-37596";
     adsgramConfig.debug = !!s.adsgram_debug;
   } catch (e) {
     console.warn("Could not load Adsgram config:", e);
+    if (!adsgramConfig.blockId) adsgramConfig.blockId = "int-37596";
   }
 }
 
