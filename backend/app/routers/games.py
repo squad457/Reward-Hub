@@ -186,7 +186,7 @@ async def spin_play(payload: GamePlayPayload, user: dict = Depends(get_current_u
         used_ad = False
         if played_today >= cfg["spin_daily_free_spins"]:
             if cfg["spin_require_ad_after_free"]:
-                used_ad = await _consume_ad_unlock(db, telegram_id, "spin", payload.ad_reward_event)
+                used_ad = await _consume_ad_unlock(db, telegram_id, "spin", payload.reward_event)
             # else: unlimited free spins beyond the guaranteed minimum, gated only by cooldown/cap
 
         # Only segments whose number falls inside the admin's [min, max] range
@@ -270,7 +270,7 @@ async def scratch_play(payload: GamePlayPayload, user: dict = Depends(get_curren
         used_ad = False
         if played_today >= cfg["scratch_daily_free"]:
             if cfg["scratch_require_ad_after_free"]:
-                used_ad = await _consume_ad_unlock(db, telegram_id, "scratch", payload.ad_reward_event)
+                used_ad = await _consume_ad_unlock(db, telegram_id, "scratch", payload.reward_event)
 
         # Diamonds are placed at random AFTER the player has already committed to
         # their 3 cells, so the result is genuinely random each round and can't

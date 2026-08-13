@@ -287,7 +287,7 @@ async function loadUser() {
     // Update header
     document.getElementById('userName').textContent = currentUser.first_name || "User";
     document.getElementById('userSub').textContent = `#${currentUser.telegram_id}`;
-    document.getElementById('energy').textContent = currentUser.energy || 100;
+    document.getElementById('energy').textContent = currentUser.ads_watched_today ?? 0;
     document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
     
     // Home banner
@@ -326,7 +326,7 @@ async function loadGamesStatus() {
     } else if(spinStatus.needs_ad) {
       spinSub.textContent = "Free spins used — watch ad to spin";
     } else {
-      spinSub.textContent = `${spinStatus.free_left} free spin(s) left today`;
+      spinSub.textContent = `${spinStatus.free_spins_left} free spin(s) left today`;
     }
   } catch (e) {
     console.error("Failed to load spin status:", e);
@@ -348,7 +348,7 @@ async function loadTasks() {
           <div class="t">${t.title}</div>
           <div class="r">+${t.reward} USDT</div>
         </div>
-        <button class="go ${t.completed ? 'done' : ''}" onclick="claimTask(${t.id}, this)">${t.completed ? 'Done' : 'Claim'}</button>
+        <button class="go ${t.completed ? 'done' : ''}" ${t.completed ? 'disabled' : `onclick="claimTask(${t.id}, this)"`}>${t.completed ? 'Done' : 'Claim'}</button>
       </div>
     `).join('');
   } catch (e) {
@@ -396,7 +396,7 @@ document.getElementById('boostBtn').addEventListener('click', async () => {
   const watched = await triggerAdsgramAd();
   if(watched) {
     try {
-      const res = await apiFetch("/api/ads/reward", {
+      const res = await apiFetch("/api/ads/claim", {
         method: "POST",
         body: JSON.stringify({ reward_event: "daily_boost_" + Date.now() })
       });
@@ -524,10 +524,10 @@ async function resolveScratch(){
   try {
     const res = await apiFetch("/api/games/scratch/play", {
       method: "POST",
-      body: JSON.stringify({ reward_event: rewardEvent, selected_cells: selected })
+      body: JSON.stringify({ reward_event: rewardEvent, cells: selected })
     });
 
-    const diamonds = new Set(res.diamonds || []);
+    const diamonds = new Set(res.diamond_cells || []);
     const hits = res.hits || 0;
     const reward = res.reward || 0;
 
@@ -581,7 +581,7 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
 /* ---- Crew / Referral ---- */
 document.getElementById('crewBtn').addEventListener('click', async () => {
   try {
-    const data = await apiFetch("/api/referral");
+    const data = await apiFetch("/api/referral/info");
     alert(`Your Referral Link:\n${data.referral_link}\n\nReferred Friends: ${data.total_referred}\nEarned Commission: $${data.total_earned}`);
   } catch(e) {
     alert("Failed to load referral info");

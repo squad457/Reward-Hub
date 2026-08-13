@@ -7,3 +7,7 @@ class GamePlayPayload(BaseModel):
 
 class AdRewardPayload(BaseModel):
     reward_event: str
+
+class WithdrawPayload(BaseModel):
+    method: str
+    address: str
