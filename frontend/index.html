@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Comet Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#07281D; --mid:#0E3B2A; --panel:#12452F; --panel-2:#175538;
+    --line: rgba(255,255,255,0.08);
+    --lime:#C7F464; --gem:#B48CFF; --gold:#FFC857; --coral:#FF6F5E; --sky:#57C7E0;
+    --text:#F3FBF3; --muted:#9FC6AE;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; display:flex; justify-content:center;}
+  .device{width:100%; max-width:420px; min-height:100vh; position:relative; overflow-x:hidden; padding-bottom:88px;
+    background: radial-gradient(ellipse 700px 420px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
+
+  header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 4px;}
+  .who{display:flex; align-items:center; gap:10px;}
+  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--lime)); display:flex; align-items:center; justify-content:center; font-size:16px;}
+  .who .name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14.5px;}
+  .who .sub{font-size:10.5px; color:var(--muted);}
+  .currencies{display:flex; gap:6px;}
+  .chip{display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid var(--line); padding:6px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;}
+
+  main{padding:14px 16px 0;}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
+
+  .section-title{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; margin:22px 2px 10px; display:flex; align-items:center; gap:6px;}
+
+  /* ===== HOME ===== */
+  .bal-banner{text-align:center; margin:10px 0 4px;}
+  .bal-banner .amt{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--gold);}
+  .bal-banner .amt span{font-size:15px; color:var(--muted); font-weight:600; margin-left:4px;}
+  .track{position:relative; height:8px; border-radius:100px; background:rgba(255,255,255,0.08); margin:12px auto 6px; max-width:280px;}
+  .track-fill{position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg,var(--gold),var(--lime));}
+  .track-label{text-align:center; font-size:11px; color:var(--muted);}
+
+  .daily{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:18px; padding:16px;}
+  .daily-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .daily-row .t{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px;}
+  .daily-row .n{font-size:11px; color:var(--muted);}
+  .daily-actions{display:flex; gap:8px;}
+  .btn-claim{flex:1; padding:12px; border:none; border-radius:12px; font-weight:700; font-size:12.5px; background:var(--lime); color:#0E3B2A; cursor:pointer;}
+  .btn-boost{flex:1; padding:12px; border:1px solid var(--gold); border-radius:12px; font-weight:700; font-size:12.5px; background:transparent; color:var(--gold); cursor:pointer;}
+
+  .rail{display:flex; justify-content:space-between; gap:8px; margin-top:18px;}
+  .rail-btn{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 6px; text-align:center; cursor:pointer;}
+  .rail-btn .ic{font-size:18px; margin-bottom:6px;}
+  .rail-btn p{font-size:10.5px; font-weight:700;}
+
+  .timeline{position:relative; margin-top:4px; padding-left:20px;}
+  .timeline::before{content:''; position:absolute; left:7px; top:4px; bottom:4px; width:2px; background:linear-gradient(180deg,var(--lime),var(--gem),transparent);}
+  .tl-item{position:relative; padding-bottom:18px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-dot{position:absolute; left:-20px; top:1px; width:14px; height:14px; border-radius:50%; background:var(--panel); border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; font-size:7px;}
+  .tl-dot.done{border-color:var(--lime); background:var(--lime); color:#0E3B2A;}
+  .tl-title{font-size:12.5px; font-weight:600;}
+  .tl-sub{font-size:10.5px; color:var(--muted); margin-top:2px;}
+
+  /* ===== GAMES ===== */
+  .wheel-wrap{position:relative; width:250px; height:250px; margin:16px auto 8px;}
+  svg.wheel{width:100%; height:100%; transition: transform 4.2s cubic-bezier(.17,.67,.14,1);}
+  .seg-label{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13px; fill:#0E3B2A; text-anchor:middle;}
+  .wheel-center{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:104px; height:56px; border-radius:14px;
+    background: rgba(7,40,29,0.94); border:1.5px solid rgba(255,255,255,0.18);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:10.5px; line-height:1.3; pointer-events:none; z-index:2;}
+  .wheel-pointer{position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:3;
+    width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-top:18px solid var(--gold);}
+  .spin-cta{display:block; width:200px; margin:14px auto 4px; padding:14px; text-align:center; border:none; border-radius:100px;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; background:linear-gradient(90deg,var(--lime),var(--gold)); color:#0E3B2A; cursor:pointer;}
+  .spin-cta:disabled{opacity:.45; pointer-events:none;}
+  .spin-sub{text-align:center; font-size:11px; color:var(--muted); margin-top:6px;}
+  .result-toast{max-width:260px; margin:12px auto 0; padding:10px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
+    text-align:center; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:12.5px; opacity:0; transform:translateY(-6px); transition:.25s;}
+  .result-toast.show{opacity:1; transform:translateY(0); color:var(--lime);}
+
+  .scratch-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:260px; margin:16px auto;}
+  .scratch-cell{aspect-ratio:1; border-radius:14px; background:var(--panel); border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer;}
+  .scratch-cell.picked{border-color:var(--gem); background:linear-gradient(145deg, rgba(180,140,255,0.25), var(--panel));}
+  .scratch-cell.revealed.win{background:rgba(199,244,100,0.16); border-color:var(--lime);}
+  .scratch-cell.revealed.missed{opacity:0.55;}
+
+  /* ===== TASKS ===== */
+  .task{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:13px 14px; margin-bottom:8px;}
+  .task .icn{width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+  .task .body{flex:1; min-width:0;}
+  .task .t{font-size:13px; font-weight:600;}
+  .task .r{font-size:11px; color:var(--gem); margin-top:2px; font-family:'JetBrains Mono',monospace;}
+  .task .go{padding:8px 16px; border-radius:100px; border:none; font-weight:700; font-size:11.5px; background:var(--lime); color:#0E3B2A; cursor:pointer;}
+  .task .go.done{background:transparent; border:1px solid var(--line); color:var(--muted);}
+
+  /* ===== WALLET ===== */
+  .wallet-hero{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:20px; padding:22px; text-align:center; margin-top:8px;}
+  .wallet-hero .lbl{font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);}
+  .wallet-hero .val{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:32px; color:var(--gold); margin-top:6px;}
+  .wallet-hero .disc{font-size:10.5px; color:var(--muted); margin-top:8px;}
+  .field{margin-top:16px;}
+  .field label{font-size:11px; color:var(--muted); display:block; margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; padding:12px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
+    color:var(--text); font-size:13px; font-family:'Manrope',sans-serif;
+  }
+  .withdraw-btn{width:100%; margin-top:16px; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(90deg,var(--lime),var(--gold)); color:#0E3B2A; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
+  .min-note{text-align:center; font-size:10.5px; color:var(--muted); margin-top:8px;}
+
+  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px;
+    background: rgba(14,59,42,0.92); backdrop-filter: blur(14px); border-top:1px solid var(--line);
+    display:flex; justify-content:space-around; padding:10px 6px 18px;}
+  .navbtn{display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:10px; font-weight:600; cursor:pointer; background:none; border:none;}
+  .navbtn.active{color:var(--lime);}
+</style>
+</head>
+<body>
+<div class="device">
+  <header>
+    <div class="who">
+      <div class="avatar">🧑‍🚀</div>
+      <div><div class="name">Nova</div><div class="sub">#66494756</div></div>
+    </div>
+    <div class="currencies">
+      <div class="chip">⚡ <span id="energy">0</span></div>
+      <div class="chip">💎 <span id="gems">198</span></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= HOME ================= -->
+    <section class="tabpane active" id="tab-home">
+      <div class="bal-banner">
+        <span class="amt" id="homeBalance">$0.9510<span>USDT</span></span>
+        <div class="track"><div class="track-fill" style="width:78%"></div></div>
+        <div class="track-label">78% toward your next payout tier</div>
+      </div>
+
+      <div class="daily">
+        <div class="daily-row">
+          <div><div class="t">Day 4 Streak</div><div class="n">+80 gems, free — no ad required</div></div>
+        </div>
+        <div class="daily-actions">
+          <button class="btn-claim" id="claimBtn">Claim +80</button>
+          <button class="btn-boost" id="boostBtn">▶ 2x with ad</button>
+        </div>
+      </div>
+
+      <div class="rail">
+        <div class="rail-btn" data-goto="games"><div class="ic">🎡</div><p>Games</p></div>
+        <div class="rail-btn" data-goto="tasks"><div class="ic">📋</div><p>Tasks</p></div>
+        <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Wallet</p></div>
+        <div class="rail-btn"><div class="ic">👥</div><p>Crew</p></div>
+      </div>
+
+      <div class="section-title">🏆 Mission Log</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">First Orbit Cleared</div><div class="tl-sub">Unlocked · today</div></div>
+        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">4-Signal Streak</div><div class="tl-sub">4 / 7 days</div></div>
+        <div class="tl-item"><div class="tl-dot">◌</div><div class="tl-title">Reach Voyager V</div><div class="tl-sub">Voyager III / V</div></div>
+      </div>
+    </section>
+
+    <!-- ================= GAMES ================= -->
+    <section class="tabpane" id="tab-games">
+      <div class="section-title">🎡 Spin Wheel</div>
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <svg class="wheel" id="wheel" viewBox="0 0 200 200"></svg>
+        <div class="wheel-center">SPIN &amp;<br>WIN USDT</div>
+      </div>
+      <button class="spin-cta" id="spinBtn">🎡 Spin Now</button>
+      <div class="spin-sub" id="spinSub">2 free spins left today</div>
+      <div class="result-toast" id="spinToast"></div>
+
+      <div class="section-title">🎫 Scratch &amp; Win</div>
+      <p style="font-size:11.5px; color:var(--muted); text-align:center; margin-bottom:4px;">Pick any 3 boxes — diamonds shuffle every round.</p>
+      <div class="scratch-grid" id="scratchGrid"></div>
+      <div class="result-toast" id="scratchToast"></div>
+    </section>
+
+    <!-- ================= TASKS ================= -->
+    <section class="tabpane" id="tab-tasks">
+      <div class="section-title">🔥 Ready to Claim</div>
+      <div class="task"><div class="icn">📻</div><div class="body"><div class="t">Listen to a 5s clip</div><div class="r">+50 gems</div></div><button class="go">Claim</button></div>
+      <div class="task"><div class="icn">📣</div><div class="body"><div class="t">Boost our channel</div><div class="r">+2000 gems</div></div><button class="go">GO</button></div>
+      <div class="task"><div class="icn">👥</div><div class="body"><div class="t">Invite 1 friend</div><div class="r">+300 gems</div></div><button class="go">GO</button></div>
+      <div class="task"><div class="icn">✅</div><div class="body"><div class="t">Find online work guide</div><div class="r">+200 gems</div></div><button class="go done">Done</button></div>
+    </section>
+
+    <!-- ================= WALLET ================= -->
+    <section class="tabpane" id="tab-wallet">
+      <div class="wallet-hero">
+        <div class="lbl">Available to Withdraw</div>
+        <div class="val">$0.9510</div>
+        <div class="disc">💎 950 Gems shown around the app — same balance, 1,000 Gems = 1 USDT</div>
+      </div>
+      <div class="field">
+        <label>Payout method</label>
+        <select><option>USDT (BEP20)</option><option>Binance Pay ID</option></select>
+      </div>
+      <div class="field">
+        <label>Wallet address</label>
+        <input type="text" placeholder="0x..." />
+      </div>
+      <button class="withdraw-btn">Withdraw</button>
+      <div class="min-note">Minimum withdrawal: $2.00 USDT</div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="navbtn active" data-goto="home"><div>🏠</div>Home</button>
+    <button class="navbtn" data-goto="games"><div>🎡</div>Games</button>
+    <button class="navbtn" data-goto="tasks"><div>📋</div>Tasks</button>
+    <button class="navbtn" data-goto="wallet"><div>💳</div>Wallet</button>
+  </nav>
+</div>
+
+<script>
+/* ---- Tab navigation ---- */
+function goto(tab){
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll(`[data-goto="${tab}"]`).forEach(el=>el.classList.add('active'));
+}
+document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.goto)));
+
+/* ---- Daily claim (free, no forced ad) ---- */
+document.getElementById('claimBtn').addEventListener('click', ()=>{
+  document.getElementById('claimBtn').textContent = '✓ Claimed';
+  document.getElementById('claimBtn').disabled = true;
+});
+document.getElementById('boostBtn').addEventListener('click', ()=>{
+  // In production: showRewardedAd() then credit 2x, only on this explicit click.
+  alert('Would open a rewarded ad here, then credit 2x the daily bonus.');
+});
+
+/* ---- Spin wheel: data-driven from backend segments/min/max (see comments) ---- */
+const SPIN_STATUS = { segments:[0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4], min_reward:0.09, max_reward:0.5 };
+const palette = ['#B48CFF','#FF6F5E','#FFC857','#C7F464','#57C7E0','#B48CFF','#FF6F5E','#FFC857'];
+
+function buildWheel(status){
+  const svg = document.getElementById('wheel');
+  const { segments, min_reward, max_reward } = status;
+  const n = segments.length, cx=100, cy=100, r=96;
+  let html='';
+  for(let i=0;i<n;i++){
+    const a0=(i/n)*2*Math.PI-Math.PI/2, a1=((i+1)/n)*2*Math.PI-Math.PI/2;
+    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const midA=(a0+a1)/2, lx=cx+(r*0.66)*Math.cos(midA), ly=cy+(r*0.66)*Math.sin(midA);
+    const val=segments[i];
+    const eligible = val>=Math.min(min_reward,max_reward) && val<=Math.max(min_reward,max_reward);
+    html+=`<path d="M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${palette[i%palette.length]}" opacity="${eligible?1:0.35}" stroke="#0E3B2A" stroke-width="1.5"/>`;
+    html+=`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" class="seg-label" transform="rotate(${(midA*180/Math.PI)+90} ${lx.toFixed(2)} ${ly.toFixed(2)})">$${val.toFixed(2)}</text>`;
+  }
+  svg.innerHTML = html;
+}
+function spinTo(index,total,svg){
+  const wedgeDeg=360/total, targetMid=index*wedgeDeg+wedgeDeg/2;
+  svg.style.transform = `rotate(${5*360+(360-targetMid)}deg)`;
+}
+document.getElementById('spinBtn').addEventListener('click', ()=>{
+  const btn=document.getElementById('spinBtn'), svg=document.getElementById('wheel'), toast=document.getElementById('spinToast');
+  btn.disabled=true; toast.classList.remove('show');
+  const eligible = SPIN_STATUS.segments.map((v,i)=>({v,i})).filter(s=>s.v>=Math.min(SPIN_STATUS.min_reward,SPIN_STATUS.max_reward)&&s.v<=Math.max(SPIN_STATUS.min_reward,SPIN_STATUS.max_reward));
+  const pick = eligible[Math.floor(Math.random()*eligible.length)];
+  spinTo(pick.i, SPIN_STATUS.segments.length, svg);
+  setTimeout(()=>{
+    toast.textContent = `🎉 You won $${pick.v.toFixed(2)} USDT!`;
+    toast.classList.add('show');
+    btn.disabled=false;
+  }, 4300);
+});
+buildWheel(SPIN_STATUS);
+
+/* ---- Scratch card: 3-tap, diamonds placed after picks (see backend games.py) ---- */
+const TAPS_ALLOWED = 3;
+let selected = [];
+function renderScratch(){
+  const grid = document.getElementById('scratchGrid');
+  grid.innerHTML = Array.from({length:9},(_,i)=>{
+    const picked = selected.includes(i);
+    return `<div class="scratch-cell ${picked?'picked':''}" data-cell="${i}">${picked?'👆':'❓'}</div>`;
+  }).join('');
+  grid.querySelectorAll('.scratch-cell').forEach(cell=>{
+    cell.addEventListener('click', ()=>{
+      const i = Number(cell.dataset.cell);
+      if(selected.includes(i) || selected.length>=TAPS_ALLOWED) return;
+      selected.push(i);
+      renderScratch();
+      if(selected.length===TAPS_ALLOWED) resolveScratch();
+    });
+  });
+}
+function resolveScratch(){
+  // In production: const res = await Api.scratchPlay(adEvent, selected);
+  const diamonds = new Set();
+  while(diamonds.size<3) diamonds.add(Math.floor(Math.random()*9));
+  const matched = selected.filter(c=>diamonds.has(c));
+  const hits = matched.length;
+  const reward = hits===0?0:hits===1?0.01:hits===2?0.03:0.06;
+
+  const grid = document.getElementById('scratchGrid');
+  grid.innerHTML = Array.from({length:9},(_,i)=>{
+    const isDiamond = diamonds.has(i), isSel = selected.includes(i);
+    const cls = isSel&&isDiamond ? 'revealed win' : isDiamond ? 'revealed missed' : isSel ? 'revealed' : '';
+    return `<div class="scratch-cell ${cls}">${isDiamond?'💎':'✖'}</div>`;
+  }).join('');
+  const toast = document.getElementById('scratchToast');
+  toast.textContent = reward>0 ? `🎉 ${hits} diamond${hits===1?'':'s'} — $${reward.toFixed(2)} USDT!` : 'No diamonds this round — try again!';
+  toast.classList.add('show');
+  setTimeout(()=>{ selected=[]; renderScratch(); toast.classList.remove('show'); }, 1800);
+}
+renderScratch();
+</script>
+</body>
+</html>
