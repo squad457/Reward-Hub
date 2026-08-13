@@ -221,7 +221,7 @@
 </div>
 
 <script>
-const API_BASE = ""; // Same-origin or absolute URL if needed
+const API_BASE = window.location.hostname.includes("localhost") ? "" : "https://reward-hub-production.up.railway.app";
 const initData = window.Telegram?.WebApp?.initData || "review";
 
 async function apiFetch(endpoint, options = {}) {
@@ -230,10 +230,25 @@ async function apiFetch(endpoint, options = {}) {
     "X-Telegram-Init-Data": initData,
     ...(options.headers || {})
   };
-  const res = await fetch(API_BASE + endpoint, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(API_BASE + endpoint, { ...options, headers });
+  } catch (networkErr) {
+    throw new Error(`Network error connecting to backend: ${networkErr.message}`);
+  }
+  
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(err.detail || `HTTP ${res.status}`);
+    let errDetail = `HTTP ${res.status} ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson.detail) {
+        errDetail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch(e) {
+      const text = await res.text().catch(() => "");
+      if (text) errDetail = text.slice(0, 150);
+    }
+    throw new Error(errDetail);
   }
   return res.json();
 }
