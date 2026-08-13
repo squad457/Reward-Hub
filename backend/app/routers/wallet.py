@@ -2,11 +2,19 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from app.auth import get_current_user
-from app.config import settings
-from app.database import get_db
+from app.database import get_db, get_settings
 from app.models import WithdrawPayload
 
 router = APIRouter(prefix="/api/wallet", tags=["wallet"])
+
+
+@router.get("/status")
+async def wallet_status(user: dict = Depends(get_current_user)):
+    """Frontend reads this to show the real, current admin-configured minimum
+    instead of a hardcoded number."""
+    async with get_db() as db:
+        cfg = await get_settings(db)
+    return {"min_withdrawal_usdt": cfg["min_withdrawal_usdt"]}
 
 
 @router.post("/withdraw")
@@ -16,9 +24,15 @@ async def withdraw(payload: WithdrawPayload, user: dict = Depends(get_current_us
     if not address:
         raise HTTPException(status_code=400, detail="Wallet address / Pay ID is required")
 
-    min_withdrawal = float(settings.MIN_WITHDRAWAL_USDT or 10.0)
-
     async with get_db() as db:
+        # Was reading settings.MIN_WITHDRAWAL_USDT — the static value baked in at
+        # boot from the .env file — so changing "Minimum withdrawal" in the admin
+        # dashboard's Settings page (which writes to the settings TABLE) never
+        # actually changed anything here. Must read it from get_settings(db) like
+        # every other admin-tunable number in the app.
+        cfg = await get_settings(db)
+        min_withdrawal = cfg["min_withdrawal_usdt"]
+
         # Re-read the balance inside the transaction instead of trusting the
         # `user` dict captured before this request, so two rapid taps on
         # Withdraw can't both pass the balance check against a stale value.

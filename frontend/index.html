@@ -199,6 +199,13 @@
   .invite-btn.ghost{background:rgba(255,255,255,0.06); border:1px solid var(--line); color:var(--text);}
   .invite-btn.primary{background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink);}
   .sheet-close{width:100%; background:none; border:none; color:var(--muted); font-size:12.5px; font-weight:600; padding:8px; cursor:pointer;}
+
+  /* ---- "Watch Ad & Claim" ticket CTA (spin + scratch) ---- */
+  .spin-cta.ad-required{background:transparent; border:2px dashed var(--gold); color:var(--gold); box-shadow:none;}
+  .ticket-cta{display:block; width:220px; margin:14px auto 4px; padding:13px; text-align:center; border-radius:100px;
+    background:transparent; border:2px dashed var(--gold); color:var(--gold); font-family:'Fredoka',sans-serif;
+    font-weight:600; font-size:14px; cursor:pointer;}
+  .ticket-cta:disabled{opacity:.5; pointer-events:none;}
 </style>
 </head>
 <body>
@@ -236,7 +243,7 @@
     </div>
     <div class="currencies">
       <div class="chip">⚡ <span id="energy">0</span></div>
-      <div class="chip">💎 <span id="gems">0</span></div>
+      <div class="chip">💎 <span id="gems">0</span> 🎫</div>
     </div>
   </header>
 
@@ -288,6 +295,7 @@
       <div class="section-title">🎫 Scratch &amp; Win</div>
       <p style="font-size:11.5px; color:var(--muted); text-align:center; margin-bottom:4px;">Pick any 3 boxes — diamonds shuffle every round.</p>
       <div class="scratch-grid" id="scratchGrid"></div>
+      <button class="ticket-cta" id="scratchAdBtn" style="display:none;">🎫 Watch Ad &amp; Claim</button>
       <div class="result-toast" id="scratchToast"></div>
     </section>
 
@@ -405,19 +413,40 @@ async function loadAdsgramConfig() {
 }
 
 async function triggerAdsgramAd() {
+  if (!adsgramConfig.blockId) {
+    // Boot's loadAdsgramConfig() may not have finished yet if the user taps
+    // very fast — retry once instead of immediately failing.
+    await loadAdsgramConfig();
+  }
   return new Promise((resolve) => {
     if (window.Adsgram && adsgramConfig.blockId) {
-      window.Adsgram.init({ blockId: adsgramConfig.blockId, debug: adsgramConfig.debug }).show()
-        .then((result) => {
-          // result.done is false when the user skips or the ad errors out —
-          // only a true "watched to the end" should ever unlock a reward.
-          resolve(!!result.done);
-        })
-        .catch((err) => {
-          console.error("Adsgram ad error:", err);
-          showToast("Ad failed or was skipped — watch the full ad to earn.", 'err');
-          resolve(false);
-        });
+      try {
+        window.Adsgram.init({ blockId: adsgramConfig.blockId, debug: adsgramConfig.debug }).show()
+          .then((result) => {
+            // result.done is false when the user skips or the ad errors out —
+            // only a true "watched to the end" should ever unlock a reward.
+            resolve(!!result.done);
+          })
+          .catch((err) => {
+            // Previously this swallowed Adsgram's actual error and always showed
+            // a generic "failed or skipped" message — so a real problem (e.g. the
+            // configured Block ID being inactive/wrong) looked identical to a user
+            // just closing the ad early, making it impossible to diagnose from
+            // inside the app. Surface Adsgram's own description/message instead.
+            console.error("Adsgram ad error:", err);
+            const detail = (err && (err.description || err.error || err.message))
+              || (typeof err === 'string' ? err : null);
+            showToast(detail ? `Ad error: ${detail}` : "Ad failed or was skipped — watch the full ad to earn.", 'err');
+            resolve(false);
+          });
+      } catch (err) {
+        // Adsgram.init() itself can throw synchronously for a malformed/invalid
+        // Block ID, before any promise even exists — that case bypassed the
+        // .catch() above entirely and silently did nothing.
+        console.error("Adsgram init error:", err);
+        showToast(err?.message || "Couldn't start the ad — check the Adsgram Block ID in the admin dashboard.", 'err');
+        resolve(false);
+      }
     } else if (window.Adsgram) {
       console.warn("No Adsgram Block ID is configured — set one in the admin dashboard's Settings page.");
       showToast("Ads aren't configured yet. Please try again later.", 'err');
@@ -526,13 +555,20 @@ async function loadGamesStatus() {
     spinStatus = await apiFetch("/api/games/spin/status");
     buildWheel(spinStatus);
     const spinSub = document.getElementById('spinSub');
+    const spinBtn = document.getElementById('spinBtn');
     if(spinStatus.max_reached) {
       spinSub.textContent = "Daily spin limit reached";
-      document.getElementById('spinBtn').disabled = true;
+      spinBtn.disabled = true;
+      spinBtn.textContent = "🎡 Spin Now";
+      spinBtn.classList.remove('ad-required');
     } else if(spinStatus.needs_ad) {
-      spinSub.textContent = "Free spins used — watch ad to spin";
+      spinSub.textContent = "Free spins used — watch an ad for another spin";
+      spinBtn.textContent = "🎫 Watch Ad & Claim";
+      spinBtn.classList.add('ad-required');
     } else {
       spinSub.textContent = `${spinStatus.free_spins_left} free spin(s) left today`;
+      spinBtn.textContent = "🎡 Spin Now";
+      spinBtn.classList.remove('ad-required');
     }
   } catch (e) {
     console.error("Failed to load spin status:", e);
@@ -698,6 +734,7 @@ async function initScratch() {
 
 function renderScratch(){
   const grid = document.getElementById('scratchGrid');
+  document.getElementById('scratchAdBtn').style.display = 'none';
   grid.innerHTML = Array.from({length:9},(_,i)=>{
     const picked = selected.includes(i);
     return `<div class="scratch-cell ${picked?'picked':''}" data-cell="${i}">${picked?'👆':'❓'}</div>`;
@@ -709,24 +746,35 @@ function renderScratch(){
       selected.push(i);
       renderScratch();
       if(selected.length===TAPS_ALLOWED) {
-        await resolveScratch();
+        if (scratchStatus && scratchStatus.needs_ad) {
+          // Explicit ticket CTA instead of silently launching an ad the instant
+          // the 3rd cell is tapped — the user should see what's about to happen.
+          document.getElementById('scratchAdBtn').style.display = 'block';
+        } else {
+          await resolveScratch(null);
+        }
       }
     });
   });
 }
 
-async function resolveScratch(){
-  let rewardEvent = null;
-  if (scratchStatus && scratchStatus.needs_ad) {
-    const watched = await triggerAdsgramAd();
-    if (!watched) {
-      selected = [];
-      renderScratch();
-      return;
-    }
-    rewardEvent = "scratch_ad_" + Date.now();
+document.getElementById('scratchAdBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('scratchAdBtn');
+  btn.disabled = true;
+  btn.textContent = "Loading ad…";
+  const watched = await triggerAdsgramAd();
+  btn.disabled = false;
+  btn.textContent = "🎫 Watch Ad & Claim";
+  btn.style.display = 'none';
+  if (!watched) {
+    selected = [];
+    renderScratch();
+    return;
   }
+  await resolveScratch("scratch_ad_" + Date.now());
+});
 
+async function resolveScratch(rewardEvent){
   try {
     const res = await apiFetch("/api/games/scratch/play", {
       method: "POST",
@@ -760,6 +808,15 @@ async function resolveScratch(){
     showToast(e.message, 'err');
     selected = [];
     renderScratch();
+  }
+}
+
+async function loadWalletStatus() {
+  try {
+    const s = await apiFetch("/api/wallet/status");
+    document.getElementById('minWithdrawNote').textContent = `Minimum withdrawal: $${Number(s.min_withdrawal_usdt).toFixed(2)} USDT`;
+  } catch (e) {
+    console.warn("Could not load wallet status:", e);
   }
 }
 
@@ -853,6 +910,7 @@ window.addEventListener('load', async () => {
   loadUser();
   loadGamesStatus();
   loadAdsgramConfig();
+  loadWalletStatus();
   initScratch();
 });
 </script>
