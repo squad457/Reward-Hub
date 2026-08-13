@@ -418,9 +418,9 @@ async function triggerAdsgramAd() {
     await loadAdsgramConfig();
   }
 
-  // Wait up to 3 seconds for window.Adsgram to load if it's still loading
+  // Wait up to 5 seconds for window.Adsgram to load if it's still loading
   let attempts = 0;
-  while (!window.Adsgram && attempts < 6) {
+  while (!window.Adsgram && attempts < 10) {
     await new Promise(r => setTimeout(r, 500));
     attempts++;
   }
