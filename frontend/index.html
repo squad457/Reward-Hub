@@ -430,20 +430,23 @@ async function triggerAdsgramAd() {
       try {
         window.Adsgram.init({ blockId: adsgramConfig.blockId, debug: adsgramConfig.debug }).show()
           .then((result) => {
-            // result.done is false when the user skips or the ad errors out —
-            // only a true "watched to the end" should ever unlock a reward.
-            resolve(!!result.done);
+            if (result && result.done) {
+              resolve(true);
+            } else {
+              showToast("Ad was closed before completion. Watch the full ad to earn.", 'err', 4000);
+              resolve(false);
+            }
           })
           .catch((err) => {
-            // Previously this swallowed Adsgram's actual error and always showed
-            // a generic "failed or skipped" message — so a real problem (e.g. the
-            // configured Block ID being inactive/wrong) looked identical to a user
-            // just closing the ad early, making it impossible to diagnose from
-            // inside the app. Surface Adsgram's own description/message instead.
             console.error("Adsgram ad error:", err);
-            const detail = (err && (err.description || err.error || err.message))
-              || (typeof err === 'string' ? err : null);
-            showToast(detail ? `Ad error: ${detail}` : "Ad failed or was skipped — watch the full ad to earn.", 'err');
+            let detail = "Adsgram error";
+            if (typeof err === 'string') detail = err;
+            else if (err?.description) detail = err.description;
+            else if (err?.message) detail = err.message;
+            else if (err?.error) detail = err.error;
+            else detail = JSON.stringify(err);
+            
+            showToast(`Adsgram Error: ${detail}`, 'err', 6000);
             resolve(false);
           });
       } catch (err) {
