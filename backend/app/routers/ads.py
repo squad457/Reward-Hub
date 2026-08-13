@@ -166,7 +166,7 @@ async def adsgram_reward_url(
     """
     ★ THE URL TO PUT IN ADSGRAM ★
     Set this exact URL as your block's Postback / Reward URL in the Adsgram dashboard:
-        https://your-backend.up.railway.app/api/ads/p?userid=[userId]
+        https://reward-hub-production.up.railway.app/api/ads/p?userid=[userId]
     Adsgram substitutes [userId] itself — no signature, no extra params needed.
     This is called server-to-server the moment a real (non-debug) ad is fully watched.
     """

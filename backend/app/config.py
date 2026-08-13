@@ -17,11 +17,11 @@ class Settings:
     DB_PATH: str = os.getenv("DB_PATH", "app_data.db")
 
     # --- CORS ---
-    # Comma-separated list of allowed frontend origins, e.g. your Vercel domain
+    # Comma-separated list of allowed frontend origins, e.g. your Vercel domain or Railway domain
     ALLOWED_ORIGINS: list[str] = [
         o.strip() for o in os.getenv(
             "ALLOWED_ORIGINS",
-            "https://your-frontend.vercel.app,http://localhost:5173"
+            "https://reward-hub-production.up.railway.app,https://your-frontend.vercel.app,http://localhost:5173"
         ).split(",") if o.strip()
     ]
 
