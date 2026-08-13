@@ -413,10 +413,27 @@ async function loadAdsgramConfig() {
   }
 }
 
+async function ensureAdsgramLoaded() {
+  if (window.Adsgram) return;
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://sad.adsgram.ai/js/sad.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.head.appendChild(script);
+  });
+}
+
 async function triggerAdsgramAd() {
   if (!adsgramConfig.blockId) {
     await loadAdsgramConfig();
   }
+  if (!adsgramConfig.blockId) {
+    adsgramConfig.blockId = "int-37596";
+  }
+
+  await ensureAdsgramLoaded();
 
   // Wait up to 5 seconds for window.Adsgram to load if it's still loading
   let attempts = 0;
