@@ -198,6 +198,13 @@ async def init_db():
             await db.execute(
                 "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (key, value)
             )
+        
+        # Always ensure env-var settings take precedence if DB was empty/unconfigured
+        if settings.ADSGRAM_BLOCK_ID:
+            await db.execute(
+                "UPDATE settings SET value = ? WHERE key = 'adsgram_block_id' AND (value IS NULL OR value = '')",
+                (settings.ADSGRAM_BLOCK_ID,)
+            )
         await db.commit()
 
 
@@ -232,7 +239,7 @@ async def get_settings(db) -> dict:
 
     return {
         "ads_enabled": _b("ads_enabled", True),
-        "adsgram_block_id": raw.get("adsgram_block_id", ""),
+        "adsgram_block_id": (raw.get("adsgram_block_id") or "").strip() or settings.ADSGRAM_BLOCK_ID,
         "ad_reward_usdt": _f("ad_reward_usdt", settings.AD_REWARD_USDT),
         "ad_daily_limit": _i("ad_daily_limit", settings.AD_DAILY_LIMIT),
         "ad_cooldown_seconds": _i("ad_cooldown_seconds", settings.AD_COOLDOWN_SECONDS),
