@@ -6,6 +6,8 @@
 <title>Reward Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.js"></script>
 <style>
   :root{
     --deep:#07281D; --mid:#0E3B2A; --panel:#12452F; --panel-2:#175538;
@@ -37,7 +39,7 @@
   .bal-banner .amt{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--gold);}
   .bal-banner .amt span{font-size:15px; color:var(--muted); font-weight:600; margin-left:4px;}
   .track{position:relative; height:8px; border-radius:100px; background:rgba(255,255,255,0.08); margin:12px auto 6px; max-width:280px;}
-  .track-fill{position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg,var(--gold),var(--lime));}
+  .track-fill{position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg,var(--gold),var(--lime)); width:0%;}
   .track-label{text-align:center; font-size:11px; color:var(--muted);}
 
   .daily{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:18px; padding:16px;}
@@ -46,6 +48,7 @@
   .daily-row .n{font-size:11px; color:var(--muted);}
   .daily-actions{display:flex; gap:8px;}
   .btn-claim{flex:1; padding:12px; border:none; border-radius:12px; font-weight:700; font-size:12.5px; background:var(--lime); color:#0E3B2A; cursor:pointer;}
+  .btn-claim:disabled{opacity:0.5; pointer-events:none;}
   .btn-boost{flex:1; padding:12px; border:1px solid var(--gold); border-radius:12px; font-weight:700; font-size:12.5px; background:transparent; color:var(--gold); cursor:pointer;}
 
   .rail{display:flex; justify-content:space-between; gap:8px; margin-top:18px;}
@@ -122,12 +125,12 @@
 <div class="device">
   <header>
     <div class="who">
-      <div class="avatar">🧑‍🚀</div>
-      <div><div class="name">Nova</div><div class="sub">#66494756</div></div>
+      <div class="avatar" id="userAvatar">🧑‍🚀</div>
+      <div><div class="name" id="userName">Loading...</div><div class="sub" id="userSub">#...</div></div>
     </div>
     <div class="currencies">
       <div class="chip">⚡ <span id="energy">0</span></div>
-      <div class="chip">💎 <span id="gems">198</span></div>
+      <div class="chip">💎 <span id="gems">0</span></div>
     </div>
   </header>
 
@@ -135,17 +138,17 @@
     <!-- ================= HOME ================= -->
     <section class="tabpane active" id="tab-home">
       <div class="bal-banner">
-        <span class="amt" id="homeBalance">$0.9510<span>USDT</span></span>
-        <div class="track"><div class="track-fill" style="width:78%"></div></div>
-        <div class="track-label">78% toward your next payout tier</div>
+        <span class="amt" id="homeBalance">$0.0000<span>USDT</span></span>
+        <div class="track"><div class="track-fill" id="trackFill" style="width:0%"></div></div>
+        <div class="track-label" id="trackLabel">Loading payout progress...</div>
       </div>
 
       <div class="daily">
         <div class="daily-row">
-          <div><div class="t">Day 4 Streak</div><div class="n">+80 gems, free — no ad required</div></div>
+          <div><div class="t" id="streakTitle">Daily Streak</div><div class="n" id="streakSub">Claim your daily reward</div></div>
         </div>
         <div class="daily-actions">
-          <button class="btn-claim" id="claimBtn">Claim +80</button>
+          <button class="btn-claim" id="claimBtn">Claim Streak</button>
           <button class="btn-boost" id="boostBtn">▶ 2x with ad</button>
         </div>
       </div>
@@ -154,14 +157,12 @@
         <div class="rail-btn" data-goto="games"><div class="ic">🎡</div><p>Games</p></div>
         <div class="rail-btn" data-goto="tasks"><div class="ic">📋</div><p>Tasks</p></div>
         <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Wallet</p></div>
-        <div class="rail-btn"><div class="ic">👥</div><p>Crew</p></div>
+        <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Crew</p></div>
       </div>
 
       <div class="section-title">🏆 Mission Log</div>
-      <div class="timeline">
-        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">First Orbit Cleared</div><div class="tl-sub">Unlocked · today</div></div>
-        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">4-Signal Streak</div><div class="tl-sub">4 / 7 days</div></div>
-        <div class="tl-item"><div class="tl-dot">◌</div><div class="tl-title">Reach Voyager V</div><div class="tl-sub">Voyager III / V</div></div>
+      <div class="timeline" id="missionLog">
+        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">Connected to Reward Hub</div><div class="tl-sub">Active session</div></div>
       </div>
     </section>
 
@@ -174,7 +175,7 @@
         <div class="wheel-center">SPIN &amp;<br>WIN USDT</div>
       </div>
       <button class="spin-cta" id="spinBtn">🎡 Spin Now</button>
-      <div class="spin-sub" id="spinSub">2 free spins left today</div>
+      <div class="spin-sub" id="spinSub">Loading plays...</div>
       <div class="result-toast" id="spinToast"></div>
 
       <div class="section-title">🎫 Scratch &amp; Win</div>
@@ -185,30 +186,29 @@
 
     <!-- ================= TASKS ================= -->
     <section class="tabpane" id="tab-tasks">
-      <div class="section-title">🔥 Ready to Claim</div>
-      <div class="task"><div class="icn">📻</div><div class="body"><div class="t">Listen to a 5s clip</div><div class="r">+50 gems</div></div><button class="go">Claim</button></div>
-      <div class="task"><div class="icn">📣</div><div class="body"><div class="t">Boost our channel</div><div class="r">+2000 gems</div></div><button class="go">GO</button></div>
-      <div class="task"><div class="icn">👥</div><div class="body"><div class="t">Invite 1 friend</div><div class="r">+300 gems</div></div><button class="go">GO</button></div>
-      <div class="task"><div class="icn">✅</div><div class="body"><div class="t">Find online work guide</div><div class="r">+200 gems</div></div><button class="go done">Done</button></div>
+      <div class="section-title">🔥 Available Tasks</div>
+      <div id="tasksList" style="display:flex; flex-direction:column; gap:8px;">
+        <div style="text-align:center; color:var(--muted); padding:20px;">Loading tasks...</div>
+      </div>
     </section>
 
     <!-- ================= WALLET ================= -->
     <section class="tabpane" id="tab-wallet">
       <div class="wallet-hero">
         <div class="lbl">Available to Withdraw</div>
-        <div class="val">$0.9510</div>
-        <div class="disc">💎 950 Gems shown around the app — same balance, 1,000 Gems = 1 USDT</div>
+        <div class="val" id="walletBalance">$0.0000</div>
+        <div class="disc" id="walletDisc">1,000 Gems = 1 USDT</div>
       </div>
       <div class="field">
         <label>Payout method</label>
-        <select><option>USDT (BEP20)</option><option>Binance Pay ID</option></select>
+        <select id="payoutMethod"><option value="USDT (BEP20)">USDT (BEP20)</option><option value="Binance Pay ID">Binance Pay ID</option></select>
       </div>
       <div class="field">
-        <label>Wallet address</label>
-        <input type="text" placeholder="0x..." />
+        <label>Wallet address / Pay ID</label>
+        <input type="text" id="walletAddress" placeholder="0x..." />
       </div>
-      <button class="withdraw-btn">Withdraw</button>
-      <div class="min-note">Minimum withdrawal: $2.00 USDT</div>
+      <button class="withdraw-btn" id="withdrawBtn">Withdraw</button>
+      <div class="min-note" id="minWithdrawNote">Minimum withdrawal: $10.00 USDT</div>
     </section>
   </main>
 
@@ -216,37 +216,191 @@
     <button class="navbtn active" data-goto="home"><div>🏠</div>Home</button>
     <button class="navbtn" data-goto="games"><div>🎡</div>Games</button>
     <button class="navbtn" data-goto="tasks"><div>📋</div>Tasks</button>
-    <button class="navbtn" data-goto="wallet"><div>💳</div>Wallet</button>
+    <button class="navbtn" data-goto="wallet"><div>💳</div>Wallet</div>
   </nav>
 </div>
 
 <script>
+const API_BASE = ""; // Same-origin or absolute URL if needed
+const initData = window.Telegram?.WebApp?.initData || "review";
+
+async function apiFetch(endpoint, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Telegram-Init-Data": initData,
+    ...(options.headers || {})
+  };
+  const res = await fetch(API_BASE + endpoint, { ...options, headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Unknown error" }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+let currentUser = null;
+let spinStatus = null;
+let scratchStatus = null;
+
+/* ---- Adsgram SDK Helper ---- */
+async function triggerAdsgramAd(blockId = "") {
+  return new Promise((resolve) => {
+    if (window.Adsgram) {
+      window.Adsgram.init({ blockId: blockId || undefined }).show()
+        .then((result) => {
+          // result = { done: true, description: "...", ... }
+          resolve(result.done || true);
+        })
+        .catch((err) => {
+          console.error("Adsgram ad error:", err);
+          alert("Ad failed or was skipped. Please watch the full ad to earn.");
+          resolve(false);
+        });
+    } else {
+      // Fallback for browser testing
+      console.warn("Adsgram SDK not loaded, bypassing ad for testing.");
+      resolve(true);
+    }
+  });
+}
+
+async function loadUser() {
+  try {
+    const data = await apiFetch("/api/users/me");
+    currentUser = data.user;
+    
+    // Update header
+    document.getElementById('userName').textContent = currentUser.first_name || "User";
+    document.getElementById('userSub').textContent = `#${currentUser.telegram_id}`;
+    document.getElementById('energy').textContent = currentUser.energy || 100;
+    document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
+    
+    // Home banner
+    const bal = currentUser.balance || 0;
+    document.getElementById('homeBalance').innerHTML = `$${bal.toFixed(4)}<span>USDT</span>`;
+    document.getElementById('walletBalance').textContent = `$${bal.toFixed(4)}`;
+    
+    // Progress toward payout (assume $10 min or tier)
+    const pct = Math.min(100, (bal / 10.0) * 100);
+    document.getElementById('trackFill').style.width = pct + '%';
+    document.getElementById('trackLabel').textContent = `${pct.toFixed(0)}% toward $10.00 minimum payout tier`;
+
+    // Streak / Daily
+    if(currentUser.streak_claimed_today) {
+      document.getElementById('claimBtn').textContent = '✓ Claimed Today';
+      document.getElementById('claimBtn').disabled = true;
+    } else {
+      document.getElementById('claimBtn').textContent = `Claim Streak (${currentUser.streak_count || 1}d)`;
+      document.getElementById('claimBtn').disabled = false;
+    }
+    document.getElementById('streakTitle').textContent = `Day ${currentUser.streak_count || 1} Streak`;
+
+  } catch (e) {
+    console.error("Failed to load user:", e);
+  }
+}
+
+async function loadGamesStatus() {
+  try {
+    spinStatus = await apiFetch("/api/games/spin/status");
+    buildWheel(spinStatus);
+    const spinSub = document.getElementById('spinSub');
+    if(spinStatus.max_reached) {
+      spinSub.textContent = "Daily spin limit reached";
+      document.getElementById('spinBtn').disabled = true;
+    } else if(spinStatus.needs_ad) {
+      spinSub.textContent = "Free spins used — watch ad to spin";
+    } else {
+      spinSub.textContent = `${spinStatus.free_left} free spin(s) left today`;
+    }
+  } catch (e) {
+    console.error("Failed to load spin status:", e);
+  }
+}
+
+async function loadTasks() {
+  try {
+    const tasks = await apiFetch("/api/tasks");
+    const container = document.getElementById('tasksList');
+    if(!tasks || tasks.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">No tasks available right now.</div>';
+      return;
+    }
+    container.innerHTML = tasks.map(t => `
+      <div class="task">
+        <div class="icn">📋</div>
+        <div class="body">
+          <div class="t">${t.title}</div>
+          <div class="r">+${t.reward} USDT</div>
+        </div>
+        <button class="go ${t.completed ? 'done' : ''}" onclick="claimTask(${t.id}, this)">${t.completed ? 'Done' : 'Claim'}</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error("Failed to load tasks:", e);
+  }
+}
+
+window.claimTask = async function(taskId, btn) {
+  try {
+    btn.disabled = true;
+    const res = await apiFetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
+    btn.textContent = "Done";
+    btn.classList.add("done");
+    alert(`Successfully claimed +${res.reward} USDT!`);
+    loadUser();
+  } catch (e) {
+    alert(e.message);
+    btn.disabled = false;
+  }
+};
+
 /* ---- Tab navigation ---- */
 function goto(tab){
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   document.querySelectorAll(`[data-goto="${tab}"]`).forEach(el=>el.classList.add('active'));
+  if(tab === 'tasks') loadTasks();
+  if(tab === 'games') loadGamesStatus();
 }
 document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.goto)));
 
-/* ---- Daily claim (free, no forced ad) ---- */
-document.getElementById('claimBtn').addEventListener('click', ()=>{
-  document.getElementById('claimBtn').textContent = '✓ Claimed';
-  document.getElementById('claimBtn').disabled = true;
-});
-document.getElementById('boostBtn').addEventListener('click', ()=>{
-  // In production: showRewardedAd() then credit 2x, only on this explicit click.
-  alert('Would open a rewarded ad here, then credit 2x the daily bonus.');
+/* ---- Daily claim ---- */
+document.getElementById('claimBtn').addEventListener('click', async () => {
+  try {
+    const res = await apiFetch("/api/users/streak/claim", { method: "POST" });
+    alert(`Streak claimed! +${res.reward} USDT`);
+    loadUser();
+  } catch(e) {
+    alert(e.message);
+  }
 });
 
-/* ---- Spin wheel: data-driven from backend segments/min/max (see comments) ---- */
-const SPIN_STATUS = { segments:[0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4], min_reward:0.09, max_reward:0.5 };
+document.getElementById('boostBtn').addEventListener('click', async () => {
+  const watched = await triggerAdsgramAd();
+  if(watched) {
+    try {
+      const res = await apiFetch("/api/ads/reward", {
+        method: "POST",
+        body: JSON.stringify({ reward_event: "daily_boost_" + Date.now() })
+      });
+      alert(`Ad watched! Rewarded $${res.reward} USDT`);
+      loadUser();
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+});
+
+/* ---- Spin Wheel ---- */
 const palette = ['#B48CFF','#FF6F5E','#FFC857','#C7F464','#57C7E0','#B48CFF','#FF6F5E','#FFC857'];
 
 function buildWheel(status){
   const svg = document.getElementById('wheel');
-  const { segments, min_reward, max_reward } = status;
+  const segments = status.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
+  const min_reward = status.min_reward || 0.09;
+  const max_reward = status.max_reward || 0.5;
   const n = segments.length, cx=100, cy=100, r=96;
   let html='';
   for(let i=0;i<n;i++){
@@ -260,27 +414,67 @@ function buildWheel(status){
   }
   svg.innerHTML = html;
 }
+
 function spinTo(index,total,svg){
   const wedgeDeg=360/total, targetMid=index*wedgeDeg+wedgeDeg/2;
   svg.style.transform = `rotate(${5*360+(360-targetMid)}deg)`;
 }
-document.getElementById('spinBtn').addEventListener('click', ()=>{
-  const btn=document.getElementById('spinBtn'), svg=document.getElementById('wheel'), toast=document.getElementById('spinToast');
-  btn.disabled=true; toast.classList.remove('show');
-  const eligible = SPIN_STATUS.segments.map((v,i)=>({v,i})).filter(s=>s.v>=Math.min(SPIN_STATUS.min_reward,SPIN_STATUS.max_reward)&&s.v<=Math.max(SPIN_STATUS.min_reward,SPIN_STATUS.max_reward));
-  const pick = eligible[Math.floor(Math.random()*eligible.length)];
-  spinTo(pick.i, SPIN_STATUS.segments.length, svg);
-  setTimeout(()=>{
-    toast.textContent = `🎉 You won $${pick.v.toFixed(2)} USDT!`;
-    toast.classList.add('show');
-    btn.disabled=false;
-  }, 4300);
-});
-buildWheel(SPIN_STATUS);
 
-/* ---- Scratch card: 3-tap, diamonds placed after picks (see backend games.py) ---- */
+document.getElementById('spinBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('spinBtn'), svg = document.getElementById('wheel'), toast = document.getElementById('spinToast');
+  btn.disabled = true; toast.classList.remove('show');
+
+  let rewardEvent = null;
+  if (spinStatus && spinStatus.needs_ad) {
+    const watched = await triggerAdsgramAd();
+    if (!watched) {
+      btn.disabled = false;
+      return;
+    }
+    rewardEvent = "spin_ad_" + Date.now();
+  }
+
+  try {
+    const res = await apiFetch("/api/games/spin/play", {
+      method: "POST",
+      body: JSON.stringify({ reward_event: rewardEvent })
+    });
+    
+    const segments = spinStatus.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
+    // Find index of winning reward in segments
+    let segIndex = segments.findIndex(s => Math.abs(s - res.reward) < 0.001);
+    if(segIndex < 0) segIndex = 0;
+
+    spinTo(segIndex, segments.length, svg);
+
+    setTimeout(() => {
+      toast.textContent = `🎉 You won $${res.reward.toFixed(4)} USDT!`;
+      toast.classList.add('show');
+      btn.disabled = false;
+      loadUser();
+      loadGamesStatus();
+    }, 4300);
+
+  } catch (e) {
+    alert(e.message);
+    btn.disabled = false;
+  }
+});
+
+/* ---- Scratch Card ---- */
 const TAPS_ALLOWED = 3;
 let selected = [];
+let scratchData = null;
+
+async function initScratch() {
+  try {
+    scratchStatus = await apiFetch("/api/games/scratch/status");
+  } catch(e) {
+    console.error("Failed to load scratch status", e);
+  }
+  renderScratch();
+}
+
 function renderScratch(){
   const grid = document.getElementById('scratchGrid');
   grid.innerHTML = Array.from({length:9},(_,i)=>{
@@ -288,35 +482,107 @@ function renderScratch(){
     return `<div class="scratch-cell ${picked?'picked':''}" data-cell="${i}">${picked?'👆':'❓'}</div>`;
   }).join('');
   grid.querySelectorAll('.scratch-cell').forEach(cell=>{
-    cell.addEventListener('click', ()=>{
+    cell.addEventListener('click', async () => {
       const i = Number(cell.dataset.cell);
       if(selected.includes(i) || selected.length>=TAPS_ALLOWED) return;
       selected.push(i);
       renderScratch();
-      if(selected.length===TAPS_ALLOWED) resolveScratch();
+      if(selected.length===TAPS_ALLOWED) {
+        await resolveScratch();
+      }
     });
   });
 }
-function resolveScratch(){
-  // In production: const res = await Api.scratchPlay(adEvent, selected);
-  const diamonds = new Set();
-  while(diamonds.size<3) diamonds.add(Math.floor(Math.random()*9));
-  const matched = selected.filter(c=>diamonds.has(c));
-  const hits = matched.length;
-  const reward = hits===0?0:hits===1?0.01:hits===2?0.03:0.06;
 
-  const grid = document.getElementById('scratchGrid');
-  grid.innerHTML = Array.from({length:9},(_,i)=>{
-    const isDiamond = diamonds.has(i), isSel = selected.includes(i);
-    const cls = isSel&&isDiamond ? 'revealed win' : isDiamond ? 'revealed missed' : isSel ? 'revealed' : '';
-    return `<div class="scratch-cell ${cls}">${isDiamond?'💎':'✖'}</div>`;
-  }).join('');
-  const toast = document.getElementById('scratchToast');
-  toast.textContent = reward>0 ? `🎉 ${hits} diamond${hits===1?'':'s'} — $${reward.toFixed(2)} USDT!` : 'No diamonds this round — try again!';
-  toast.classList.add('show');
-  setTimeout(()=>{ selected=[]; renderScratch(); toast.classList.remove('show'); }, 1800);
+async function resolveScratch(){
+  let rewardEvent = null;
+  if (scratchStatus && scratchStatus.needs_ad) {
+    const watched = await triggerAdsgramAd();
+    if (!watched) {
+      selected = [];
+      renderScratch();
+      return;
+    }
+    rewardEvent = "scratch_ad_" + Date.now();
+  }
+
+  try {
+    const res = await apiFetch("/api/games/scratch/play", {
+      method: "POST",
+      body: JSON.stringify({ reward_event: rewardEvent, selected_cells: selected })
+    });
+
+    const diamonds = new Set(res.diamonds || []);
+    const hits = res.hits || 0;
+    const reward = res.reward || 0;
+
+    const grid = document.getElementById('scratchGrid');
+    grid.innerHTML = Array.from({length:9},(_,i)=>{
+      const isDiamond = diamonds.has(i), isSel = selected.includes(i);
+      const cls = isSel&&isDiamond ? 'revealed win' : isDiamond ? 'revealed missed' : isSel ? 'revealed' : '';
+      return `<div class="scratch-cell ${cls}">${isDiamond?'💎':'✖'}</div>`;
+    }).join('');
+
+    const toast = document.getElementById('scratchToast');
+    toast.textContent = reward>0 ? `🎉 ${hits} diamond(s) — $${reward.toFixed(4)} USDT!` : 'No diamonds this round — try again!';
+    toast.classList.add('show');
+
+    setTimeout(()=>{ 
+      selected=[]; 
+      renderScratch(); 
+      toast.classList.remove('show'); 
+      loadUser();
+      initScratch();
+    }, 2500);
+
+  } catch(e) {
+    alert(e.message);
+    selected = [];
+    renderScratch();
+  }
 }
-renderScratch();
+
+/* ---- Wallet / Withdraw ---- */
+document.getElementById('withdrawBtn').addEventListener('click', async () => {
+  const method = document.getElementById('payoutMethod').value;
+  const address = document.getElementById('walletAddress').value.trim();
+  if(!address) {
+    alert("Please enter your wallet address or Pay ID");
+    return;
+  }
+  try {
+    const res = await apiFetch("/api/wallet/withdraw", {
+      method: "POST",
+      body: JSON.stringify({ method, address })
+    });
+    alert(`Withdrawal request submitted successfully! Amount: $${res.amount} USDT`);
+    document.getElementById('walletAddress').value = "";
+    loadUser();
+  } catch(e) {
+    alert(e.message);
+  }
+});
+
+/* ---- Crew / Referral ---- */
+document.getElementById('crewBtn').addEventListener('click', async () => {
+  try {
+    const data = await apiFetch("/api/referral");
+    alert(`Your Referral Link:\n${data.referral_link}\n\nReferred Friends: ${data.total_referred}\nEarned Commission: $${data.total_earned}`);
+  } catch(e) {
+    alert("Failed to load referral info");
+  }
+});
+
+// Initialize app on load
+window.addEventListener('load', () => {
+  loadUser();
+  loadGamesStatus();
+  initScratch();
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+});
 </script>
 </body>
 </html>
