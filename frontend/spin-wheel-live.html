@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Reward Hub — Spin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#07281D; --mid:#0E3B2A; --panel:#12452F; --panel-2:#175538;
+    --line: rgba(255,255,255,0.08);
+    --lime:#C7F464; --gem:#B48CFF; --gold:#FFC857; --coral:#FF6F5E; --sky:#57C7E0;
+    --text:#F3FBF3; --muted:#9FC6AE;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; display:flex; justify-content:center;}
+  .device{width:100%; max-width:420px; min-height:100vh; position:relative; overflow-x:hidden; padding-bottom:30px;
+    background: radial-gradient(ellipse 700px 420px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
+
+  header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 4px;}
+  .who{display:flex; align-items:center; gap:10px;}
+  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--lime)); display:flex; align-items:center; justify-content:center; font-size:16px;}
+  .who .name{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14.5px;}
+  .who .sub{font-size:10.5px; color:var(--muted);}
+  .currencies{display:flex; gap:6px;}
+  .chip{display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid var(--line); padding:6px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;}
+
+  main{padding:14px 16px 0;}
+  .bal-banner{text-align:center; margin:10px 0 4px;}
+  .bal-banner .amt{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--gold);}
+  .bal-banner .amt span{font-size:15px; color:var(--muted); font-weight:600; margin-left:4px;}
+
+  .wheel-wrap{position:relative; width:290px; height:290px; margin:26px auto 8px;}
+  svg.wheel{width:100%; height:100%; transition: transform 4.2s cubic-bezier(.17,.67,.14,1);}
+  .seg-label{font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13.5px; fill:#0E3B2A; text-anchor:middle;}
+  .wheel-center{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:118px; height:62px; border-radius:16px;
+    background: rgba(7,40,29,0.94); border:1.5px solid rgba(255,255,255,0.18);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:11.5px; text-align:center; line-height:1.3;
+    pointer-events:none; z-index:2;
+  }
+  .wheel-pointer{position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:3;
+    width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent;
+    border-top:20px solid var(--gold); filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+
+  .spin-cta{display:block; width:220px; margin:18px auto 4px; padding:15px; text-align:center;
+    border:none; border-radius:100px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px;
+    background:linear-gradient(90deg,var(--lime),var(--gold)); color:#0E3B2A; cursor:pointer;}
+  .spin-cta:disabled{opacity:0.45; pointer-events:none;}
+  .spin-sub{text-align:center; font-size:11px; color:var(--muted); margin-top:6px;}
+
+  .result-toast{
+    max-width:280px; margin:14px auto 0; padding:12px 16px; border-radius:14px;
+    background:var(--panel); border:1px solid var(--line); text-align:center;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:13.5px;
+    opacity:0; transform:translateY(-6px); transition:.25s;
+  }
+  .result-toast.show{opacity:1; transform:translateY(0);}
+  .result-toast.win{color:var(--lime);}
+</style>
+</head>
+<body>
+<div class="device">
+  <header>
+    <div class="who">
+      <div class="avatar">🧑‍🚀</div>
+      <div><div class="name">Nova</div><div class="sub">#66494756</div></div>
+    </div>
+    <div class="currencies">
+      <div class="chip">⚡ <span id="energy">0</span></div>
+      <div class="chip">💎 <span id="gems">198</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="bal-banner">
+      <span class="amt" id="balance">$0.9510<span>USDT</span></span>
+    </div>
+
+    <div class="wheel-wrap">
+      <div class="wheel-pointer"></div>
+      <svg class="wheel" id="wheel" viewBox="0 0 200 200"></svg>
+      <div class="wheel-center">SPIN &amp;<br>WIN USDT</div>
+    </div>
+    <button class="spin-cta" id="spinBtn">🎡 Spin Now</button>
+    <div class="spin-sub" id="spinSub">2 free spins left today</div>
+    <div class="result-toast" id="resultToast"></div>
+  </main>
+</div>
+
+<script>
+/*
+ * Wheel rendering is fully data-driven from the backend's /api/games/spin/status
+ * response: `segments` (the actual USDT value of each wedge) and `min_reward`/
+ * `max_reward` (the admin's payout range). Every segment shows its real number.
+ * Segments outside [min_reward, max_reward] are drawn slightly muted, since the
+ * backend guarantees they can never actually be landed on (see spin_play) —
+ * this keeps the wheel visually honest: what's shown is what can happen.
+ *
+ * In a live deployment, replace MOCK_STATUS below with a real call to
+ * Api.spinStatus() and MOCK_PLAY with Api.spinPlay(adEvent).
+ */
+const MOCK_STATUS = {
+  segments: [0.09, 0.5, 0.15, 0.3, 0.1, 0.5, 0.2, 0.4],
+  min_reward: 0.09,
+  max_reward: 0.5,
+  free_spins_left: 2,
+};
+
+const palette = ['#B48CFF','#FF6F5E','#FFC857','#C7F464','#57C7E0','#B48CFF','#FF6F5E','#FFC857'];
+
+function buildWheel(status){
+  const svg = document.getElementById('wheel');
+  const { segments, min_reward, max_reward } = status;
+  const n = segments.length;
+  const cx = 100, cy = 100, r = 96;
+  let html = '';
+  for(let i=0;i<n;i++){
+    const a0 = (i/n)*2*Math.PI - Math.PI/2;
+    const a1 = ((i+1)/n)*2*Math.PI - Math.PI/2;
+    const x0 = cx + r*Math.cos(a0), y0 = cy + r*Math.sin(a0);
+    const x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
+    const midA = (a0+a1)/2;
+    const lx = cx + (r*0.66)*Math.cos(midA), ly = cy + (r*0.66)*Math.sin(midA);
+    const val = segments[i];
+    const eligible = val >= Math.min(min_reward,max_reward) && val <= Math.max(min_reward,max_reward);
+    const fill = palette[i % palette.length];
+    html += `<path d="M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z"
+              fill="${fill}" opacity="${eligible ? 1 : 0.35}" stroke="#0E3B2A" stroke-width="1.5"/>`;
+    html += `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" class="seg-label"
+              transform="rotate(${(midA*180/Math.PI)+90} ${lx.toFixed(2)} ${ly.toFixed(2)})">$${val.toFixed(2)}</text>`;
+  }
+  svg.innerHTML = html;
+}
+
+function spinTo(index, total, svg){
+  // land the pointer (fixed at top) on the middle of the winning wedge
+  const wedgeDeg = 360/total;
+  const targetMid = index*wedgeDeg + wedgeDeg/2;
+  const fullSpins = 5*360;
+  const rotation = fullSpins + (360 - targetMid);
+  svg.style.transform = `rotate(${rotation}deg)`;
+}
+
+let currentRotation = 0;
+async function handleSpin(){
+  const btn = document.getElementById('spinBtn');
+  const svg = document.getElementById('wheel');
+  const toast = document.getElementById('resultToast');
+  btn.disabled = true;
+  toast.classList.remove('show');
+
+  // --- Replace with: const res = await Api.spinPlay(adEvent); ---
+  const status = MOCK_STATUS;
+  const eligible = status.segments
+    .map((v,i)=>({v,i}))
+    .filter(s => s.v >= Math.min(status.min_reward,status.max_reward) && s.v <= Math.max(status.min_reward,status.max_reward));
+  const pick = eligible[Math.floor(Math.random()*eligible.length)];
+  const res = { reward: pick.v, landed_index: pick.i, segments: status.segments };
+  // -----------------------------------------------------------
+
+  spinTo(res.landed_index, res.segments.length, svg);
+
+  setTimeout(()=>{
+    toast.textContent = `🎉 You won $${res.reward.toFixed(2)} USDT!`;
+    toast.classList.add('show','win');
+    document.getElementById('balance').innerHTML = `$${(0.9510+res.reward).toFixed(4)}<span>USDT</span>`;
+    btn.disabled = false;
+  }, 4300);
+}
+
+buildWheel(MOCK_STATUS);
+document.getElementById('spinBtn').addEventListener('click', handleSpin);
+</script>
+</body>
+</html>

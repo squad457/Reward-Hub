@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Reward Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.js"></script>
+<style>
+  :root{
+    --deep:#1B0E1E; --mid:#2B1330; --panel:#341A3A; --panel-2:#402146;
+    --line: rgba(255,255,255,0.09);
+    --lime:#3FE6B4; --gem:#B98CFF; --gold:#FFB627; --coral:#FF5C77; --sky:#5FD3E8;
+    --text:#FBF1E0; --muted:#C7A8CE;
+    --ink:#1B0E1E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; display:flex; justify-content:center;}
+  .device{width:100%; max-width:420px; min-height:100vh; position:relative; overflow-x:hidden; padding-bottom:88px;
+    background: radial-gradient(ellipse 700px 420px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
+
+  header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 16px; position:relative; margin-bottom:8px;}
+  header::after{content:''; position:absolute; left:0; right:0; bottom:0; height:9px;
+    background-image: radial-gradient(circle 5px, var(--deep) 5px, transparent 5.5px);
+    background-size: 18px 9px; background-position: 5px 0; background-repeat: repeat-x;}
+  .who{display:flex; align-items:center; gap:10px;}
+  .avatar{width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--gem),var(--gold)); display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 0 0 2px rgba(255,182,39,0.25);}
+  .who .name{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px;}
+  .who .sub{font-size:10.5px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .currencies{display:flex; gap:6px;}
+  .chip{display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid var(--line); padding:6px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;}
+
+  main{padding:14px 16px 0;}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
+
+  .section-title{font-family:'Fredoka',sans-serif; font-weight:600; font-size:14.5px; margin:24px 2px 10px; display:flex; align-items:center; gap:6px; letter-spacing:.01em;}
+
+  /* ===== HOME ===== */
+  .bal-banner{text-align:center; margin:6px 0 4px; position:relative; padding:22px 16px 18px;
+    background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px;}
+  .bal-banner::before, .bal-banner::after{content:''; position:absolute; top:50%; width:18px; height:18px; border-radius:50%;
+    background:var(--deep); transform:translateY(-50%);}
+  .bal-banner::before{left:-9px;} .bal-banner::after{right:-9px;}
+  .bal-banner .eyebrow{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:6px;}
+  .bal-banner .amt{font-family:'Fredoka',sans-serif; font-weight:600; font-size:32px; color:var(--gold);}
+  .bal-banner .amt span{font-size:14px; color:var(--muted); font-weight:600; margin-left:4px; font-family:'JetBrains Mono',monospace;}
+  .track{position:relative; height:8px; border-radius:100px; background:rgba(255,255,255,0.08); margin:14px auto 6px; max-width:280px; overflow:hidden;}
+  .track-fill{position:absolute; left:0; top:0; bottom:0; border-radius:100px; background:linear-gradient(90deg,var(--coral),var(--gold)); width:0%;}
+  .track-label{text-align:center; font-size:11px; color:var(--muted);}
+
+  .daily{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:18px; padding:16px;}
+  .daily-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .daily-row .t{font-family:'Fredoka',sans-serif; font-weight:700; font-size:14px;}
+  .daily-row .n{font-size:11px; color:var(--muted);}
+  .daily-actions{display:flex; gap:8px;}
+  .btn-claim{flex:1; padding:12px; border:none; border-radius:12px; font-weight:700; font-size:12.5px; background:var(--lime); color:#1B0E1E; cursor:pointer;}
+  .btn-claim:disabled{opacity:0.5; pointer-events:none;}
+  .btn-boost{flex:1; padding:12px; border:1px solid var(--gold); border-radius:12px; font-weight:700; font-size:12.5px; background:transparent; color:var(--gold); cursor:pointer;}
+
+  .rail{display:flex; justify-content:space-between; gap:8px; margin-top:18px;}
+  .rail-btn{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 6px; text-align:center; cursor:pointer;}
+  .rail-btn .ic{font-size:18px; margin-bottom:6px;}
+  .rail-btn p{font-size:10.5px; font-weight:700;}
+
+  .timeline{position:relative; margin-top:4px; padding-left:20px;}
+  .timeline::before{content:''; position:absolute; left:7px; top:4px; bottom:4px; width:2px; background:linear-gradient(180deg,var(--lime),var(--gem),transparent);}
+  .tl-item{position:relative; padding-bottom:18px;}
+  .tl-item:last-child{padding-bottom:0;}
+  .tl-dot{position:absolute; left:-20px; top:1px; width:14px; height:14px; border-radius:50%; background:var(--panel); border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; font-size:7px;}
+  .tl-dot.done{border-color:var(--lime); background:var(--lime); color:#1B0E1E;}
+  .tl-title{font-size:12.5px; font-weight:600;}
+  .tl-sub{font-size:10.5px; color:var(--muted); margin-top:2px;}
+
+  /* ===== GAMES ===== */
+  .wheel-wrap{position:relative; width:250px; height:250px; margin:16px auto 8px;}
+  svg.wheel{width:100%; height:100%; transition: transform 4.2s cubic-bezier(.17,.67,.14,1);}
+  .seg-label{font-family:'Fredoka',sans-serif; font-weight:700; font-size:13px; fill:#1B0E1E; text-anchor:middle;}
+  .wheel-center{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:104px; height:56px; border-radius:14px;
+    background: rgba(27,14,30,0.94); border:1.5px solid rgba(255,255,255,0.18);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:10.5px; line-height:1.3; pointer-events:none; z-index:2;}
+  .wheel-pointer{position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:3;
+    width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-top:18px solid var(--gold);}
+  .spin-cta{display:block; width:200px; margin:14px auto 4px; padding:14px; text-align:center; border:none; border-radius:100px;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:14px; background:linear-gradient(90deg,var(--lime),var(--gold)); color:#1B0E1E; cursor:pointer;}
+  .spin-cta:disabled{opacity:.45; pointer-events:none;}
+  .spin-sub{text-align:center; font-size:11px; color:var(--muted); margin-top:6px;}
+  .result-toast{max-width:260px; margin:12px auto 0; padding:10px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
+    text-align:center; font-family:'Fredoka',sans-serif; font-weight:700; font-size:12.5px; opacity:0; transform:translateY(-6px); transition:.25s;}
+  .result-toast.show{opacity:1; transform:translateY(0); color:var(--lime);}
+
+  .scratch-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:260px; margin:16px auto;}
+  .scratch-cell{aspect-ratio:1; border-radius:14px; background:var(--panel); border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer;}
+  .scratch-cell.picked{border-color:var(--gem); background:linear-gradient(145deg, rgba(180,140,255,0.25), var(--panel));}
+  .scratch-cell.revealed.win{background:rgba(63,230,180,0.16); border-color:var(--lime);}
+  .scratch-cell.revealed.missed{opacity:0.55;}
+
+  /* ===== TASKS ===== */
+  .task{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:13px 14px; margin-bottom:8px;}
+  .task .icn{width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+  .task .body{flex:1; min-width:0;}
+  .task .t{font-size:13px; font-weight:600;}
+  .task .r{font-size:11px; color:var(--gem); margin-top:2px; font-family:'JetBrains Mono',monospace;}
+  .task .go{padding:8px 16px; border-radius:100px; border:none; font-weight:700; font-size:11.5px; background:var(--lime); color:#1B0E1E; cursor:pointer;}
+  .task .go.done{background:transparent; border:1px solid var(--line); color:var(--muted);}
+
+  /* ===== WALLET ===== */
+  .wallet-hero{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:20px; padding:22px; text-align:center; margin-top:8px;}
+  .wallet-hero .lbl{font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);}
+  .wallet-hero .val{font-family:'Fredoka',sans-serif; font-weight:800; font-size:32px; color:var(--gold); margin-top:6px;}
+  .wallet-hero .disc{font-size:10.5px; color:var(--muted); margin-top:8px;}
+  .field{margin-top:16px;}
+  .field label{font-size:11px; color:var(--muted); display:block; margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; padding:12px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
+    color:var(--text); font-size:13px; font-family:'Manrope',sans-serif;
+  }
+  .withdraw-btn{width:100%; margin-top:16px; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(90deg,var(--lime),var(--gold)); color:#1B0E1E; font-family:'Fredoka',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
+  .min-note{text-align:center; font-size:10.5px; color:var(--muted); margin-top:8px;}
+
+  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px;
+    background: rgba(43,19,48,0.92); backdrop-filter: blur(14px); border-top:1px solid var(--line);
+    display:flex; justify-content:space-around; padding:14px 6px 18px; z-index:5;}
+  nav::before{content:''; position:absolute; left:0; right:0; top:-5px; height:9px;
+    background-image: radial-gradient(circle 5px, var(--deep) 5px, transparent 5.5px);
+    background-size: 18px 9px; background-position: 5px 0; background-repeat: repeat-x;}
+  .navbtn{display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:10px; font-weight:600; cursor:pointer; background:none; border:none; position:relative; padding:4px 10px;}
+  .navbtn.active{color:var(--gold);}
+  .navbtn.active::after{content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; border-radius:2px; background:var(--gold);}
+</style>
+</head>
+<body>
+<div class="device">
+  <header>
+    <div class="who">
+      <div class="avatar" id="userAvatar">🎪</div>
+      <div><div class="name" id="userName">Loading...</div><div class="sub" id="userSub">#...</div></div>
+    </div>
+    <div class="currencies">
+      <div class="chip">⚡ <span id="energy">0</span></div>
+      <div class="chip">💎 <span id="gems">0</span></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= HOME ================= -->
+    <section class="tabpane active" id="tab-home">
+      <div class="bal-banner">
+        <div class="eyebrow">🎟️ Your winnings</div>
+        <span class="amt" id="homeBalance">$0.0000<span>USDT</span></span>
+        <div class="track"><div class="track-fill" id="trackFill" style="width:0%"></div></div>
+        <div class="track-label" id="trackLabel">Loading payout progress...</div>
+      </div>
+
+      <div class="daily">
+        <div class="daily-row">
+          <div><div class="t" id="streakTitle">Daily Streak</div><div class="n" id="streakSub">Claim your daily reward</div></div>
+        </div>
+        <div class="daily-actions">
+          <button class="btn-claim" id="claimBtn">Claim Streak</button>
+          <button class="btn-boost" id="boostBtn">▶ 2x with ad</button>
+        </div>
+      </div>
+
+      <div class="rail">
+        <div class="rail-btn" data-goto="games"><div class="ic">🎡</div><p>Games</p></div>
+        <div class="rail-btn" data-goto="tasks"><div class="ic">📋</div><p>Tasks</p></div>
+        <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Wallet</p></div>
+        <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Crew</p></div>
+      </div>
+
+      <div class="section-title">🏆 Mission Log</div>
+      <div class="timeline" id="missionLog">
+        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">Connected to Reward Hub</div><div class="tl-sub">Active session</div></div>
+      </div>
+    </section>
+
+    <!-- ================= GAMES ================= -->
+    <section class="tabpane" id="tab-games">
+      <div class="section-title">🎡 Spin Wheel</div>
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <svg class="wheel" id="wheel" viewBox="0 0 200 200"></svg>
+        <div class="wheel-center">SPIN &amp;<br>WIN USDT</div>
+      </div>
+      <button class="spin-cta" id="spinBtn">🎡 Spin Now</button>
+      <div class="spin-sub" id="spinSub">Loading plays...</div>
+      <div class="result-toast" id="spinToast"></div>
+
+      <div class="section-title">🎫 Scratch &amp; Win</div>
+      <p style="font-size:11.5px; color:var(--muted); text-align:center; margin-bottom:4px;">Pick any 3 boxes — diamonds shuffle every round.</p>
+      <div class="scratch-grid" id="scratchGrid"></div>
+      <div class="result-toast" id="scratchToast"></div>
+    </section>
+
+    <!-- ================= TASKS ================= -->
+    <section class="tabpane" id="tab-tasks">
+      <div class="section-title">🔥 Available Tasks</div>
+      <div id="tasksList" style="display:flex; flex-direction:column; gap:8px;">
+        <div style="text-align:center; color:var(--muted); padding:20px;">Loading tasks...</div>
+      </div>
+    </section>
+
+    <!-- ================= WALLET ================= -->
+    <section class="tabpane" id="tab-wallet">
+      <div class="wallet-hero">
+        <div class="lbl">Available to Withdraw</div>
+        <div class="val" id="walletBalance">$0.0000</div>
+        <div class="disc" id="walletDisc">1,000 Gems = 1 USDT</div>
+      </div>
+      <div class="field">
+        <label>Payout method</label>
+        <select id="payoutMethod"><option value="USDT (BEP20)">USDT (BEP20)</option><option value="Binance Pay ID">Binance Pay ID</option></select>
+      </div>
+      <div class="field">
+        <label>Wallet address / Pay ID</label>
+        <input type="text" id="walletAddress" placeholder="0x..." />
+      </div>
+      <button class="withdraw-btn" id="withdrawBtn">Withdraw</button>
+      <div class="min-note" id="minWithdrawNote">Minimum withdrawal: $10.00 USDT</div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="navbtn active" data-goto="home"><div>🏠</div>Home</button>
+    <button class="navbtn" data-goto="games"><div>🎡</div>Games</button>
+    <button class="navbtn" data-goto="tasks"><div>📋</div>Tasks</button>
+    <button class="navbtn" data-goto="wallet"><div>💳</div>Wallet</div>
+  </nav>
+</div>
+
+<script>
+const API_BASE = window.location.hostname.includes("localhost") ? "" : "https://reward-hub-production.up.railway.app";
+const initData = window.Telegram?.WebApp?.initData || "review";
+
+async function apiFetch(endpoint, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Telegram-Init-Data": initData,
+    ...(options.headers || {})
+  };
+  let res;
+  try {
+    res = await fetch(API_BASE + endpoint, { ...options, headers });
+  } catch (networkErr) {
+    throw new Error(`Network error connecting to backend: ${networkErr.message}`);
+  }
+  
+  if (!res.ok) {
+    let errDetail = `HTTP ${res.status} ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson.detail) {
+        errDetail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch(e) {
+      const text = await res.text().catch(() => "");
+      if (text) errDetail = text.slice(0, 150);
+    }
+    throw new Error(errDetail);
+  }
+  return res.json();
+}
+
+let currentUser = null;
+let spinStatus = null;
+let scratchStatus = null;
+
+/* ---- Adsgram SDK Helper ---- */
+async function triggerAdsgramAd(blockId = "") {
+  return new Promise((resolve) => {
+    if (window.Adsgram) {
+      window.Adsgram.init({ blockId: blockId || undefined }).show()
+        .then((result) => {
+          // result = { done: true, description: "...", ... }
+          resolve(result.done || true);
+        })
+        .catch((err) => {
+          console.error("Adsgram ad error:", err);
+          alert("Ad failed or was skipped. Please watch the full ad to earn.");
+          resolve(false);
+        });
+    } else {
+      // Fallback for browser testing
+      console.warn("Adsgram SDK not loaded, bypassing ad for testing.");
+      resolve(true);
+    }
+  });
+}
+
+async function loadUser() {
+  try {
+    const data = await apiFetch("/api/users/me");
+    currentUser = data.user;
+    
+    // Update header
+    document.getElementById('userName').textContent = currentUser.first_name || "User";
+    document.getElementById('userSub').textContent = `#${currentUser.telegram_id}`;
+    document.getElementById('energy').textContent = currentUser.ads_watched_today ?? 0;
+    document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
+    
+    // Home banner
+    const bal = currentUser.balance || 0;
+    document.getElementById('homeBalance').innerHTML = `$${bal.toFixed(4)}<span>USDT</span>`;
+    document.getElementById('walletBalance').textContent = `$${bal.toFixed(4)}`;
+    
+    // Progress toward payout (assume $10 min or tier)
+    const pct = Math.min(100, (bal / 10.0) * 100);
+    document.getElementById('trackFill').style.width = pct + '%';
+    document.getElementById('trackLabel').textContent = `${pct.toFixed(0)}% toward $10.00 minimum payout tier`;
+
+    // Streak / Daily
+    if(currentUser.streak_claimed_today) {
+      document.getElementById('claimBtn').textContent = '✓ Claimed Today';
+      document.getElementById('claimBtn').disabled = true;
+    } else {
+      document.getElementById('claimBtn').textContent = `Claim Streak (${currentUser.streak_count || 1}d)`;
+      document.getElementById('claimBtn').disabled = false;
+    }
+    document.getElementById('streakTitle').textContent = `Day ${currentUser.streak_count || 1} Streak`;
+
+  } catch (e) {
+    console.error("Failed to load user:", e);
+  }
+}
+
+async function loadGamesStatus() {
+  try {
+    spinStatus = await apiFetch("/api/games/spin/status");
+    buildWheel(spinStatus);
+    const spinSub = document.getElementById('spinSub');
+    if(spinStatus.max_reached) {
+      spinSub.textContent = "Daily spin limit reached";
+      document.getElementById('spinBtn').disabled = true;
+    } else if(spinStatus.needs_ad) {
+      spinSub.textContent = "Free spins used — watch ad to spin";
+    } else {
+      spinSub.textContent = `${spinStatus.free_spins_left} free spin(s) left today`;
+    }
+  } catch (e) {
+    console.error("Failed to load spin status:", e);
+  }
+}
+
+async function loadTasks() {
+  try {
+    const tasks = await apiFetch("/api/tasks");
+    const container = document.getElementById('tasksList');
+    if(!tasks || tasks.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:20px;">No tasks available right now.</div>';
+      return;
+    }
+    container.innerHTML = tasks.map(t => `
+      <div class="task">
+        <div class="icn">📋</div>
+        <div class="body">
+          <div class="t">${t.title}</div>
+          <div class="r">+${t.reward} USDT</div>
+        </div>
+        <button class="go ${t.completed ? 'done' : ''}" ${t.completed ? 'disabled' : `onclick="claimTask(${t.id}, this)"`}>${t.completed ? 'Done' : 'Claim'}</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error("Failed to load tasks:", e);
+  }
+}
+
+window.claimTask = async function(taskId, btn) {
+  try {
+    btn.disabled = true;
+    const res = await apiFetch(`/api/tasks/${taskId}/claim`, { method: "POST" });
+    btn.textContent = "Done";
+    btn.classList.add("done");
+    alert(`Successfully claimed +${res.reward} USDT!`);
+    loadUser();
+  } catch (e) {
+    alert(e.message);
+    btn.disabled = false;
+  }
+};
+
+/* ---- Tab navigation ---- */
+function goto(tab){
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll(`[data-goto="${tab}"]`).forEach(el=>el.classList.add('active'));
+  if(tab === 'tasks') loadTasks();
+  if(tab === 'games') loadGamesStatus();
+}
+document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.goto)));
+
+/* ---- Daily claim ---- */
+document.getElementById('claimBtn').addEventListener('click', async () => {
+  try {
+    const res = await apiFetch("/api/users/streak/claim", { method: "POST" });
+    alert(`Streak claimed! +${res.reward} USDT`);
+    loadUser();
+  } catch(e) {
+    alert(e.message);
+  }
+});
+
+document.getElementById('boostBtn').addEventListener('click', async () => {
+  const watched = await triggerAdsgramAd();
+  if(watched) {
+    try {
+      const res = await apiFetch("/api/ads/claim", {
+        method: "POST",
+        body: JSON.stringify({ reward_event: "daily_boost_" + Date.now() })
+      });
+      alert(`Ad watched! Rewarded $${res.reward} USDT`);
+      loadUser();
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+});
+
+/* ---- Spin Wheel ---- */
+const palette = ['#B98CFF','#FF5C77','#FFB627','#3FE6B4','#5FD3E8','#B98CFF','#FF5C77','#FFB627'];
+
+function buildWheel(status){
+  const svg = document.getElementById('wheel');
+  const segments = status.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
+  const min_reward = status.min_reward || 0.09;
+  const max_reward = status.max_reward || 0.5;
+  const n = segments.length, cx=100, cy=100, r=96;
+  let html='';
+  for(let i=0;i<n;i++){
+    const a0=(i/n)*2*Math.PI-Math.PI/2, a1=((i+1)/n)*2*Math.PI-Math.PI/2;
+    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const midA=(a0+a1)/2, lx=cx+(r*0.66)*Math.cos(midA), ly=cy+(r*0.66)*Math.sin(midA);
+    const val=segments[i];
+    const eligible = val>=Math.min(min_reward,max_reward) && val<=Math.max(min_reward,max_reward);
+    html+=`<path d="M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${palette[i%palette.length]}" opacity="${eligible?1:0.35}" stroke="#1B0E1E" stroke-width="1.5"/>`;
+    html+=`<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" class="seg-label" transform="rotate(${(midA*180/Math.PI)+90} ${lx.toFixed(2)} ${ly.toFixed(2)})">$${val.toFixed(2)}</text>`;
+  }
+  svg.innerHTML = html;
+}
+
+function spinTo(index,total,svg){
+  const wedgeDeg=360/total, targetMid=index*wedgeDeg+wedgeDeg/2;
+  svg.style.transform = `rotate(${5*360+(360-targetMid)}deg)`;
+}
+
+document.getElementById('spinBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('spinBtn'), svg = document.getElementById('wheel'), toast = document.getElementById('spinToast');
+  btn.disabled = true; toast.classList.remove('show');
+
+  let rewardEvent = null;
+  if (spinStatus && spinStatus.needs_ad) {
+    const watched = await triggerAdsgramAd();
+    if (!watched) {
+      btn.disabled = false;
+      return;
+    }
+    rewardEvent = "spin_ad_" + Date.now();
+  }
+
+  try {
+    const res = await apiFetch("/api/games/spin/play", {
+      method: "POST",
+      body: JSON.stringify({ reward_event: rewardEvent })
+    });
+    
+    const segments = spinStatus.segments || [0.09,0.5,0.15,0.3,0.1,0.5,0.2,0.4];
+    // Find index of winning reward in segments
+    let segIndex = segments.findIndex(s => Math.abs(s - res.reward) < 0.001);
+    if(segIndex < 0) segIndex = 0;
+
+    spinTo(segIndex, segments.length, svg);
+
+    setTimeout(() => {
+      toast.textContent = `🎉 You won $${res.reward.toFixed(4)} USDT!`;
+      toast.classList.add('show');
+      btn.disabled = false;
+      loadUser();
+      loadGamesStatus();
+    }, 4300);
+
+  } catch (e) {
+    alert(e.message);
+    btn.disabled = false;
+  }
+});
+
+/* ---- Scratch Card ---- */
+const TAPS_ALLOWED = 3;
+let selected = [];
+let scratchData = null;
+
+async function initScratch() {
+  try {
+    scratchStatus = await apiFetch("/api/games/scratch/status");
+  } catch(e) {
+    console.error("Failed to load scratch status", e);
+  }
+  renderScratch();
+}
+
+function renderScratch(){
+  const grid = document.getElementById('scratchGrid');
+  grid.innerHTML = Array.from({length:9},(_,i)=>{
+    const picked = selected.includes(i);
+    return `<div class="scratch-cell ${picked?'picked':''}" data-cell="${i}">${picked?'👆':'❓'}</div>`;
+  }).join('');
+  grid.querySelectorAll('.scratch-cell').forEach(cell=>{
+    cell.addEventListener('click', async () => {
+      const i = Number(cell.dataset.cell);
+      if(selected.includes(i) || selected.length>=TAPS_ALLOWED) return;
+      selected.push(i);
+      renderScratch();
+      if(selected.length===TAPS_ALLOWED) {
+        await resolveScratch();
+      }
+    });
+  });
+}
+
+async function resolveScratch(){
+  let rewardEvent = null;
+  if (scratchStatus && scratchStatus.needs_ad) {
+    const watched = await triggerAdsgramAd();
+    if (!watched) {
+      selected = [];
+      renderScratch();
+      return;
+    }
+    rewardEvent = "scratch_ad_" + Date.now();
+  }
+
+  try {
+    const res = await apiFetch("/api/games/scratch/play", {
+      method: "POST",
+      body: JSON.stringify({ reward_event: rewardEvent, cells: selected })
+    });
+
+    const diamonds = new Set(res.diamond_cells || []);
+    const hits = res.hits || 0;
+    const reward = res.reward || 0;
+
+    const grid = document.getElementById('scratchGrid');
+    grid.innerHTML = Array.from({length:9},(_,i)=>{
+      const isDiamond = diamonds.has(i), isSel = selected.includes(i);
+      const cls = isSel&&isDiamond ? 'revealed win' : isDiamond ? 'revealed missed' : isSel ? 'revealed' : '';
+      return `<div class="scratch-cell ${cls}">${isDiamond?'💎':'✖'}</div>`;
+    }).join('');
+
+    const toast = document.getElementById('scratchToast');
+    toast.textContent = reward>0 ? `🎉 ${hits} diamond(s) — $${reward.toFixed(4)} USDT!` : 'No diamonds this round — try again!';
+    toast.classList.add('show');
+
+    setTimeout(()=>{ 
+      selected=[]; 
+      renderScratch(); 
+      toast.classList.remove('show'); 
+      loadUser();
+      initScratch();
+    }, 2500);
+
+  } catch(e) {
+    alert(e.message);
+    selected = [];
+    renderScratch();
+  }
+}
+
+/* ---- Wallet / Withdraw ---- */
+document.getElementById('withdrawBtn').addEventListener('click', async () => {
+  const method = document.getElementById('payoutMethod').value;
+  const address = document.getElementById('walletAddress').value.trim();
+  if(!address) {
+    alert("Please enter your wallet address or Pay ID");
+    return;
+  }
+  try {
+    const res = await apiFetch("/api/wallet/withdraw", {
+      method: "POST",
+      body: JSON.stringify({ method, address })
+    });
+    alert(`Withdrawal request submitted successfully! Amount: $${res.amount} USDT`);
+    document.getElementById('walletAddress').value = "";
+    loadUser();
+  } catch(e) {
+    alert(e.message);
+  }
+});
+
+/* ---- Crew / Referral ---- */
+document.getElementById('crewBtn').addEventListener('click', async () => {
+  try {
+    const data = await apiFetch("/api/referral/info");
+    alert(`Your Referral Link:\n${data.referral_link}\n\nReferred Friends: ${data.total_referred}\nEarned Commission: $${data.total_earned}`);
+  } catch(e) {
+    alert("Failed to load referral info");
+  }
+});
+
+// Initialize app on load
+window.addEventListener('load', () => {
+  loadUser();
+  loadGamesStatus();
+  initScratch();
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+});
+</script>
+</body>
+</html>

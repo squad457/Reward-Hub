@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reward Hub — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#1B0E1E; --mid:#2B1330; --panel:#341A3A; --panel-2:#402146;
+    --line: rgba(255,255,255,0.09);
+    --lime:#3FE6B4; --gem:#B98CFF; --gold:#FFB627; --coral:#FF5C77; --sky:#5FD3E8;
+    --text:#FBF1E0; --muted:#C7A8CE; --ink:#1B0E1E;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--deep); color:var(--text); font-family:'Manrope',sans-serif; min-height:100vh;
+    background: radial-gradient(ellipse 900px 500px at 50% -10%, var(--panel-2), var(--mid) 55%, var(--deep) 100%);}
+  h1,h2,h3{font-family:'Fredoka',sans-serif; font-weight:600;}
+  a{color:inherit;}
+  input,select,textarea,button{font-family:'Manrope',sans-serif;}
+
+  /* ---- Login ---- */
+  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .login-card{width:100%; max-width:360px; background:linear-gradient(160deg,var(--panel-2),var(--panel));
+    border:1.5px dashed rgba(255,182,39,0.4); border-radius:18px; padding:32px 26px; text-align:center;}
+  .login-card .ic{font-size:34px; margin-bottom:10px;}
+  .login-card h1{font-size:20px; margin-bottom:4px;}
+  .login-card p{font-size:12.5px; color:var(--muted); margin-bottom:20px;}
+  .login-card input{width:100%; padding:12px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--line);
+    color:var(--text); font-size:13px; margin-bottom:10px;}
+  .login-card button{width:100%; padding:13px; border:none; border-radius:12px; font-family:'Fredoka',sans-serif;
+    font-weight:600; font-size:14px; background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink); cursor:pointer;}
+  .login-err{color:var(--coral); font-size:12px; margin-top:10px; min-height:14px;}
+
+  /* ---- Shell ---- */
+  #app{display:none;}
+  #app.show{display:flex; min-height:100vh;}
+  aside{width:210px; flex-shrink:0; background:rgba(0,0,0,0.18); border-right:1px solid var(--line);
+    padding:22px 14px; position:sticky; top:0; height:100vh;}
+  .brand{display:flex; align-items:center; gap:8px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; margin-bottom:24px; padding:0 6px;}
+  .navitem{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; font-size:13px; font-weight:600;
+    color:var(--muted); cursor:pointer; margin-bottom:4px;}
+  .navitem.active{background:rgba(255,182,39,0.12); color:var(--gold);}
+  .navitem:hover:not(.active){background:rgba(255,255,255,0.05);}
+  main{flex:1; padding:28px 32px; max-width:1000px;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .page-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:20px;}
+  .page-head h2{font-size:20px;}
+  .page-head .sub{font-size:12px; color:var(--muted);}
+
+  /* ---- Cards / stats ---- */
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:26px;}
+  .stat-card{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:16px; padding:18px;}
+  .stat-card .lbl{font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;}
+  .stat-card .val{font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:600; color:var(--gold);}
+
+  /* ---- Table ---- */
+  table{width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  th,td{text-align:left; padding:11px 14px; font-size:12.5px; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; background:rgba(0,0,0,0.15);}
+  tr:last-child td{border-bottom:none;}
+  td.mono{font-family:'JetBrains Mono',monospace;}
+  .badge{display:inline-block; padding:3px 9px; border-radius:100px; font-size:10.5px; font-weight:700;}
+  .badge.pending{background:rgba(255,182,39,0.15); color:var(--gold);}
+  .badge.approved{background:rgba(63,230,180,0.15); color:var(--lime);}
+  .badge.rejected{background:rgba(255,92,119,0.15); color:var(--coral);}
+  .badge.banned{background:rgba(255,92,119,0.15); color:var(--coral);}
+  .badge.active{background:rgba(63,230,180,0.15); color:var(--lime);}
+  .btn{padding:7px 13px; border-radius:100px; border:none; font-weight:700; font-size:11px; cursor:pointer; margin-right:6px;}
+  .btn-ok{background:var(--lime); color:var(--ink);}
+  .btn-no{background:var(--coral); color:var(--ink);}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text);}
+  .empty{padding:26px; text-align:center; color:var(--muted); font-size:12.5px;}
+
+  /* ---- Forms ---- */
+  .toolbar{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .toolbar input, .toolbar select{padding:9px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--text); font-size:12.5px;}
+  .card-form{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:22px;}
+  .card-form h3{font-size:14px; margin-bottom:14px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:11px; color:var(--muted); margin-bottom:5px;}
+  .field input, .field select, .field textarea{width:100%; padding:10px 12px; border-radius:10px; background:var(--mid); border:1px solid var(--line); color:var(--text); font-size:12.5px;}
+  .field.check{display:flex; align-items:center; gap:8px;}
+  .field.check input{width:auto;}
+  .save-row{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
+  .btn-save{padding:11px 20px; border:none; border-radius:12px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px;
+    background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink); cursor:pointer;}
+  .toast{position:fixed; top:18px; right:18px; padding:12px 18px; border-radius:12px; background:var(--panel-2); border:1px solid var(--line);
+    font-size:12.5px; font-weight:600; opacity:0; transform:translateY(-8px); transition:.25s; z-index:20;}
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.err{border-color:var(--coral); color:var(--coral);}
+  .toast.ok{border-color:var(--lime); color:var(--lime);}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="ic">🎟️</div>
+    <h1>Reward Hub Admin</h1>
+    <p>Enter your admin key to manage the app.</p>
+    <input type="password" id="adminKeyInput" placeholder="Admin API key" />
+    <button id="loginBtn">Enter dashboard</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <aside>
+    <div class="brand">🎪 Reward Hub</div>
+    <div class="navitem active" data-page="overview">📊 Overview</div>
+    <div class="navitem" data-page="withdrawals">💸 Withdrawals</div>
+    <div class="navitem" data-page="users">👥 Users</div>
+    <div class="navitem" data-page="tasks">📋 Tasks</div>
+    <div class="navitem" data-page="settings">⚙️ Settings</div>
+    <div class="navitem" id="logoutBtn" style="margin-top:24px; color:var(--coral);">↩ Log out</div>
+  </aside>
+
+  <main>
+    <!-- Overview -->
+    <section class="page active" id="page-overview">
+      <div class="page-head"><h2>Overview</h2><div class="sub" id="overviewRefreshed"></div></div>
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="lbl">Total users</div><div class="val">—</div></div>
+        <div class="stat-card"><div class="lbl">Pending withdrawals</div><div class="val">—</div></div>
+        <div class="stat-card"><div class="lbl">Total ever paid out</div><div class="val">—</div></div>
+      </div>
+    </section>
+
+    <!-- Withdrawals -->
+    <section class="page" id="page-withdrawals">
+      <div class="page-head"><h2>Withdrawals</h2></div>
+      <div class="toolbar">
+        <select id="wdStatusFilter">
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div id="wdTableWrap"><div class="empty">Loading…</div></div>
+    </section>
+
+    <!-- Users -->
+    <section class="page" id="page-users">
+      <div class="page-head"><h2>Users</h2></div>
+      <div class="toolbar">
+        <input type="text" id="userSearch" placeholder="Search by username or Telegram ID" />
+        <button class="btn btn-ghost" id="userSearchBtn">Search</button>
+      </div>
+      <div id="usersTableWrap"><div class="empty">Loading…</div></div>
+    </section>
+
+    <!-- Tasks -->
+    <section class="page" id="page-tasks">
+      <div class="page-head"><h2>Tasks</h2></div>
+      <div class="card-form">
+        <h3>Add a task</h3>
+        <div class="grid2">
+          <div class="field"><label>Title</label><input id="taskTitle" placeholder="Join our channel" /></div>
+          <div class="field"><label>Reward (USDT)</label><input id="taskReward" type="number" step="0.001" placeholder="0.02" /></div>
+        </div>
+        <div class="field"><label>URL / channel link</label><input id="taskUrl" placeholder="https://t.me/..." /></div>
+        <div class="field"><label>Description (optional)</label><input id="taskDesc" placeholder="Short description shown to users" /></div>
+        <div class="field"><label>Type</label>
+          <select id="taskType"><option value="link">Visit link</option><option value="telegram_join">Join Telegram channel</option></select>
+        </div>
+        <div class="save-row"><button class="btn-save" id="addTaskBtn">Add task</button></div>
+      </div>
+      <div id="tasksTableWrap"><div class="empty">Loading…</div></div>
+    </section>
+
+    <!-- Settings -->
+    <section class="page" id="page-settings">
+      <div class="page-head"><h2>Live settings</h2><div class="sub">Changes apply immediately — no redeploy needed</div></div>
+
+      <div class="card-form">
+        <h3>Maintenance</h3>
+        <div class="field check"><input type="checkbox" id="s_maintenance_mode" /><label for="s_maintenance_mode">Maintenance mode (blocks all non-admins)</label></div>
+        <div class="field"><label>Maintenance message</label><input id="s_maintenance_message" /></div>
+      </div>
+
+      <div class="card-form">
+        <h3>Ads</h3>
+        <div class="field check"><input type="checkbox" id="s_ads_enabled" /><label for="s_ads_enabled">Ads enabled</label></div>
+        <div class="grid2">
+          <div class="field"><label>Reward per ad (USDT)</label><input id="s_ad_reward_usdt" type="number" step="0.0001" /></div>
+          <div class="field"><label>Daily ad limit</label><input id="s_ad_daily_limit" type="number" /></div>
+        </div>
+        <div class="field"><label>Cooldown between ads (seconds)</label><input id="s_ad_cooldown_seconds" type="number" /></div>
+      </div>
+
+      <div class="card-form">
+        <h3>Spin wheel</h3>
+        <div class="field check"><input type="checkbox" id="s_spin_enabled" /><label for="s_spin_enabled">Spin enabled</label></div>
+        <div class="grid2">
+          <div class="field"><label>Min reward</label><input id="s_spin_min_reward" type="number" step="0.001" /></div>
+          <div class="field"><label>Max reward</label><input id="s_spin_max_reward" type="number" step="0.001" /></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Free spins / day</label><input id="s_spin_daily_free_spins" type="number" /></div>
+          <div class="field"><label>Max spins / day (0 = unlimited)</label><input id="s_spin_max_daily_spins" type="number" /></div>
+        </div>
+      </div>
+
+      <div class="card-form">
+        <h3>Scratch card</h3>
+        <div class="field check"><input type="checkbox" id="s_scratch_enabled" /><label for="s_scratch_enabled">Scratch card enabled</label></div>
+        <div class="grid2">
+          <div class="field"><label>Min reward</label><input id="s_scratch_min_reward" type="number" step="0.001" /></div>
+          <div class="field"><label>Max reward</label><input id="s_scratch_max_reward" type="number" step="0.001" /></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Free plays / day</label><input id="s_scratch_daily_free" type="number" /></div>
+          <div class="field"><label>Max plays / day</label><input id="s_scratch_max_daily" type="number" /></div>
+        </div>
+      </div>
+
+      <div class="card-form">
+        <h3>Referrals &amp; withdrawals</h3>
+        <div class="grid2">
+          <div class="field"><label>Referral commission (%)</label><input id="s_referral_commission_percent" type="number" step="0.1" /></div>
+          <div class="field"><label>Referral signup bonus (USDT)</label><input id="s_referral_fixed_reward" type="number" step="0.001" /></div>
+        </div>
+        <div class="field"><label>Minimum withdrawal (USDT)</label><input id="s_min_withdrawal_usdt" type="number" step="0.5" /></div>
+      </div>
+
+      <div class="save-row"><button class="btn-save" id="saveSettingsBtn">Save all settings</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = window.location.hostname.includes("localhost") ? "" : "https://reward-hub-production.up.railway.app";
+let ADMIN_KEY = localStorage.getItem("rh_admin_key") || "";
+
+function showToast(msg, isErr=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (isErr ? 'err' : 'ok');
+  setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+async function adminFetch(endpoint, options = {}) {
+  const headers = { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY, ...(options.headers||{}) };
+  const res = await fetch(API_BASE + endpoint, { ...options, headers });
+  if (res.status === 403) { logout(); throw new Error("Invalid admin key"); }
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { const j = await res.json(); if (j.detail) detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch(e){}
+    throw new Error(detail);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function logout(){
+  localStorage.removeItem("rh_admin_key");
+  ADMIN_KEY = "";
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+async function tryLogin(key){
+  ADMIN_KEY = key;
+  try {
+    await adminFetch("/api/admin/stats");
+    localStorage.setItem("rh_admin_key", key);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    initApp();
+  } catch(e) {
+    document.getElementById('loginErr').textContent = "Couldn't verify that key — check it and try again.";
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const key = document.getElementById('adminKeyInput').value.trim();
+  if (!key) return;
+  tryLogin(key);
+});
+document.getElementById('adminKeyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+/* ---- Nav ---- */
+document.querySelectorAll('.navitem[data-page]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.navitem[data-page]').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('page-' + el.dataset.page).classList.add('active');
+    if (el.dataset.page === 'withdrawals') loadWithdrawals();
+    if (el.dataset.page === 'users') loadUsers();
+    if (el.dataset.page === 'tasks') loadTasks();
+    if (el.dataset.page === 'settings') loadSettings();
+  });
+});
+
+/* ---- Overview ---- */
+async function loadOverview(){
+  try {
+    const s = await adminFetch("/api/admin/stats");
+    const cards = document.querySelectorAll('#statGrid .val');
+    cards[0].textContent = s.total_users;
+    cards[1].textContent = s.pending_withdrawals;
+    cards[2].textContent = `$${Number(s.total_earned_all_users).toFixed(4)}`;
+    document.getElementById('overviewRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) { showToast(e.message, true); }
+}
+
+/* ---- Withdrawals ---- */
+async function loadWithdrawals(){
+  const wrap = document.getElementById('wdTableWrap');
+  const status = document.getElementById('wdStatusFilter').value;
+  wrap.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const rows = await adminFetch(`/api/admin/withdrawals?status=${status}`);
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">No withdrawals in this state.</div>'; return; }
+    wrap.innerHTML = `<table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Payout ID</th><th>Requested</th><th>Status</th><th></th></tr></thead><tbody>
+      ${rows.map(w => `<tr>
+        <td>${w.first_name || ''} ${w.username ? '@'+w.username : '#'+w.telegram_id}</td>
+        <td class="mono">$${Number(w.amount).toFixed(4)}</td>
+        <td>${w.method}</td>
+        <td class="mono">${w.payout_id}</td>
+        <td>${new Date(w.requested_at).toLocaleString()}</td>
+        <td><span class="badge ${w.status}">${w.status}</span></td>
+        <td>${w.status === 'pending' ? `
+          <button class="btn btn-ok" onclick="resolveWithdrawal(${w.id}, true)">Approve</button>
+          <button class="btn btn-no" onclick="resolveWithdrawal(${w.id}, false)">Reject</button>` : ''}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
+}
+window.resolveWithdrawal = async function(id, approve){
+  if (!approve && !confirm("Reject this withdrawal and refund the balance to the user?")) return;
+  try {
+    await adminFetch(`/api/admin/withdrawals/${id}/resolve?approve=${approve}`, { method: "POST" });
+    showToast(approve ? "Withdrawal approved" : "Withdrawal rejected & refunded");
+    loadWithdrawals();
+  } catch(e) { showToast(e.message, true); }
+};
+document.getElementById('wdStatusFilter').addEventListener('change', loadWithdrawals);
+
+/* ---- Users ---- */
+async function loadUsers(){
+  const wrap = document.getElementById('usersTableWrap');
+  const q = document.getElementById('userSearch').value.trim();
+  wrap.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const rows = await adminFetch(`/api/admin/users?q=${encodeURIComponent(q)}`);
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">No users found.</div>'; return; }
+    wrap.innerHTML = `<table><thead><tr><th>User</th><th>Telegram ID</th><th>Balance</th><th>Total earned</th><th>Status</th><th></th></tr></thead><tbody>
+      ${rows.map(u => `<tr>
+        <td>${u.first_name || ''} ${u.username ? '@'+u.username : ''}</td>
+        <td class="mono">${u.telegram_id}</td>
+        <td class="mono">$${Number(u.balance).toFixed(4)}</td>
+        <td class="mono">$${Number(u.total_earned).toFixed(4)}</td>
+        <td><span class="badge ${u.is_banned ? 'banned' : 'active'}">${u.is_banned ? 'Banned' : 'Active'}</span></td>
+        <td><button class="btn ${u.is_banned ? 'btn-ok' : 'btn-no'}" onclick="toggleBan(${u.telegram_id}, ${u.is_banned ? 'false' : 'true'})">${u.is_banned ? 'Unban' : 'Ban'}</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
+}
+window.toggleBan = async function(telegramId, banned){
+  try {
+    await adminFetch(`/api/admin/users/${telegramId}/ban?banned=${banned}`, { method: "POST" });
+    showToast(banned ? "User banned" : "User unbanned");
+    loadUsers();
+  } catch(e) { showToast(e.message, true); }
+};
+document.getElementById('userSearchBtn').addEventListener('click', loadUsers);
+document.getElementById('userSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadUsers(); });
+
+/* ---- Tasks ---- */
+async function loadTasks(){
+  const wrap = document.getElementById('tasksTableWrap');
+  wrap.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const rows = await adminFetch("/api/admin/tasks");
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">No tasks yet — add one above.</div>'; return; }
+    wrap.innerHTML = `<table><thead><tr><th>Title</th><th>Reward</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>
+      ${rows.map(t => `<tr>
+        <td>${t.title}</td>
+        <td class="mono">$${Number(t.reward).toFixed(4)}</td>
+        <td>${t.task_type}</td>
+        <td><span class="badge ${t.is_active ? 'active' : 'banned'}">${t.is_active ? 'Active' : 'Disabled'}</span></td>
+        <td><button class="btn ${t.is_active ? 'btn-no' : 'btn-ok'}" onclick="toggleTask(${t.id}, ${t.is_active ? 'false' : 'true'})">${t.is_active ? 'Disable' : 'Enable'}</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  } catch(e) { wrap.innerHTML = `<div class="empty">${e.message}</div>`; }
+}
+window.toggleTask = async function(id, active){
+  try {
+    await adminFetch(`/api/admin/tasks/${id}/toggle?active=${active}`, { method: "POST" });
+    loadTasks();
+  } catch(e) { showToast(e.message, true); }
+};
+document.getElementById('addTaskBtn').addEventListener('click', async () => {
+  const title = document.getElementById('taskTitle').value.trim();
+  const url = document.getElementById('taskUrl').value.trim();
+  const reward = parseFloat(document.getElementById('taskReward').value);
+  const description = document.getElementById('taskDesc').value.trim();
+  const task_type = document.getElementById('taskType').value;
+  if (!title || !url || !reward) { showToast("Title, URL and reward are required", true); return; }
+  try {
+    await adminFetch("/api/admin/tasks", { method: "POST", body: JSON.stringify({ title, url, reward, description, task_type }) });
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskUrl').value = '';
+    document.getElementById('taskReward').value = '';
+    document.getElementById('taskDesc').value = '';
+    showToast("Task added");
+    loadTasks();
+  } catch(e) { showToast(e.message, true); }
+});
+
+/* ---- Settings ---- */
+async function loadSettings(){
+  try {
+    const s = await adminFetch("/api/admin/settings");
+    document.getElementById('s_maintenance_mode').checked = s.maintenance_mode;
+    document.getElementById('s_maintenance_message').value = s.maintenance_message || '';
+    document.getElementById('s_ads_enabled').checked = s.ads_enabled;
+    document.getElementById('s_ad_reward_usdt').value = s.ad_reward_usdt;
+    document.getElementById('s_ad_daily_limit').value = s.ad_daily_limit;
+    document.getElementById('s_ad_cooldown_seconds').value = s.ad_cooldown_seconds;
+    document.getElementById('s_spin_enabled').checked = s.spin_enabled;
+    document.getElementById('s_spin_min_reward').value = s.spin_min_reward;
+    document.getElementById('s_spin_max_reward').value = s.spin_max_reward;
+    document.getElementById('s_spin_daily_free_spins').value = s.spin_daily_free_spins;
+    document.getElementById('s_spin_max_daily_spins').value = s.spin_max_daily_spins;
+    document.getElementById('s_scratch_enabled').checked = s.scratch_enabled;
+    document.getElementById('s_scratch_min_reward').value = s.scratch_min_reward;
+    document.getElementById('s_scratch_max_reward').value = s.scratch_max_reward;
+    document.getElementById('s_scratch_daily_free').value = s.scratch_daily_free;
+    document.getElementById('s_scratch_max_daily').value = s.scratch_max_daily;
+    document.getElementById('s_referral_commission_percent').value = s.referral_commission_percent;
+    document.getElementById('s_referral_fixed_reward').value = s.referral_fixed_reward;
+    document.getElementById('s_min_withdrawal_usdt').value = s.min_withdrawal_usdt;
+  } catch(e) { showToast(e.message, true); }
+}
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const values = {
+    maintenance_mode: document.getElementById('s_maintenance_mode').checked ? "1" : "0",
+    maintenance_message: document.getElementById('s_maintenance_message').value,
+    ads_enabled: document.getElementById('s_ads_enabled').checked ? "1" : "0",
+    ad_reward_usdt: document.getElementById('s_ad_reward_usdt').value,
+    ad_daily_limit: document.getElementById('s_ad_daily_limit').value,
+    ad_cooldown_seconds: document.getElementById('s_ad_cooldown_seconds').value,
+    spin_enabled: document.getElementById('s_spin_enabled').checked ? "1" : "0",
+    spin_min_reward: document.getElementById('s_spin_min_reward').value,
+    spin_max_reward: document.getElementById('s_spin_max_reward').value,
+    spin_daily_free_spins: document.getElementById('s_spin_daily_free_spins').value,
+    spin_max_daily_spins: document.getElementById('s_spin_max_daily_spins').value,
+    scratch_enabled: document.getElementById('s_scratch_enabled').checked ? "1" : "0",
+    scratch_min_reward: document.getElementById('s_scratch_min_reward').value,
+    scratch_max_reward: document.getElementById('s_scratch_max_reward').value,
+    scratch_daily_free: document.getElementById('s_scratch_daily_free').value,
+    scratch_max_daily: document.getElementById('s_scratch_max_daily').value,
+    referral_commission_percent: document.getElementById('s_referral_commission_percent').value,
+    referral_fixed_reward: document.getElementById('s_referral_fixed_reward').value,
+    min_withdrawal_usdt: document.getElementById('s_min_withdrawal_usdt').value,
+  };
+  try {
+    await adminFetch("/api/admin/settings", { method: "POST", body: JSON.stringify({ values }) });
+    showToast("Settings saved");
+  } catch(e) { showToast(e.message, true); }
+});
+
+/* ---- Boot ---- */
+function initApp(){
+  loadOverview();
+}
+if (ADMIN_KEY) { tryLogin(ADMIN_KEY); } else { document.getElementById('loginScreen').style.display = 'flex'; }
+</script>
+</body>
+</html>
