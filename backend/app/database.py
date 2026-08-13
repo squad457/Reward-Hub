@@ -11,6 +11,7 @@ withdrawals      withdrawal requests + status tracking
 ad_events        one row per verified Adsgram reward, used for daily-limit / cooldown checks
 referrals        referral edges (referrer -> referred) + commission paid
 """
+import json
 import aiosqlite
 import contextlib
 from app.config import settings
@@ -264,6 +265,52 @@ async def get_settings(db) -> dict:
         "scratch_require_ad_after_free": _b("scratch_require_ad_after_free", settings.SCRATCH_REQUIRE_AD_AFTER_FREE),
         "scratch_winning_cells": max(1, min(9, _i("scratch_winning_cells", 3))),
     }
+
+
+async def credit_referral_commission(db, telegram_id: int, base_amount: float):
+    """
+    If `telegram_id` was referred by someone, pays that referrer a % of THIS
+    reward (referral_commission_percent in settings — admin-configurable).
+    Call this right after any reward is credited to a user's balance (ads,
+    tasks, spin, scratch, daily streak). Previously referral_commission_percent
+    was stored in settings and shown in the UI but never actually paid out
+    anywhere — referrers only ever got the one-time signup bonus.
+    """
+    if base_amount <= 0:
+        return
+    cursor = await db.execute("SELECT referred_by FROM users WHERE telegram_id = ?", (telegram_id,))
+    row = await cursor.fetchone()
+    referrer_id = row["referred_by"] if row else None
+    if not referrer_id:
+        return
+
+    cfg = await get_settings(db)
+    pct = cfg["referral_commission_percent"]
+    if pct <= 0:
+        return
+    commission = round(base_amount * pct / 100.0, 6)
+    if commission <= 0:
+        return
+
+    ref_cursor = await db.execute("SELECT balance FROM users WHERE telegram_id = ?", (referrer_id,))
+    ref_row = await ref_cursor.fetchone()
+    if not ref_row:
+        return
+
+    new_balance = ref_row["balance"] + commission
+    await db.execute(
+        "UPDATE users SET balance = ?, total_earned = total_earned + ? WHERE telegram_id = ?",
+        (new_balance, commission, referrer_id),
+    )
+    await db.execute(
+        """INSERT INTO transactions (telegram_id, type, amount, balance_after, meta)
+           VALUES (?, 'referral_commission', ?, ?, ?)""",
+        (referrer_id, commission, new_balance, json.dumps({"from_user": telegram_id})),
+    )
+    await db.execute(
+        "UPDATE referrals SET total_commission = total_commission + ? WHERE referrer_id = ? AND referred_id = ?",
+        (commission, referrer_id, telegram_id),
+    )
 
 
 @contextlib.asynccontextmanager

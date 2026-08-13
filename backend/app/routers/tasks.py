@@ -2,7 +2,7 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from app.auth import get_current_user
-from app.database import get_db
+from app.database import get_db, credit_referral_commission
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -65,5 +65,6 @@ async def claim_task(task_id: int, user: dict = Depends(get_current_user)):
                VALUES (?, 'task_reward', ?, ?, ?)""",
             (telegram_id, reward, new_balance, json.dumps({"task_id": task_id})),
         )
+        await credit_referral_commission(db, telegram_id, reward)
         await db.commit()
     return {"reward": reward, "new_balance": round(new_balance, 4)}

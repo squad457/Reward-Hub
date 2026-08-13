@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from app.auth import get_current_user
 from app.bot import fetch_avatar_file_path, bot
 from app.config import settings
-from app.database import get_db, get_settings
+from app.database import get_db, get_settings, credit_referral_commission
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -77,6 +77,7 @@ async def claim_streak(user: dict = Depends(get_current_user)):
                VALUES (?, 'checkin', ?, ?, ?)""",
             (telegram_id, reward, new_balance, json.dumps({"streak_day": new_streak})),
         )
+        await credit_referral_commission(db, telegram_id, reward)
         await db.commit()
 
     return {"reward": reward, "streak_count": new_streak, "new_balance": round(new_balance, 4)}

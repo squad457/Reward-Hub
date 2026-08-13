@@ -169,7 +169,7 @@ async def get_current_user(x_telegram_init_data: str = Header(None, alias="X-Tel
                 ])
                 welcome_text = (
                     f"👋 **Welcome {tg_user.get('first_name', '')}!**\n\n"
-                    f"💰 Welcome to **USDT Rewards**!\n"
+                    f"💰 Welcome to **Reward Hub**!\n"
                     f"You have successfully joined and activated your account.\n\n"
                     f"Tap the button below anytime to open the app and start earning!"
                 )

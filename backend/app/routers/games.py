@@ -34,7 +34,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_current_user
-from app.database import get_db, get_settings
+from app.database import get_db, get_settings, credit_referral_commission
 from app.models import GamePlayPayload
 
 router = APIRouter(prefix="/api/games", tags=["games"])
@@ -132,6 +132,7 @@ async def _credit(db, telegram_id: int, game_type: str, reward: float, used_ad: 
            VALUES (?, ?, ?, ?, ?)""",
         (telegram_id, f"{game_type}_reward", reward, new_balance, json.dumps(meta)),
     )
+    await credit_referral_commission(db, telegram_id, reward)
     return new_balance
 
 

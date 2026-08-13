@@ -80,8 +80,8 @@ if dp:
             referrer_id = parts[1].strip()
 
         text = (
-            f"🎯 Welcome to Reward Hub{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\\n\\n"
-            "🎡 Spin the wheel, scratch for diamonds, and keep your daily earnings streak alive.\\n"
+            f"🎯 Welcome to Reward Hub{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\n\n"
+            "🎡 Spin the wheel, scratch for diamonds, and keep your daily earnings streak alive.\n"
             "🎫 Tap below to open your dashboard."
         )
         await message.answer(text, reply_markup=_webapp_keyboard(referrer_id))

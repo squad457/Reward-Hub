@@ -171,6 +171,34 @@
   /* Modern tactile feedback on every tappable control */
   .spin-cta, .withdraw-btn, .go, .navbtn, .tg-gate-btn, .claim-btn, #boostBtn, #crewBtn{transition:transform .12s ease, opacity .15s ease;}
   .spin-cta:active, .withdraw-btn:active, .go:active:not(:disabled), .navbtn:active, .tg-gate-btn:active, #boostBtn:active, #crewBtn:active{transform:scale(.95);}
+
+  /* ---- Invite bottom sheet ---- */
+  .sheet-overlay{position:fixed; inset:0; background:rgba(10,5,12,0.7); backdrop-filter:blur(4px);
+    display:none; align-items:flex-end; justify-content:center; z-index:80;}
+  .sheet-overlay.show{display:flex; animation:fadeIn .25s ease;}
+  .sheet{width:100%; max-width:420px; background:linear-gradient(170deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line); border-bottom:none; border-radius:22px 22px 0 0; padding:10px 22px 28px;
+    animation:sheetUp .35s cubic-bezier(.22,1,.36,1);}
+  @keyframes sheetUp{from{transform:translateY(100%)} to{transform:translateY(0)}}
+  .sheet-handle{width:36px; height:4px; border-radius:100px; background:var(--line); margin:6px auto 16px;}
+  .sheet-header{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .sheet-ic{font-size:24px;}
+  .sheet-header h2{font-size:17px;}
+  .sheet-desc{font-size:12.5px; color:var(--muted); line-height:1.55; margin-bottom:18px;}
+  .invite-stats{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+  .invite-stat{background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center;}
+  .invite-stat .v{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:17px; color:var(--gold);}
+  .invite-stat .l{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+  .invite-link-box{display:flex; align-items:center; background:var(--mid); border:1.5px dashed rgba(255,182,39,0.4);
+    border-radius:14px; padding:12px 14px; margin-bottom:14px; overflow:hidden;}
+  .invite-link-box span{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;}
+  .invite-actions{display:flex; gap:10px; margin-bottom:14px;}
+  .invite-btn{flex:1; padding:13px; border-radius:12px; border:none; font-family:'Fredoka',sans-serif; font-weight:600;
+    font-size:13.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;}
+  .invite-btn.ghost{background:rgba(255,255,255,0.06); border:1px solid var(--line); color:var(--text);}
+  .invite-btn.primary{background:linear-gradient(90deg,var(--lime),var(--gold)); color:var(--ink);}
+  .sheet-close{width:100%; background:none; border:none; color:var(--muted); font-size:12.5px; font-weight:600; padding:8px; cursor:pointer;}
 </style>
 </head>
 <body>
@@ -181,6 +209,23 @@
     <h2>Open in Telegram</h2>
     <p>Reward Hub runs inside Telegram — spins, tasks, and payouts only work there. Tap below to launch it in the app.</p>
     <a id="telegramGateLink" href="https://telegram.org" class="tg-gate-btn">Open in Telegram</a>
+  </div>
+</div>
+<div class="sheet-overlay" id="inviteOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><div class="sheet-ic">👥</div><h2>Invite Friends</h2></div>
+    <p class="sheet-desc" id="inviteDesc">Loading…</p>
+    <div class="invite-stats">
+      <div class="invite-stat"><div class="v" id="inviteCount">0</div><div class="l">Invited</div></div>
+      <div class="invite-stat"><div class="v" id="inviteEarned">$0.0000</div><div class="l">Earned</div></div>
+    </div>
+    <div class="invite-link-box"><span id="inviteLinkText">Loading…</span></div>
+    <div class="invite-actions">
+      <button class="invite-btn ghost" id="inviteCopyBtn">📋 Copy</button>
+      <button class="invite-btn primary" id="inviteShareBtn">↗ Share</button>
+    </div>
+    <button class="sheet-close" id="inviteCloseBtn">Close</button>
   </div>
 </div>
 <div class="device">
@@ -218,8 +263,8 @@
       <div class="rail">
         <div class="rail-btn" data-goto="games"><div class="ic">🎡</div><p>Games</p></div>
         <div class="rail-btn" data-goto="tasks"><div class="ic">📋</div><p>Tasks</p></div>
-        <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Wallet</p></div>
-        <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Crew</p></div>
+        <div class="rail-btn" data-goto="wallet"><div class="ic">💳</div><p>Payout</p></div>
+        <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Invite</p></div>
       </div>
 
       <div class="section-title">📜 Recent Activity</div>
@@ -278,7 +323,7 @@
     <button class="navbtn active" data-goto="home"><div>🏠</div>Home</button>
     <button class="navbtn" data-goto="games"><div>🎡</div>Games</button>
     <button class="navbtn" data-goto="tasks"><div>📋</div>Tasks</button>
-    <button class="navbtn" data-goto="wallet"><div>💳</div>Wallet</div>
+    <button class="navbtn" data-goto="wallet"><div>💳</div>Payout</div>
   </nav>
 </div>
 
@@ -739,18 +784,61 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
   }
 });
 
-/* ---- Crew / Referral ---- */
-document.getElementById('crewBtn').addEventListener('click', async () => {
+/* ---- Invite / Referral bottom sheet ---- */
+let inviteData = null;
+
+async function openInviteSheet() {
+  document.getElementById('inviteOverlay').classList.add('show');
+  document.getElementById('inviteDesc').textContent = 'Loading…';
+  document.getElementById('inviteLinkText').textContent = 'Loading…';
   try {
     const data = await apiFetch("/api/referral/info");
-    try {
-      await navigator.clipboard.writeText(data.referral_link);
-      showToast(`Link copied! ${data.total_referred} friend(s) invited — $${data.total_earned} earned`, 'ok', 4200);
-    } catch (copyErr) {
-      showToast(`${data.referral_link} — ${data.total_referred} invited, $${data.total_earned} earned`, 'info', 4800);
-    }
-  } catch(e) {
-    showToast("Failed to load referral info", 'err');
+    inviteData = data;
+    document.getElementById('inviteCount').textContent = data.total_referred;
+    document.getElementById('inviteEarned').textContent = `$${Number(data.total_earned).toFixed(4)}`;
+    document.getElementById('inviteLinkText').textContent = data.referral_link;
+
+    // These numbers come straight from the admin dashboard's settings, so the
+    // copy here always matches whatever the admin has actually configured.
+    const parts = [];
+    if (data.signup_bonus > 0) parts.push(`you earn $${data.signup_bonus.toFixed(3)} USDT the moment a friend joins`);
+    if (data.commission_percent > 0) parts.push(`${data.commission_percent}% of everything they earn after that, for as long as they play`);
+    document.getElementById('inviteDesc').textContent = parts.length
+      ? `Share your link — ${parts.join(', plus ')}.`
+      : 'Share your link to invite friends and grow Reward Hub together!';
+  } catch (e) {
+    document.getElementById('inviteDesc').textContent = "Couldn't load your invite details.";
+  }
+}
+function closeInviteSheet() {
+  document.getElementById('inviteOverlay').classList.remove('show');
+}
+document.getElementById('crewBtn').addEventListener('click', openInviteSheet);
+document.getElementById('inviteCloseBtn').addEventListener('click', closeInviteSheet);
+document.getElementById('inviteOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'inviteOverlay') closeInviteSheet();
+});
+
+document.getElementById('inviteCopyBtn').addEventListener('click', async () => {
+  if (!inviteData) return;
+  try {
+    await navigator.clipboard.writeText(inviteData.referral_link);
+    showToast('Invite link copied!', 'ok');
+  } catch (e) {
+    showToast('Could not copy — long-press the link above to copy it', 'err');
+  }
+});
+
+document.getElementById('inviteShareBtn').addEventListener('click', () => {
+  if (!inviteData) return;
+  const text = "Join me on Reward Hub and start earning USDT! 🎟️";
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteData.referral_link)}&text=${encodeURIComponent(text)}`;
+  if (window.Telegram?.WebApp?.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(shareUrl);
+  } else if (navigator.share) {
+    navigator.share({ title: 'Reward Hub', text, url: inviteData.referral_link }).catch(() => {});
+  } else {
+    window.open(shareUrl, '_blank');
   }
 });
 

@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     await stop_bot()
 
 
-app = FastAPI(title="USDT Rewards Mini App API", lifespan=lifespan)
+app = FastAPI(title="Reward Hub API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,7 +63,7 @@ app.include_router(admin.router)
 
 @app.get("/")
 async def health_check():
-    return {"status": "ok", "service": "usdt-rewards-api", "bot": "running in-process"}
+    return {"status": "ok", "service": "reward-hub-api", "bot": "running in-process"}
 
 
 @app.get("/api/config")

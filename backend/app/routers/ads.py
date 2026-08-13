@@ -57,7 +57,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.auth import get_current_user
 from app.config import settings as env_settings
-from app.database import get_db, get_settings
+from app.database import get_db, get_settings, credit_referral_commission
 from app.models import AdRewardPayload
 
 router = APIRouter(prefix="/api/ads", tags=["ads"])
@@ -114,40 +114,16 @@ async def _credit_ad_reward(db, telegram_id: int, reward_event: str) -> tuple[fl
            VALUES (?, 'ad_reward', ?, ?, ?)""",
         (telegram_id, reward, new_balance, json.dumps({"reward_event": reward_event})),
     )
-    await _pay_referral_commission(db, telegram_id, reward, cfg["referral_commission_percent"])
+    await credit_referral_commission(db, telegram_id, reward)
     return reward, new_balance
 
 
 async def _pay_referral_commission(db, telegram_id: int, base_amount: float, commission_percent: float):
-    """If this user was referred, credit the referrer their commission percentage."""
-    ref_cursor = await db.execute("SELECT referred_by FROM users WHERE telegram_id = ?", (telegram_id,))
-    row = await ref_cursor.fetchone()
-    if not row or not row["referred_by"]:
-        return
-    referrer_id = row["referred_by"]
-    commission = round(base_amount * commission_percent / 100, 6)
-    if commission <= 0:
-        return
-
-    ref_balance_cursor = await db.execute("SELECT balance FROM users WHERE telegram_id = ?", (referrer_id,))
-    ref_row = await ref_balance_cursor.fetchone()
-    if not ref_row:
-        return
-    new_ref_balance = ref_row["balance"] + commission
-
-    await db.execute(
-        "UPDATE users SET balance = ?, total_earned = total_earned + ? WHERE telegram_id = ?",
-        (new_ref_balance, commission, referrer_id),
-    )
-    await db.execute(
-        """INSERT INTO transactions (telegram_id, type, amount, balance_after, meta)
-           VALUES (?, 'referral_commission', ?, ?, ?)""",
-        (referrer_id, commission, new_ref_balance, json.dumps({"from_user": telegram_id})),
-    )
-    await db.execute(
-        "UPDATE referrals SET total_commission = total_commission + ? WHERE referrer_id = ? AND referred_id = ?",
-        (commission, referrer_id, telegram_id),
-    )
+    """Deprecated — kept only so nothing breaks if something still imports this
+    name. Use app.database.credit_referral_commission (single shared implementation
+    now also used by games.py, tasks.py, and users.py) instead."""
+    from app.database import credit_referral_commission as _shared
+    await _shared(db, telegram_id, base_amount)
 
 
 @router.post("/claim")
