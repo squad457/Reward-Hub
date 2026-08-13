@@ -66,7 +66,7 @@ def _webapp_keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
     if start_param:
         url += f"?startapp={start_param}"
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎡 Open Comet Quest", url=url)]
+        [InlineKeyboardButton(text="🎡 Open Reward Hub", url=url)]
     ])
 
 
@@ -79,9 +79,9 @@ async def start_handler(message: Message):
         referrer_id = parts[1].strip()
 
     text = (
-        f"☄️ Welcome to Comet Quest{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\n\n"
-        "🎡 Spin the wheel, scratch for diamonds, and keep your signal streak alive.\n"
-        "🎫 Tap below to open your mission board."
+        f"🎯 Welcome to Reward Hub{', ' + message.from_user.first_name if message.from_user.first_name else ''}!\n\n"
+        "🎡 Spin the wheel, scratch for diamonds, and keep your daily earnings streak alive.\n"
+        "🎫 Tap below to open your dashboard."
     )
     await message.answer(text, reply_markup=_webapp_keyboard(referrer_id))
 
