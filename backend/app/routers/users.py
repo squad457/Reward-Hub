@@ -82,6 +82,19 @@ async def claim_streak(user: dict = Depends(get_current_user)):
     return {"reward": reward, "streak_count": new_streak, "new_balance": round(new_balance, 4)}
 
 
+@router.get("/activity")
+async def get_activity(limit: int = 12, user: dict = Depends(get_current_user)):
+    """Real transaction history — replaces the old static 'Mission Log' placeholder
+    on the home screen, which never reflected anything the user actually did."""
+    async with get_db() as db:
+        cursor = await db.execute(
+            "SELECT type, amount, created_at FROM transactions WHERE telegram_id = ? ORDER BY id DESC LIMIT ?",
+            (user["telegram_id"], limit),
+        )
+        rows = await cursor.fetchall()
+        return [{"type": r["type"], "amount": r["amount"], "created_at": r["created_at"]} for r in rows]
+
+
 @router.get("/avatar/{telegram_id}")
 async def get_avatar(telegram_id: int):
     """

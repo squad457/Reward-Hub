@@ -11,7 +11,13 @@ async def referral_info(user: dict = Depends(get_current_user)):
         cursor = await db.execute("SELECT COUNT(*) as count FROM referrals WHERE referrer_id = ?", (user["telegram_id"],))
         count = (await cursor.fetchone())["count"]
         return {
-            "referral_link": f"https://t.me/{settings.BOT_USERNAME}?startapp={user['telegram_id']}",
+            # Must include the mini app's short_name segment — this bot's app was
+            # registered via BotFather /newapp (not set as the "main" menu-button
+            # app), so a bare "t.me/<bot>?startapp=..." link (no short_name) opens
+            # the bot chat but never actually launches the Mini App, and start_param
+            # never reaches auth.py — meaning referrals silently never got credited.
+            # auth.py's own welcome-message link already builds it this (correct) way.
+            "referral_link": f"https://t.me/{settings.BOT_USERNAME}/{settings.MINI_APP_SHORT_NAME}?startapp={user['telegram_id']}",
             "total_referred": count,
             "total_earned": user["total_earned"] or 0
         }

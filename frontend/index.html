@@ -96,14 +96,19 @@
   .rail-btn .ic{font-size:18px; margin-bottom:6px;}
   .rail-btn p{font-size:10.5px; font-weight:700;}
 
-  .timeline{position:relative; margin-top:4px; padding-left:20px;}
-  .timeline::before{content:''; position:absolute; left:7px; top:4px; bottom:4px; width:2px; background:linear-gradient(180deg,var(--lime),var(--gem),transparent);}
+  .timeline{position:relative; margin-top:4px; padding-left:26px;}
+  .timeline::before{content:''; position:absolute; left:11px; top:4px; bottom:4px; width:2px; background:linear-gradient(180deg,var(--lime),var(--gem),transparent);}
   .tl-item{position:relative; padding-bottom:18px;}
   .tl-item:last-child{padding-bottom:0;}
-  .tl-dot{position:absolute; left:-20px; top:1px; width:14px; height:14px; border-radius:50%; background:var(--panel); border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; font-size:7px;}
+  .tl-dot{position:absolute; left:-24px; top:0; width:20px; height:20px; border-radius:50%; background:var(--panel); border:2px solid var(--muted); display:flex; align-items:center; justify-content:center; font-size:10px;}
   .tl-dot.done{border-color:var(--lime); background:var(--lime); color:#1B0E1E;}
   .tl-title{font-size:12.5px; font-weight:600;}
   .tl-sub{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .tl-item{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .tl-body{flex:1; min-width:0;}
+  .tl-amt{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; white-space:nowrap; padding-top:1px;}
+  .tl-amt.pos{color:var(--lime);}
+  .tl-amt.neg{color:var(--coral);}
 
   /* ===== GAMES ===== */
   .wheel-wrap{position:relative; width:250px; height:250px; margin:16px auto 8px;}
@@ -217,9 +222,9 @@
         <div class="rail-btn" id="crewBtn"><div class="ic">👥</div><p>Crew</p></div>
       </div>
 
-      <div class="section-title">🏆 Mission Log</div>
+      <div class="section-title">📜 Recent Activity</div>
       <div class="timeline" id="missionLog">
-        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-title">Connected to Reward Hub</div><div class="tl-sub">Active session</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">Loading…</div>
       </div>
     </section>
 
@@ -373,8 +378,13 @@ async function triggerAdsgramAd() {
       showToast("Ads aren't configured yet. Please try again later.", 'err');
       resolve(false);
     } else {
-      console.warn("Adsgram SDK not loaded, bypassing ad for local testing.");
-      resolve(true);
+      // The Adsgram SDK script failed to load or hasn't finished loading yet
+      // (slow connection, blocked request, etc). This must FAIL CLOSED — a
+      // permissive "assume watched" fallback here means anyone whose network
+      // blocks sad.adsgram.ai gets rewards without ever seeing an ad.
+      console.warn("Adsgram SDK not available — cannot verify an ad was watched.");
+      showToast("Ads aren't ready yet — please wait a moment and try again.", 'err');
+      resolve(false);
     }
   });
 }
@@ -393,6 +403,7 @@ async function loadUser() {
     avatarImg.src = `${API_BASE}/api/users/avatar/${currentUser.telegram_id}`;
     document.getElementById('energy').textContent = currentUser.ads_watched_today ?? 0;
     document.getElementById('gems').textContent = currentUser.balance ? Math.round(currentUser.balance * 1000) : 0;
+    loadActivity();
     
     // Home banner
     const bal = currentUser.balance || 0;
@@ -416,6 +427,52 @@ async function loadUser() {
 
   } catch (e) {
     console.error("Failed to load user:", e);
+  }
+}
+
+const ACTIVITY_META = {
+  ad_reward: { icon: '📺', label: 'Watched an ad' },
+  task_reward: { icon: '📋', label: 'Completed a task' },
+  referral_commission: { icon: '👥', label: 'Referral commission' },
+  referral_bonus: { icon: '👥', label: 'Referral bonus' },
+  signup_bonus: { icon: '🎁', label: 'Welcome bonus' },
+  spin_reward: { icon: '🎡', label: 'Spin the wheel' },
+  scratch_reward: { icon: '💎', label: 'Scratch card' },
+  checkin: { icon: '📅', label: 'Daily check-in' },
+  withdrawal: { icon: '💸', label: 'Withdrawal requested' },
+  admin_adjust: { icon: '⚙️', label: 'Balance adjusted' },
+};
+
+function timeAgo(iso) {
+  const diffSec = Math.max(0, (Date.now() - new Date(iso + (iso.endsWith('Z') ? '' : 'Z')).getTime()) / 1000);
+  if (diffSec < 60) return 'just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return `${Math.floor(diffSec / 86400)}d ago`;
+}
+
+async function loadActivity() {
+  const wrap = document.getElementById('missionLog');
+  try {
+    const rows = await apiFetch("/api/users/activity");
+    if (!rows.length) {
+      wrap.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">No activity yet — go watch an ad or spin the wheel! 🎡</div>';
+      return;
+    }
+    wrap.innerHTML = rows.map(r => {
+      const meta = ACTIVITY_META[r.type] || { icon: '💰', label: r.type };
+      const positive = r.amount >= 0;
+      return `<div class="tl-item">
+        <div class="tl-dot done">${meta.icon}</div>
+        <div class="tl-body">
+          <div class="tl-title">${meta.label}</div>
+          <div class="tl-sub">${timeAgo(r.created_at)}</div>
+        </div>
+        <div class="tl-amt ${positive ? 'pos' : 'neg'}">${positive ? '+' : ''}$${Math.abs(r.amount).toFixed(4)}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    wrap.innerHTML = '<div style="text-align:center; color:var(--muted); font-size:12px; padding:16px 0;">Couldn\'t load activity.</div>';
   }
 }
 
