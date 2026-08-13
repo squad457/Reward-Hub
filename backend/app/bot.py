@@ -20,8 +20,14 @@ from app.config import settings
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=settings.BOT_TOKEN)
-dp = Dispatcher()
+bot = None
+dp = None
+if settings.BOT_TOKEN and ":" in settings.BOT_TOKEN:
+    try:
+        bot = Bot(token=settings.BOT_TOKEN)
+        dp = Dispatcher()
+    except Exception as e:
+        logging.warning(f"Failed to initialize Telegram Bot: {e}")
 
 MINI_APP_URL = f"https://t.me/{settings.BOT_USERNAME}/{settings.MINI_APP_SHORT_NAME}"
 
@@ -41,6 +47,8 @@ async def fetch_avatar_file_path(telegram_id: int) -> str | None:
     empty. Calling getUserProfilePhotos/getFile with the bot token works
     regardless of how the app was opened.
     """
+    if not bot:
+        return None
     try:
         photos = await bot.get_user_profile_photos(telegram_id, limit=1)
         if not photos.photos:
@@ -62,7 +70,7 @@ def _webapp_keyboard(start_param: str | None = None) -> InlineKeyboardMarkup:
     ])
 
 
-@dp.message(CommandStart())
+@dp.message(CommandStart()) if dp else lambda f: f
 async def start_handler(message: Message):
     # Deep link referrals arrive as /start <referrer_telegram_id>
     referrer_id = None
@@ -85,13 +93,17 @@ async def run_bot():
     `python -m app.bot` separately, or Telegram will reject the second
     getUpdates connection (409 Conflict).
     """
+    if not bot or not dp:
+        logging.warning("Telegram Bot is not initialized (missing or invalid BOT_TOKEN). Bot polling skipped.")
+        return
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 
 async def stop_bot():
     """Called on FastAPI shutdown to close the bot's HTTP session cleanly."""
-    await bot.session.close()
+    if bot:
+        await bot.session.close()
 
 
 # ── Standalone fallback ──────────────────────────────────────────────
