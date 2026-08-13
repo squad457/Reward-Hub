@@ -415,10 +415,16 @@ async function loadAdsgramConfig() {
 
 async function triggerAdsgramAd() {
   if (!adsgramConfig.blockId) {
-    // Boot's loadAdsgramConfig() may not have finished yet if the user taps
-    // very fast — retry once instead of immediately failing.
     await loadAdsgramConfig();
   }
+
+  // Wait up to 3 seconds for window.Adsgram to load if it's still loading
+  let attempts = 0;
+  while (!window.Adsgram && attempts < 6) {
+    await new Promise(r => setTimeout(r, 500));
+    attempts++;
+  }
+
   return new Promise((resolve) => {
     if (window.Adsgram && adsgramConfig.blockId) {
       try {
