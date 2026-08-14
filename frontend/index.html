@@ -878,24 +878,134 @@ function switchTab(tab) {
   if (tab === 'friends') loadReferral();
 }
 
-document.getElementById("tabHome").onclick = () => switchTab('home');
-document.getElementById("tabSpin").onclick = () => switchTab('spin');
-document.getElementById("tabTasks").onclick = () => switchTab('tasks');
+// Wait for DOM to be fully loaded before attaching event handlers
+document.addEventListener('DOMContentLoaded', function() {
+  const tabHome = document.getElementById("tabHome");
+  const tabSpin = document.getElementById("tabSpin");
+  const tabTasks = document.getElementById("tabTasks");
+  const navHome = document.getElementById("navHome");
+  const navSpin = document.getElementById("navSpin");
+  const navTasks = document.getElementById("navTasks");
+  const navFriends = document.getElementById("navFriends");
+  const navWithdraw = document.getElementById("navWithdraw");
 
-document.getElementById("navHome").onclick = () => switchTab('home');
-document.getElementById("navSpin").onclick = () => switchTab('spin');
-document.getElementById("navTasks").onclick = () => switchTab('tasks');
-document.getElementById("navFriends").onclick = () => switchTab('friends');
-document.getElementById("navWithdraw").onclick = () => {
-  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
-  document.getElementById("withdrawModal").classList.add("show");
-};
+  if (tabHome) tabHome.onclick = () => switchTab('home');
+  if (tabSpin) tabSpin.onclick = () => switchTab('spin');
+  if (tabTasks) tabTasks.onclick = () => switchTab('tasks');
 
-(async function init() {
-  await loadAppSettings();
-  await loadMe();
-  await Promise.all([loadDaily(), loadSpinStatus(), loadTasks()]);
-})();
+  if (navHome) navHome.onclick = () => switchTab('home');
+  if (navSpin) navSpin.onclick = () => switchTab('spin');
+  if (navTasks) navTasks.onclick = () => switchTab('tasks');
+  if (navFriends) navFriends.onclick = () => switchTab('friends');
+  if (navWithdraw) {
+    navWithdraw.onclick = () => {
+      try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+      const modal = document.getElementById("withdrawModal");
+      if (modal) modal.classList.add("show");
+    };
+  }
+
+  // Also fix other button handlers that might be called before DOM ready
+  const giftBtn = document.getElementById("giftBtn");
+  if (giftBtn) {
+    giftBtn.onclick = async () => {
+      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+      const code = document.getElementById("giftInput").value.trim();
+      if (!code) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
+          method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
+        });
+        if (!res.ok) {
+          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+          return toast((await res.json()).detail || "Invalid code");
+        }
+        const data = await res.json();
+        let msg = "🎁 Gift code redeemed!";
+        if (data.reward_gems) msg += ` +${data.reward_gems} gems`;
+        if (data.reward_spins) msg += ` +${data.reward_spins} spins`;
+        if (data.reward_usdt) msg += ` +$${data.reward_usdt} USDT`;
+        toast(msg);
+        document.getElementById("giftInput").value = "";
+        await Promise.all([loadMe(), loadSpinStatus()]);
+      } catch (e) {
+        toast("Network error");
+      }
+    };
+  }
+
+  const convertBtn = document.getElementById("convertBtn");
+  if (convertBtn) {
+    convertBtn.onclick = async () => {
+      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+      try {
+        const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
+        if (!res.ok) {
+          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+          return toast((await res.json()).detail || "Nothing to convert");
+        }
+        const data = await res.json();
+        toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
+        await loadMe();
+      } catch (e) {
+        toast("Network error");
+      }
+    };
+  }
+
+  const withdrawBtn = document.getElementById("withdrawBtn");
+  if (withdrawBtn) {
+    withdrawBtn.onclick = () => {
+      try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+      const modal = document.getElementById("withdrawModal");
+      if (modal) modal.classList.add("show");
+    };
+  }
+
+  const closeWithdraw = document.getElementById("closeWithdraw");
+  if (closeWithdraw) {
+    closeWithdraw.onclick = () => {
+      const modal = document.getElementById("withdrawModal");
+      if (modal) modal.classList.remove("show");
+    };
+  }
+
+  const wdSubmit = document.getElementById("wdSubmit");
+  if (wdSubmit) {
+    wdSubmit.onclick = async () => {
+      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+      const amount_usdt = parseFloat(document.getElementById("wdAmount").value);
+      const method = document.getElementById("wdMethod").value;
+      const destination = document.getElementById("wdDestination").value.trim();
+      if (!amount_usdt || !destination) {
+        try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+        return toast("Please fill in all fields");
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/withdraw`, {
+          method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
+        });
+        if (!res.ok) {
+          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+          return toast((await res.json()).detail || "Could not submit withdrawal");
+        }
+        toast("🚀 Payout requested — pending review");
+        const modal = document.getElementById("withdrawModal");
+        if (modal) modal.classList.remove("show");
+        await loadMe();
+      } catch (e) {
+        toast("Network error");
+      }
+    };
+  }
+
+  // Initial load
+  (async function init() {
+    await loadAppSettings();
+    await loadMe();
+    await Promise.all([loadDaily(), loadSpinStatus(), loadTasks()]);
+  })();
+});
 </script>
 </body>
 </html>
