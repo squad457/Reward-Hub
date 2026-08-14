@@ -11,18 +11,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-0: #040F0B;
-    --bg-1: #0A261D;
-    --bg-2: #0F3D2E;
-    --emerald: #10B981;
-    --emerald-glow: rgba(16, 185, 129, 0.4);
-    --amethyst: #8B5CF6;
+    --bg-0: #040907;
+    --bg-1: #0A1B14;
+    --bg-2: #0F2E23;
+    --emerald: #00F59B;
+    --emerald-glow: rgba(0, 245, 155, 0.35);
+    --purple: #8B5CF6;
     --gold: #F59E0B;
-    --gold-glow: rgba(245, 158, 11, 0.4);
+    --gold-glow: rgba(245, 158, 11, 0.3);
     --ink: #FFFFFF;
     --ink-dim: #9CA3AF;
-    --facet-border: rgba(255, 255, 255, 0.12);
-    --card-bg: linear-gradient(145deg, rgba(15, 61, 46, 0.9), rgba(7, 33, 25, 0.98));
+    --border: rgba(255, 255, 255, 0.08);
   }
   
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -31,264 +30,328 @@
     font-family: 'Plus Jakarta Sans', sans-serif; overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, .display { font-family: 'Space Grotesk', sans-serif; }
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
   
-  .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 110px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 100px; }
 
-  /* Topbar */
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 18px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 21px; letter-spacing: -0.02em; }
-  .brand .gem-icon {
-    width: 28px; height: 28px;
-    background: conic-gradient(from 45deg, var(--emerald), var(--amethyst), var(--gold), var(--emerald));
-    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-    box-shadow: 0 0 20px var(--emerald-glow);
+  /* Top Bar */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px; }
+  .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
+  .logo-badge {
+    width: 32px; height: 32px; background: linear-gradient(135deg, #EC4899, #8B5CF6);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; box-shadow: 0 0 15px rgba(236,72,153,0.4);
   }
-  .vip-badge {
-    background: linear-gradient(135deg, var(--gold), #D97706); color: #000;
-    font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 6px;
-    letter-spacing: 0.05em; box-shadow: 0 0 12px var(--gold-glow);
-  }
-  .balance-pill {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4);
-    padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #34D399;
-    box-shadow: inset 0 1px 2px rgba(255,255,255,0.15), 0 4px 15px rgba(16,185,129,0.15);
+  .top-pill {
+    display: flex; align-items: center; gap: 6px; background: rgba(0,245,155,0.1);
+    border: 1px solid rgba(0,245,155,0.3); padding: 6px 12px; border-radius: 999px;
+    font-weight: 800; font-size: 13px; color: var(--emerald);
   }
 
-  /* Broadcast Banner */
+  /* Broadcast */
   .broadcast-banner {
-    display: none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.08));
-    border: 1px solid rgba(245, 158, 11, 0.4); padding: 14px 18px; border-radius: 16px;
-    margin-bottom: 18px; font-size: 13px; color: #FDE68A; font-weight: 600; line-height: 1.5;
-    box-shadow: 0 6px 25px rgba(0,0,0,0.3); animation: pulseGlow 3s infinite alternate;
-  }
-  @keyframes pulseGlow {
-    0% { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 4px 15px rgba(245,158,11,0.1); }
-    100% { border-color: rgba(245, 158, 11, 0.8); box-shadow: 0 6px 25px rgba(245,158,11,0.3); }
+    display: none; background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.05));
+    border: 1px solid rgba(245,158,11,0.35); padding: 12px 16px; border-radius: 14px;
+    margin-bottom: 14px; font-size: 13px; color: #FCD34D; font-weight: 600; line-height: 1.4;
   }
 
-  /* Hero Card */
-  .hero {
-    padding: 26px 22px; margin-bottom: 18px; border-radius: 24px; background: var(--card-bg);
-    border: 1px solid var(--facet-border); box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-    position: relative; overflow: hidden;
+  /* Tab Switcher */
+  .tab-switcher {
+    display: flex; background: #0A1B14; border: 1px solid var(--border); border-radius: 14px;
+    padding: 4px; margin-bottom: 16px;
   }
-  .hero::after {
-    content: ''; position: absolute; top: -60px; right: -60px; width: 160px; height: 160px;
-    background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%); pointer-events: none;
+  .tab-btn {
+    flex: 1; padding: 11px; text-align: center; font-weight: 700; font-size: 13px; color: var(--ink-dim);
+    border: none; background: transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
   }
-  .hero .label { color: var(--ink-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
-  .hero .amount { font-size: 40px; font-weight: 800; margin-top: 6px; display: flex; align-items: baseline; gap: 8px; letter-spacing: -0.02em; color: var(--ink); }
-  .hero .usdt { font-size: 16px; color: var(--ink-dim); font-weight: 600; }
-  .hero .row { display: flex; gap: 12px; margin-top: 20px; }
-  .hero .row button {
-    flex: 1; border: none; border-radius: 14px; padding: 13px; font-weight: 800; font-size: 14px; cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .hero .row button:active { transform: scale(0.96); }
-  .btn-convert {
-    background: rgba(139, 92, 246, 0.2); color: #DDD6FE; border: 1px solid rgba(139, 92, 246, 0.5) !important;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.15);
-  }
-  .btn-withdraw {
-    background: linear-gradient(135deg, var(--gold), #D97706); color: #000; box-shadow: 0 4px 20px var(--gold-glow);
+  .tab-btn.active {
+    background: linear-gradient(135deg, #00F59B, #059669); color: #04100D;
+    box-shadow: 0 4px 15px var(--emerald-glow);
   }
 
-  /* Section Header */
-  .section-title { display: flex; align-items: center; justify-content: space-between; margin: 26px 4px 12px; }
-  .section-title h2 { font-size: 17px; margin: 0; letter-spacing: -0.01em; font-weight: 800; }
-  .section-title .eyebrow { font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+  /* Gorgeous Balance Hero Card (matching screenshot 3) */
+  .hero-card {
+    background: linear-gradient(135deg, #059669 0%, #065F46 50%, #042F23 100%);
+    border-radius: 24px; padding: 22px; border: 1px solid rgba(0,245,155,0.3);
+    box-shadow: 0 15px 40px rgba(0,245,155,0.15); margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .hero-card::before {
+    content: ''; position: absolute; top: -50px; right: -50px; width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); pointer-events: none;
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 600; margin-bottom: 12px; }
+  .hero-balance-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); font-weight: 700; }
+  .hero-balance-amount { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 2px; }
+  .hero-usd { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 600; margin-bottom: 18px; }
+  .hero-actions { display: flex; gap: 10px; }
+  .hero-btn {
+    flex: 1; background: #FFFFFF; color: #064E3B; border: none; padding: 12px; border-radius: 12px;
+    font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.15s;
+  }
+  .hero-btn:active { transform: scale(0.97); }
+  .hero-btn.outline { background: rgba(0,0,0,0.25); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.2); }
 
-  /* Daily Grid */
-  .daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+  /* Stats Grid (3 cards matching screenshot 3) */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-card {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 14px 10px;
+    text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); font-weight: 700; }
+  .stat-card .val { font-size: 15px; font-weight: 800; margin-top: 6px; color: var(--ink); }
+
+  /* Daily Streak Box (matching screenshot 1 & 2) */
+  .streak-box {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 18px;
+  }
+  .streak-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .streak-title-area h3 { margin: 0; font-size: 15px; font-weight: 800; }
+  .streak-title-area p { margin: 2px 0 0; font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .streak-days-count { text-align: right; }
+  .streak-days-count .num { font-size: 20px; font-weight: 800; color: var(--emerald); }
+  .streak-days-count .lbl { font-size: 10px; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; }
+
+  .daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
   .day-cell {
-    padding: 14px 6px; text-align: center; font-size: 12px; color: var(--ink-dim);
-    border-radius: 14px; background: var(--card-bg); border: 1px solid var(--facet-border);
-    transition: all 0.2s;
+    background: #040F0B; border: 1px solid var(--border); border-radius: 14px; padding: 12px 6px;
+    text-align: center; font-size: 11px; color: var(--ink-dim); transition: all 0.2s;
   }
-  .day-cell.done { background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.08)); border-color: rgba(16,185,129,0.5); color: #34D399; }
-  .day-cell.today { background: linear-gradient(135deg, rgba(139,92,246,0.35), rgba(139,92,246,0.12)); border-color: rgba(139,92,246,0.7); color: #EDE9FE; box-shadow: 0 0 20px rgba(139,92,246,0.25); }
-  .day-cell .d { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .day-cell.done { background: rgba(0,245,155,0.12); border-color: rgba(0,245,155,0.4); color: var(--emerald); }
+  .day-cell.today { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.6); color: #DDD6FE; box-shadow: 0 0 15px rgba(139,92,246,0.2); }
+  .day-cell .d { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
   .day-cell .r { font-weight: 800; color: var(--gold); }
 
-  .main-action-btn {
-    width: 100%; margin-top: 14px; padding: 15px; background: linear-gradient(135deg, var(--emerald), #059669);
-    color: #04100D; border: none; border-radius: 16px; font-weight: 800; font-size: 15px; cursor: pointer;
-    box-shadow: 0 6px 25px var(--emerald-glow); transition: transform 0.15s ease;
+  .claim-main-btn {
+    width: 100%; background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: #FFF; border: none;
+    padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(139,92,246,0.4); transition: transform 0.15s;
   }
-  .main-action-btn:active { transform: scale(0.97); }
-  .main-action-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; box-shadow: none; }
-
-  .ad-btn {
-    width: 100%; margin-top: 10px; padding: 14px; background: rgba(139, 92, 246, 0.08); border: 1px dashed rgba(139,92,246,0.6);
-    color: #DDD6FE; border-radius: 16px; font-weight: 700; font-size: 13px; cursor: pointer;
-    transition: background 0.2s;
-  }
-  .ad-btn:hover { background: rgba(139,92,246,0.15); }
+  .claim-main-btn:active { transform: scale(0.97); }
+  .claim-main-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; box-shadow: none; }
 
   /* Wheel */
-  .wheel-wrap { display: flex; flex-direction: column; align-items: center; padding: 28px 16px; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--facet-border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); }
-  .wheel-outer { position: relative; width: 250px; height: 250px; }
+  .wheel-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; margin-bottom: 18px; }
+  .wheel-outer { position: relative; width: 230px; height: 230px; margin: 0 auto; }
   .wheel {
-    width: 250px; height: 250px; border-radius: 50%; position: relative;
-    border: 6px solid rgba(255,255,255,0.12); box-shadow: 0 0 0 3px rgba(16,185,129,0.3), 0 15px 40px rgba(0,0,0,0.6);
+    width: 230px; height: 230px; border-radius: 50%; position: relative;
+    border: 5px solid rgba(255,255,255,0.1); box-shadow: 0 0 0 3px rgba(0,245,155,0.3), 0 15px 35px rgba(0,0,0,0.5);
     transition: transform 4s cubic-bezier(0.12, 0.67, 0.1, 1);
   }
   .wheel-pointer {
     position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
-    border-left: 11px solid transparent; border-right: 11px solid transparent; border-top: 20px solid var(--gold);
-    z-index: 5; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+    border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid var(--gold); z-index: 5;
   }
-  .wheel-label { position: absolute; font-size: 12px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
-  .spin-btn {
-    margin-top: 22px; background: linear-gradient(135deg, var(--gold), #D97706); color: #000;
-    font-weight: 800; border: none; padding: 15px 40px; border-radius: 999px; font-size: 16px; cursor: pointer;
-    box-shadow: 0 6px 25px var(--gold-glow); transition: transform 0.15s ease;
+  .wheel-label { position: absolute; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+  .spin-action-btn {
+    margin-top: 18px; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
+    padding: 14px 36px; border-radius: 999px; font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 6px 20px var(--gold-glow);
   }
-  .spin-btn:active { transform: scale(0.96); }
-  .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-  .spins-left { margin-top: 10px; font-size: 13px; color: var(--ink-dim); font-weight: 600; }
-  .bonus-spin-link { font-size: 13px; color: #DDD6FE; margin-top: 8px; text-decoration: underline; cursor: pointer; font-weight: 700; }
 
-  /* Tasks */
+  /* Tasks & Gift */
+  .card-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: 20px; padding: 18px; margin-bottom: 18px; }
   .task-card {
-    display: flex; align-items: center; justify-content: space-between; padding: 18px; margin-bottom: 12px;
-    border-radius: 16px; background: var(--card-bg); border: 1px solid var(--facet-border);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3); transition: transform 0.2s;
+    display: flex; align-items: center; justify-content: space-between; padding: 14px; margin-bottom: 10px;
+    background: #040F0B; border: 1px solid var(--border); border-radius: 14px;
   }
-  .task-info { display: flex; flex-direction: column; gap: 5px; }
-  .task-title { font-size: 15px; font-weight: 700; color: var(--ink); }
-  .task-reward { font-size: 13px; color: var(--gold); font-weight: 800; display: flex; align-items: center; gap: 4px; }
+  .task-info { display: flex; flex-direction: column; gap: 3px; }
+  .task-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .task-reward { font-size: 12px; color: var(--gold); font-weight: 800; }
   .task-btn {
     background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none;
-    padding: 11px 20px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap;
-    box-shadow: 0 4px 15px var(--emerald-glow); transition: transform 0.15s ease;
+    padding: 9px 18px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer;
   }
-  .task-btn:active { transform: scale(0.95); }
-  .task-btn.claimed { background: transparent; border: 1px solid var(--facet-border); color: var(--ink-dim); box-shadow: none; cursor: default; }
+  .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; }
 
-  /* Referral Card */
-  .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--facet-border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); }
-  .ref-count { font-size: 34px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); }
-  .ref-code { margin-top: 10px; font-family: monospace; font-size: 15px; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 10px; display: inline-block; letter-spacing: 0.05em; color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
-  .ref-btn {
-    margin-top: 16px; background: linear-gradient(135deg, var(--amethyst), #7C3AED); color: #fff; border: none;
-    padding: 14px 24px; border-radius: 999px; font-weight: 800; font-size: 15px; cursor: pointer; width: 100%;
-    box-shadow: 0 6px 20px rgba(139,92,246,0.4); transition: transform 0.15s ease;
+  /* Bottom Navigation Bar (matching screenshot) */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
+    background: rgba(10, 27, 20, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+    display: flex; justify-content: space-around; padding: 10px 6px 20px; z-index: 50;
   }
-  .ref-btn:active { transform: scale(0.97); }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--ink-dim);
+    font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; background: transparent; border: none;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--emerald); }
+  .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
 
-  /* Gift Code */
-  .gift-row { display: flex; gap: 10px; padding: 16px; border-radius: 18px; background: var(--card-bg); border: 1px solid var(--facet-border); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-  .gift-row input {
-    flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--facet-border); border-radius: 12px; padding: 13px 16px;
-    color: var(--ink); font-size: 14px; outline: none; font-weight: 600;
-  }
-  .gift-row input:focus { border-color: var(--emerald); }
-  .gift-row button {
-    background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none; padding: 13px 22px;
-    border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px var(--emerald-glow);
-  }
-
-  /* Top-to-Bottom Toast Notification */
+  /* Toast Notification */
   .toast {
-    position: fixed; top: 18px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
+    position: fixed; top: 16px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
     background: linear-gradient(135deg, #0F3D2E, #051C14); border: 1px solid var(--emerald);
-    padding: 16px 22px; border-radius: 16px; font-size: 14px; font-weight: 700; text-align: center;
-    color: var(--ink); transform: translateY(-180%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+    padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-align: center;
+    color: var(--ink); transform: translateY(-180%); transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100; box-shadow: 0 10px 35px rgba(0,0,0,0.6);
   }
   .toast.show { transform: translateY(0); }
 
   /* Modal */
   .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-    display: none; align-items: flex-end; z-index: 60; animation: fadeIn 0.2s ease;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+    display: none; align-items: flex-end; z-index: 70;
   }
   .modal-backdrop.show { display: flex; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .modal {
-    background: #0A261D; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 28px 28px 0 0;
-    padding: 26px 22px 40px; border: 1px solid var(--facet-border); box-shadow: 0 -15px 50px rgba(0,0,0,0.7);
-    animation: slideUp 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    background: #0A1B14; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 24px 24px 0 0;
+    padding: 24px 20px 36px; border: 1px solid var(--border); box-shadow: 0 -15px 40px rgba(0,0,0,0.7);
   }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal h3 { margin: 0 0 18px; font-size: 19px; font-weight: 800; color: var(--ink); }
+  .modal h3 { margin: 0 0 16px; font-size: 18px; font-weight: 800; }
   .modal input, .modal select {
-    width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--facet-border); border-radius: 14px;
-    padding: 14px 16px; color: var(--ink); font-size: 14px; margin-bottom: 14px; outline: none; font-weight: 600;
+    width: 100%; background: #040F0B; border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 15px; color: var(--ink); font-size: 14px; margin-bottom: 12px; outline: none; font-weight: 600;
   }
-  .modal input:focus, .modal select:focus { border-color: var(--gold); }
   .modal button.primary {
     width: 100%; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
-    padding: 15px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
-    box-shadow: 0 6px 25px var(--gold-glow); margin-top: 8px;
+    padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px;
   }
-  .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 20px; font-weight: 800; }
+  .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 18px; font-weight: 800; }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <div class="topbar">
-    <div class="brand"><span class="gem-icon"></span> Reward Hub <span class="vip-badge" id="vipBadge" style="display:none;">VIP</span></div>
-    <div class="balance-pill">💎 <span id="gemsBalance">0</span></div>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-badge">R</div>
+      <span id="appNameTitle">Reward Hub</span>
+    </div>
+    <div class="top-pill">💎 <span id="gemsBalance">0</span> Gems</div>
   </div>
 
+  <!-- Broadcast -->
   <div id="broadcastBanner" class="broadcast-banner">
     📣 <span id="broadcastText"></span>
   </div>
 
-  <div class="hero">
-    <div class="label">Cash-out balance</div>
-    <div class="amount" id="usdtBalance">$0.00 <span class="usdt">USDT</span></div>
-    <div class="row">
-      <button class="btn-convert" id="convertBtn">Convert gems</button>
-      <button class="btn-withdraw" id="withdrawBtn">Withdraw</button>
-    </div>
-    <div id="conversionRateLabel" style="font-size:12px; color:var(--ink-dim); margin-top:14px; text-align:center; font-weight:600;">— gems = $1.00 USDT</div>
+  <!-- Tab Switcher -->
+  <div class="tab-switcher">
+    <button class="tab-btn active" id="tabHome">⚡ Dashboard</button>
+    <button class="tab-btn" id="tabSpin">🎡 Spin Wheel</button>
+    <button class="tab-btn" id="tabTasks">📋 Tasks</button>
   </div>
 
-  <div class="section-title"><h2>Daily Rewards</h2><span class="eyebrow" id="streakLabel">Streak: 0</span></div>
-  <div class="daily-grid" id="dailyGrid"></div>
-  <button class="main-action-btn" id="claimDailyBtn">Claim today's reward</button>
-  <button class="ad-btn" id="watchAdDailyBtn">▶ Watch ad for +40 bonus gems</button>
-
-  <div class="section-title"><h2>Spin the Wheel</h2><span class="eyebrow" id="spinsLeftLabel">— left today</span></div>
-  <div class="wheel-wrap">
-    <div class="wheel-outer">
-      <div class="wheel-pointer"></div>
-      <div class="wheel" id="wheel"></div>
+  <!-- VIEW: HOME / DASHBOARD -->
+  <div id="viewHome">
+    <!-- Gorgeous Balance Hero Card -->
+    <div class="hero-card">
+      <div class="hero-top">
+        <span>HELLO 👋 <span id="userName">User</span></span>
+        <span>MIN. WITHDRAW: <b id="minWdLabel">5.00 USDT</b></span>
+      </div>
+      <div class="hero-balance-label">USDT Balance</div>
+      <div class="hero-balance-amount" id="usdtBalance">$0.00</div>
+      <div class="hero-usd" id="conversionRateLabel">— gems = $1.00 USDT</div>
+      <div class="hero-actions">
+        <button class="hero-btn" id="withdrawBtn">💸 Withdraw</button>
+        <button class="hero-btn outline" id="convertBtn">✨ Convert Gems</button>
+      </div>
     </div>
-    <button class="spin-btn" id="spinBtn">Spin for Gems</button>
-    <div class="bonus-spin-link" id="watchAdSpinBtn">▶ Watch ad for +1 spin</div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Earned</div>
+        <div class="val" id="statEarned">0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Referrals</div>
+        <div class="val" id="statReferrals">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">VIP Status</div>
+        <div class="val" id="statVip" style="color: var(--gold);">Regular</div>
+      </div>
+    </div>
+
+    <!-- Daily Streak Box -->
+    <div class="streak-box">
+      <div class="streak-header">
+        <div class="streak-title-area">
+          <h3>Check in & earn rewards</h3>
+          <p>Daily Streak</p>
+        </div>
+        <div class="streak-days-count">
+          <div class="num" id="streakNum">0</div>
+          <div class="lbl">days</div>
+        </div>
+      </div>
+      <div class="daily-grid" id="dailyGrid"></div>
+      <button class="claim-main-btn" id="claimDailyBtn">Claim today's reward</button>
+      <button class="ad-btn" id="watchAdDailyBtn">▶ Watch ad for +40 bonus gems</button>
+    </div>
+
+    <!-- Gift Code Box -->
+    <div class="card-box">
+      <div class="section-title" style="margin-top:0;"><h2>Gift Code</h2><span class="eyebrow">Redeem</span></div>
+      <div class="gift-row" style="padding:0; background:none; border:none; box-shadow:none;">
+        <input type="text" id="giftInput" placeholder="Enter gift code" />
+        <button id="giftBtn">Redeem</button>
+      </div>
+    </div>
+
+    <!-- Referral Card -->
+    <div class="ref-card">
+      <div class="ref-count" id="refCount">0</div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-top:4px; margin-bottom:12px; font-weight:700;">friends invited</div>
+      <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
+      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.3); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
+        🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
+      </div>
+      <button class="ref-btn" id="shareBtn">Share invite link</button>
+    </div>
   </div>
 
-  <div class="section-title"><h2>Tasks</h2><span class="eyebrow">Earn more gems</span></div>
-  <div id="taskList"></div>
-
-  <div class="section-title"><h2>Gift Code</h2><span class="eyebrow">Redeem</span></div>
-  <div class="gift-row">
-    <input type="text" id="giftInput" placeholder="Enter gift code" />
-    <button id="giftBtn">Redeem</button>
+  <!-- VIEW: SPIN WHEEL -->
+  <div id="viewSpin" style="display:none;">
+    <div class="wheel-wrap">
+      <div class="wheel-outer">
+        <div class="wheel-pointer"></div>
+        <div class="wheel" id="wheel"></div>
+      </div>
+      <button class="spin-action-btn" id="spinBtn">Spin for Gems</button>
+      <div class="spins-left" id="spinsLeftLabel">— left today</div>
+      <div class="bonus-spin-link" id="watchAdSpinBtn">▶ Watch ad for +1 spin</div>
+    </div>
   </div>
 
-  <div class="section-title"><h2>Invite Friends</h2><span class="eyebrow">Referral</span></div>
-  <div class="ref-card">
-    <div class="ref-count" id="refCount">0</div>
-    <div style="font-size:12px; color:var(--ink-dim); margin-top:3px; margin-bottom:12px; font-weight:600;">friends invited</div>
-    <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
-    <div style="margin-bottom:18px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.4); padding:12px 14px; border-radius:12px; text-align:left; border: 1px solid var(--facet-border);">
-      🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
+  <!-- VIEW: TASKS -->
+  <div id="viewTasks" style="display:none;">
+    <div class="card-box">
+      <div class="section-title" style="margin-top:0;"><h2>Available Tasks</h2><span class="eyebrow">Earn gems</span></div>
+      <div id="taskList"></div>
     </div>
-    <button class="ref-btn" id="shareBtn">Share invite link</button>
   </div>
 
 </div>
 
+<!-- Bottom Navigation Bar -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="navHome">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-item" id="navSpin">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    <span>Spin</span>
+  </button>
+  <button class="nav-item" id="navTasks">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Tasks</span>
+  </button>
+  <button class="nav-item" id="navWithdraw">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Wallet</span>
+  </button>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<!-- Withdraw Modal -->
 <div class="modal-backdrop" id="withdrawModal">
   <div class="modal">
     <span class="close" id="closeWithdraw">✕</span>
@@ -308,12 +371,13 @@ const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
 
 const API_BASE = "https://reward-hub-production.up.railway.app";
-
 const urlParams = new URLSearchParams(window.location.search);
 const refFromLink = urlParams.get("ref");
 
-let APP_SETTINGS = { adsgram_block_id: "", bot_username: "", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "" };
+let APP_SETTINGS = { adsgram_block_id: "", bot_username: "", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
 let AdController = null;
+let me = null;
+let wheelSegments = [];
 
 async function loadAppSettings() {
   try {
@@ -322,6 +386,8 @@ async function loadAppSettings() {
   } catch (e) { console.warn("Could not load app settings", e); }
 
   document.title = APP_SETTINGS.app_name || "Reward Hub";
+  document.getElementById("appNameTitle").textContent = APP_SETTINGS.app_name || "Reward Hub";
+  document.getElementById("minWdLabel").textContent = `${Number(APP_SETTINGS.min_withdraw_usdt || 5).toFixed(2)} USDT`;
 
   if (APP_SETTINGS.admin_broadcast) {
     document.getElementById("broadcastText").textContent = APP_SETTINGS.admin_broadcast;
@@ -354,15 +420,17 @@ function toast(msg) {
   setTimeout(() => t.classList.remove("show"), 3500);
 }
 
-let me = null;
-let wheelSegments = [];
-
 async function loadMe() {
   const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
   me = await res.json();
   document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
-  document.getElementById("usdtBalance").innerHTML = `$${me.balance_usdt.toFixed(2)} <span class="usdt">USDT</span>`;
-  document.getElementById("streakLabel").textContent = `Streak: ${me.daily_streak}`;
+  document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
+  document.getElementById("userName").textContent = me.first_name || "User";
+  document.getElementById("streakNum").textContent = me.daily_streak;
+  document.getElementById("refCount").textContent = me.invited_count || 0;
+  document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
+  document.getElementById("statReferrals").textContent = me.invited_count || 0;
+  document.getElementById("statVip").textContent = me.is_vip ? "VIP" : "Regular";
   document.getElementById("refCode").textContent = me.referral_code;
   document.getElementById("vipBadge").style.display = me.is_vip ? "inline-block" : "none";
 }
@@ -434,7 +502,7 @@ function renderWheel(segments) {
     label.textContent = s.label;
     label.style.left = "50%";
     label.style.top = "50%";
-    label.style.transform = `rotate(${angle}deg) translate(0, -92px) rotate(${-angle}deg) translate(-50%, -50%)`;
+    label.style.transform = `rotate(${angle}deg) translate(0, -85px) rotate(${-angle}deg) translate(-50%, -50%)`;
     wheel.appendChild(label);
   });
 }
@@ -492,7 +560,7 @@ async function loadTasks() {
         <div class="task-title">${t.title}</div>
         <div class="task-reward">💎 +${t.reward_gems} gems</div>
       </div>
-      <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Claimed" : "Start"}</button>
+      <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Done" : "Start"}</button>
     `;
     card.querySelector("button").onclick = async () => {
       tg?.HapticFeedback?.impactOccurred('medium');
@@ -591,6 +659,35 @@ document.getElementById("wdSubmit").onclick = async () => {
   toast("🚀 Withdrawal requested — pending review");
   document.getElementById("withdrawModal").classList.remove("show");
   await loadMe();
+};
+
+/* Tab Navigation Switcher */
+function switchTab(tab) {
+  tg?.HapticFeedback?.impactOccurred('light');
+  document.getElementById("viewHome").style.display = (tab === 'home') ? 'block' : 'none';
+  document.getElementById("viewSpin").style.display = (tab === 'spin') ? 'block' : 'none';
+  document.getElementById("viewTasks").style.display = (tab === 'tasks') ? 'block' : 'none';
+
+  document.getElementById("tabHome").classList.toggle('active', tab === 'home');
+  document.getElementById("tabSpin").classList.toggle('active', tab === 'spin');
+  document.getElementById("tabTasks").classList.toggle('active', tab === 'tasks');
+
+  document.getElementById("navHome").classList.toggle('active', tab === 'home');
+  document.getElementById("navSpin").classList.toggle('active', tab === 'spin');
+  document.getElementById("navTasks").classList.toggle('active', tab === 'tasks');
+  document.getElementById("navWithdraw").classList.remove('active');
+}
+
+document.getElementById("tabHome").onclick = () => switchTab('home');
+document.getElementById("tabSpin").onclick = () => switchTab('spin');
+document.getElementById("tabTasks").onclick = () => switchTab('tasks');
+
+document.getElementById("navHome").onclick = () => switchTab('home');
+document.getElementById("navSpin").onclick = () => switchTab('spin');
+document.getElementById("navTasks").onclick = () => switchTab('tasks');
+document.getElementById("navWithdraw").onclick = () => {
+  tg?.HapticFeedback?.impactOccurred('light');
+  document.getElementById("withdrawModal").classList.add("show");
 };
 
 (async function init() {
