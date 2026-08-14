@@ -6,9 +6,10 @@ aiosqlite data layer for the Reward Hub Telegram Mini App.
 import aiosqlite
 import secrets
 import time
+import os
 from contextlib import asynccontextmanager
 
-DB_PATH = "rewardhub.db"
+DB_PATH = os.environ.get("DATABASE_PATH", "/data/rewardhub.db" if os.path.exists("/data") else "rewardhub.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
