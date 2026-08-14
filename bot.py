@@ -16,7 +16,7 @@ from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "123456:TEST_TOKEN")
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://reward-hub-production.up.railway.app")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://reward-hub.vercel.app")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
