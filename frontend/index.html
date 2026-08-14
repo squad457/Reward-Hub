@@ -8,7 +8,7 @@
 <!-- AdsGram SDK -->
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-0: #040907;
@@ -21,7 +21,7 @@
     --gold-glow: rgba(245, 158, 11, 0.3);
     --ink: #FFFFFF;
     --ink-dim: #9CA3AF;
-    --border: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.08);
   }
   
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -33,6 +33,28 @@
   h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
   
   .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 110px; }
+
+  /* Splash / Loading Screen */
+  #splashScreen {
+    position: fixed; inset: 0; background: #040907; z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.4s ease;
+  }
+  .splash-logo-wrap {
+    width: 90px; height: 90px; background: linear-gradient(135deg, #00F59B, #8B5CF6);
+    border-radius: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 42px; font-weight: 800; color: #040907; box-shadow: 0 0 40px rgba(0,245,155,0.4);
+    animation: pulseLogo 2s infinite alternate; margin-bottom: 20px;
+  }
+  @keyframes pulseLogo {
+    0% { transform: scale(0.95); box-shadow: 0 0 20px rgba(0,245,155,0.3); }
+    100% { transform: scale(1.05); box-shadow: 0 0 50px rgba(0,245,155,0.6); }
+  }
+  .splash-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .splash-subtitle { font-size: 11px; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.25em; font-weight: 700; margin-bottom: 40px; }
+  .splash-bar-wrap { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+  .splash-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00F59B, #8B5CF6); animation: loadBar 1.2s forwards; }
+  @keyframes loadBar { 0% { width: 0%; } 100% { width: 100%; } }
 
   /* Top Bar */
   .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px; }
@@ -53,20 +75,6 @@
     display: none; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.08));
     border: 1px solid rgba(245,158,11,0.4); padding: 12px 16px; border-radius: 16px;
     margin-bottom: 16px; font-size: 13px; color: #FDE68A; font-weight: 600; line-height: 1.5;
-  }
-
-  /* Tab Switcher */
-  .tab-switcher {
-    display: flex; background: #0A1B14; border: 1px solid var(--border); border-radius: 14px;
-    padding: 4px; margin-bottom: 16px;
-  }
-  .tab-btn {
-    flex: 1; padding: 11px; text-align: center; font-weight: 700; font-size: 13px; color: var(--ink-dim);
-    border: none; background: transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
-  }
-  .tab-btn.active {
-    background: linear-gradient(135deg, #00F59B, #059669); color: #04100D;
-    box-shadow: 0 4px 15px var(--emerald-glow);
   }
 
   /* Gorgeous Balance Hero Card */
@@ -167,7 +175,14 @@
   }
   .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; box-shadow: none; }
 
-  /* Referral Card */
+  /* Friends / Referral View matching screenshot 4 & 5 */
+  .friend-step-card {
+    background: #040F0B; border: 1px solid var(--border); border-radius: 16px; padding: 16px;
+    margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .friend-step-title { font-size: 14px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .friend-step-desc { font-size: 12px; color: var(--ink-dim); font-weight: 500; line-height: 1.4; }
+
   .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 18px; }
   .ref-count { font-size: 34px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); }
   .ref-code { margin-top: 10px; font-family: monospace; font-size: 15px; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 10px; display: inline-block; letter-spacing: 0.05em; color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
@@ -237,6 +252,15 @@
 </style>
 </head>
 <body>
+
+<!-- Splash / Loading Screen matching screenshot 2 -->
+<div id="splashScreen">
+  <div class="splash-logo-wrap">R</div>
+  <div class="splash-title">Reward Hub</div>
+  <div class="splash-subtitle">PLAY · WIN · EARN</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+</div>
+
 <div class="app">
 
   <!-- Header -->
@@ -250,13 +274,6 @@
   <!-- Broadcast -->
   <div id="broadcastBanner" class="broadcast-banner">
     📣 <span id="broadcastText"></span>
-  </div>
-
-  <!-- Tab Switcher -->
-  <div class="tab-switcher">
-    <button class="tab-btn active" id="tabHome">⚡ Dashboard</button>
-    <button class="tab-btn" id="tabSpin">🎡 Spin Wheel</button>
-    <button class="tab-btn" id="tabTasks">📋 Tasks</button>
   </div>
 
   <!-- VIEW: HOME / DASHBOARD -->
@@ -317,17 +334,6 @@
         <button id="giftBtn">Redeem</button>
       </div>
     </div>
-
-    <!-- Referral Card -->
-    <div class="ref-card">
-      <div class="ref-count" id="refCount">0</div>
-      <div style="font-size:12px; color:var(--ink-dim); margin-top:4px; margin-bottom:12px; font-weight:700;">friends invited</div>
-      <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
-      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.4); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
-        🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
-      </div>
-      <button class="ref-btn" id="shareBtn">Share invite link</button>
-    </div>
   </div>
 
   <!-- VIEW: SPIN WHEEL -->
@@ -351,9 +357,44 @@
     </div>
   </div>
 
+  <!-- VIEW: FRIENDS / REFERRAL (matching screenshot 4 & 5) -->
+  <div id="viewFriends" style="display:none;">
+    <div class="ref-card">
+      <div class="ref-count" id="refCount">0</div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-top:4px; margin-bottom:12px; font-weight:700;">friends invited</div>
+      <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
+      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.4); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
+        🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
+      </div>
+      <button class="ref-btn" id="shareBtn">Share invite link</button>
+    </div>
+
+    <div class="card-box">
+      <div style="font-size:16px; font-weight:800; margin-bottom:12px;">🤝 Invite & Earn</div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-bottom:16px; line-height:1.4;">Invite friends and earn rewards together on every step below.</div>
+
+      <div class="friend-step-card">
+        <div class="friend-step-title">📦 1. Share Your Link</div>
+        <div class="friend-step-desc">Send your Telegram referral link to friends.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">🎉 2. Friend Joins</div>
+        <div class="friend-step-desc">Your friend instantly receives bonus gems after joining with your link.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">💎 3. Referral Commission</div>
+        <div class="friend-step-desc">You earn gems instantly when your friends complete tasks and spin.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">🚀 4. Earn Forever <span style="background:rgba(0,245,155,0.15); color:var(--emerald); padding:2px 8px; border-radius:6px; font-size:11px;">10%</span></div>
+        <div class="friend-step-desc">Receive 10% lifetime commission on their eligible earnings.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Bottom Navigation Bar -->
+<!-- Bottom Navigation Bar matching screenshot 4 & 5 -->
 <div class="bottom-nav">
   <button class="nav-item active" id="navHome">
     <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -366,6 +407,10 @@
   <button class="nav-item" id="navTasks">
     <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
     <span>Tasks</span>
+  </button>
+  <button class="nav-item" id="navFriends">
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    <span>Friends</span>
   </button>
   <button class="nav-item" id="navWithdraw">
     <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
@@ -394,6 +439,17 @@
 <script>
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
+
+// Hide splash screen after 1.2s
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById("splashScreen");
+    if (splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 400);
+    }
+  }, 1200);
+});
 
 const API_BASE = "https://reward-hub-production.up.railway.app";
 const urlParams = new URLSearchParams(window.location.search);
@@ -482,9 +538,15 @@ async function loadDaily() {
 
 document.getElementById("claimDailyBtn").onclick = async () => {
   tg?.HapticFeedback?.impactOccurred('medium');
+  const btn = document.getElementById("claimDailyBtn");
+  btn.textContent = "Claiming...";
+  btn.disabled = true;
+
   const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
   if (!res.ok) {
     tg?.HapticFeedback?.notificationOccurred('error');
+    btn.disabled = false;
+    btn.textContent = "Claim today's reward";
     return toast((await res.json()).detail || "Could not claim");
   }
   const data = await res.json();
@@ -549,12 +611,14 @@ document.getElementById("spinBtn").onclick = async () => {
   tg?.HapticFeedback?.impactOccurred('heavy');
   const btn = document.getElementById("spinBtn");
   btn.disabled = true;
+  btn.textContent = "Spinning...";
 
   const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
   if (!res.ok) {
     tg?.HapticFeedback?.notificationOccurred('error');
     toast((await res.json()).detail || "Could not spin");
     btn.disabled = false;
+    btn.textContent = "Spin for Gems";
     return;
   }
   const data = await res.json();
@@ -569,6 +633,7 @@ document.getElementById("spinBtn").onclick = async () => {
     toast(`🎉 You won +${data.reward_gems} gems!`);
     document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
     btn.disabled = data.spins_left <= 0;
+    btn.textContent = "Spin for Gems";
     await loadMe();
   }, 4100);
 };
@@ -693,6 +758,7 @@ function switchTab(tab) {
   document.getElementById("viewHome").style.display = (tab === 'home') ? 'block' : 'none';
   document.getElementById("viewSpin").style.display = (tab === 'spin') ? 'block' : 'none';
   document.getElementById("viewTasks").style.display = (tab === 'tasks') ? 'block' : 'none';
+  document.getElementById("viewFriends").style.display = (tab === 'friends') ? 'block' : 'none';
 
   document.getElementById("tabHome").classList.toggle('active', tab === 'home');
   document.getElementById("tabSpin").classList.toggle('active', tab === 'spin');
@@ -701,6 +767,7 @@ function switchTab(tab) {
   document.getElementById("navHome").classList.toggle('active', tab === 'home');
   document.getElementById("navSpin").classList.toggle('active', tab === 'spin');
   document.getElementById("navTasks").classList.toggle('active', tab === 'tasks');
+  document.getElementById("navFriends").classList.toggle('active', tab === 'friends');
   document.getElementById("navWithdraw").classList.remove('active');
 }
 
@@ -711,6 +778,7 @@ document.getElementById("tabTasks").onclick = () => switchTab('tasks');
 document.getElementById("navHome").onclick = () => switchTab('home');
 document.getElementById("navSpin").onclick = () => switchTab('spin');
 document.getElementById("navTasks").onclick = () => switchTab('tasks');
+document.getElementById("navFriends").onclick = () => switchTab('friends');
 document.getElementById("navWithdraw").onclick = () => {
   tg?.HapticFeedback?.impactOccurred('light');
   document.getElementById("withdrawModal").classList.add("show");
