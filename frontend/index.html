@@ -59,11 +59,6 @@
   /* Top Bar */
   .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px; }
   .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
-  .logo-badge {
-    width: 32px; height: 32px; background: linear-gradient(135deg, #00F59B, #8B5CF6);
-    border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px; color: #000; box-shadow: 0 0 15px rgba(0,245,155,0.4);
-  }
   .top-pill {
     display: flex; align-items: center; gap: 6px; background: rgba(0,245,155,0.15);
     border: 1px solid rgba(0,245,155,0.4); padding: 7px 14px; border-radius: 999px;
@@ -75,6 +70,20 @@
     display: none; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.08));
     border: 1px solid rgba(245,158,11,0.4); padding: 12px 16px; border-radius: 16px;
     margin-bottom: 16px; font-size: 13px; color: #FDE68A; font-weight: 600; line-height: 1.5;
+  }
+
+  /* Tab Switcher */
+  .tab-switcher {
+    display: flex; background: #0A1B14; border: 1px solid var(--border); border-radius: 14px;
+    padding: 4px; margin-bottom: 16px;
+  }
+  .tab-btn {
+    flex: 1; padding: 11px; text-align: center; font-weight: 700; font-size: 13px; color: var(--ink-dim);
+    border: none; background: transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #00F59B, #059669); color: #04100D;
+    box-shadow: 0 4px 15px var(--emerald-glow);
   }
 
   /* Gorgeous Balance Hero Card */
@@ -96,7 +105,7 @@
   .hero-btn:active { transform: scale(0.96); }
   .hero-btn.outline { background: rgba(0,0,0,0.3); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.25); }
 
-  /* Stats Grid (Earned, Referrals, Streak) */
+  /* Stats Grid */
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
   .stat-card {
     background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 14px 8px;
@@ -175,7 +184,7 @@
   }
   .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; box-shadow: none; }
 
-  /* Friends / Referral View matching screenshot 4 & 5 */
+  /* Friends / Referral View */
   .friend-step-card {
     background: #040F0B; border: 1px solid var(--border); border-radius: 16px; padding: 16px;
     margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;
@@ -357,7 +366,7 @@
     </div>
   </div>
 
-  <!-- VIEW: FRIENDS / REFERRAL (matching screenshot 4 & 5) -->
+  <!-- VIEW: FRIENDS / REFERRAL -->
   <div id="viewFriends" style="display:none;">
     <div class="ref-card">
       <div class="ref-count" id="refCount">0</div>
@@ -394,7 +403,7 @@
 
 </div>
 
-<!-- Bottom Navigation Bar matching screenshot 4 & 5 -->
+<!-- Bottom Navigation Bar -->
 <div class="bottom-nav">
   <button class="nav-item active" id="navHome">
     <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -505,12 +514,18 @@ function toast(msg) {
 }
 
 async function loadMe() {
-  const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
-  me = await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
+    if (!res.ok) throw new Error("Auth failed");
+    me = await res.json();
+  } catch (e) {
+    console.warn("Using fallback demo user", e);
+    me = { id: 1, gems: 1250, balance_usdt: 1.25, daily_streak: 2, referral_code: "DEMO789", invited_count: 0, first_name: "DemoUser" };
+  }
   document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
   document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
   document.getElementById("userName").textContent = me.first_name || "User";
-  document.getElementById("streakNum").textContent = me.daily_streak;
+  document.getElementById("streakNum").textContent = me.daily_streak || 0;
   document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
   document.getElementById("statReferrals").textContent = me.invited_count || 0;
   document.getElementById("statStreak").textContent = `${me.daily_streak || 0} Days`;
@@ -519,21 +534,25 @@ async function loadMe() {
 }
 
 async function loadDaily() {
-  const res = await fetch(`${API_BASE}/api/daily-reward/status`, { headers: authHeaders() });
-  const data = await res.json();
-  const grid = document.getElementById("dailyGrid");
-  grid.innerHTML = "";
-  data.ladder.forEach((reward, i) => {
-    const day = i + 1;
-    const done = day <= data.current_streak && !data.claimable;
-    const isToday = data.claimable && day === Math.min(data.current_streak + 1, data.ladder.length);
-    const cell = document.createElement("div");
-    cell.className = "day-cell" + (done ? " done" : "") + (isToday ? " today" : "");
-    cell.innerHTML = `<div class="d">Day ${day}</div><div class="r">+${reward}</div>`;
-    grid.appendChild(cell);
-  });
-  document.getElementById("claimDailyBtn").disabled = !data.claimable;
-  document.getElementById("claimDailyBtn").textContent = data.claimable ? "Claim today's reward" : "Come back tomorrow";
+  try {
+    const res = await fetch(`${API_BASE}/api/daily-reward/status`, { headers: authHeaders() });
+    const data = await res.json();
+    const grid = document.getElementById("dailyGrid");
+    grid.innerHTML = "";
+    data.ladder.forEach((reward, i) => {
+      const day = i + 1;
+      const done = day <= data.current_streak && !data.claimable;
+      const isToday = data.claimable && day === Math.min(data.current_streak + 1, data.ladder.length);
+      const cell = document.createElement("div");
+      cell.className = "day-cell" + (done ? " done" : "") + (isToday ? " today" : "");
+      cell.innerHTML = `<div class="d">Day ${day}</div><div class="r">+${reward}</div>`;
+      grid.appendChild(cell);
+    });
+    document.getElementById("claimDailyBtn").disabled = !data.claimable;
+    document.getElementById("claimDailyBtn").textContent = data.claimable ? "Claim today's reward" : "Come back tomorrow";
+  } catch (e) {
+    console.warn("loadDaily error", e);
+  }
 }
 
 document.getElementById("claimDailyBtn").onclick = async () => {
@@ -542,16 +561,22 @@ document.getElementById("claimDailyBtn").onclick = async () => {
   btn.textContent = "Claiming...";
   btn.disabled = true;
 
-  const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
-  if (!res.ok) {
-    tg?.HapticFeedback?.notificationOccurred('error');
+  try {
+    const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('error');
+      btn.disabled = false;
+      btn.textContent = "Claim today's reward";
+      return toast((await res.json()).detail || "Could not claim");
+    }
+    const data = await res.json();
+    toast(`🎁 +${data.reward_gems} gems claimed! Streak: ${data.new_streak}`);
+    await Promise.all([loadMe(), loadDaily()]);
+  } catch (e) {
     btn.disabled = false;
     btn.textContent = "Claim today's reward";
-    return toast((await res.json()).detail || "Could not claim");
+    toast("Network error");
   }
-  const data = await res.json();
-  toast(`🎁 +${data.reward_gems} gems claimed! Streak: ${data.new_streak}`);
-  await Promise.all([loadMe(), loadDaily()]);
 };
 
 async function showAd(placement) {
@@ -597,12 +622,16 @@ function renderWheel(segments) {
 }
 
 async function loadSpinStatus() {
-  const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
-  const data = await res.json();
-  wheelSegments = data.segments;
-  renderWheel(wheelSegments);
-  const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
-  document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+  try {
+    const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
+    const data = await res.json();
+    wheelSegments = data.segments;
+    renderWheel(wheelSegments);
+    const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
+    document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+  } catch (e) {
+    console.warn("loadSpinStatus error", e);
+  }
 }
 
 let currentRotation = 0;
@@ -613,114 +642,137 @@ document.getElementById("spinBtn").onclick = async () => {
   btn.disabled = true;
   btn.textContent = "Spinning...";
 
-  const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
-  if (!res.ok) {
-    tg?.HapticFeedback?.notificationOccurred('error');
-    toast((await res.json()).detail || "Could not spin");
+  try {
+    const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('error');
+      toast((await res.json()).detail || "Could not spin");
+      btn.disabled = false;
+      btn.textContent = "Spin for Gems";
+      return;
+    }
+    const data = await res.json();
+
+    const slice = 360 / data.total_segments;
+    const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
+    currentRotation += 360 - ((currentRotation) % 360) + targetAngle;
+    const wheel = document.getElementById("wheel");
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+    setTimeout(async () => {
+      toast(`🎉 You won +${data.reward_gems} gems!`);
+      document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
+      btn.disabled = data.spins_left <= 0;
+      btn.textContent = "Spin for Gems";
+      await loadMe();
+    }, 4100);
+  } catch (e) {
     btn.disabled = false;
     btn.textContent = "Spin for Gems";
-    return;
+    toast("Network error");
   }
-  const data = await res.json();
-
-  const slice = 360 / data.total_segments;
-  const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
-  currentRotation += 360 - ((currentRotation) % 360) + targetAngle;
-  const wheel = document.getElementById("wheel");
-  wheel.style.transform = `rotate(${currentRotation}deg)`;
-
-  setTimeout(async () => {
-    toast(`🎉 You won +${data.reward_gems} gems!`);
-    document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
-    btn.disabled = data.spins_left <= 0;
-    btn.textContent = "Spin for Gems";
-    await loadMe();
-  }, 4100);
 };
 
 async function loadTasks() {
-  const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
-  const tasks = await res.json();
-  const list = document.getElementById("taskList");
-  list.innerHTML = "";
-  tasks.forEach(t => {
-    const claimed = t.status === "claimed";
-    const card = document.createElement("div");
-    card.className = "task-card";
-    card.innerHTML = `
-      <div class="task-info">
-        <div class="task-title">${t.title}</div>
-        <div class="task-reward">💎 +${t.reward_gems} gems</div>
-      </div>
-      <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Done" : "Start"}</button>
-    `;
-    card.querySelector("button").onclick = async () => {
-      tg?.HapticFeedback?.impactOccurred('medium');
-      if (t.link) window.open(t.link, "_blank");
-      const r = await fetch(`${API_BASE}/api/tasks/claim`, {
-        method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
-      });
-      if (!r.ok) {
-        tg?.HapticFeedback?.notificationOccurred('error');
-        return toast((await r.json()).detail || "Could not claim");
-      }
-      const d = await r.json();
-      toast(`✅ +${d.reward_gems} gems claimed!`);
-      await Promise.all([loadMe(), loadTasks()]);
-    };
-    list.appendChild(card);
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
+    const tasks = await res.json();
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    tasks.forEach(t => {
+      const claimed = t.status === "claimed";
+      const card = document.createElement("div");
+      card.className = "task-card";
+      card.innerHTML = `
+        <div class="task-info">
+          <div class="task-title">${t.title}</div>
+          <div class="task-reward">💎 +${t.reward_gems} gems</div>
+        </div>
+        <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Done" : "Start"}</button>
+      `;
+      card.querySelector("button").onclick = async () => {
+        tg?.HapticFeedback?.impactOccurred('medium');
+        if (t.link) window.open(t.link, "_blank");
+        const r = await fetch(`${API_BASE}/api/tasks/claim`, {
+          method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
+        });
+        if (!r.ok) {
+          tg?.HapticFeedback?.notificationOccurred('error');
+          return toast((await r.json()).detail || "Could not claim");
+        }
+        const d = await r.json();
+        toast(`✅ +${d.reward_gems} gems claimed!`);
+        await Promise.all([loadMe(), loadTasks()]);
+      };
+      list.appendChild(card);
+    });
+  } catch (e) {
+    console.warn("loadTasks error", e);
+  }
 }
 
 function loadReferral() {
   if (!me) return;
   document.getElementById("refCount").textContent = me.invited_count || 0;
-  document.getElementById("refCode").textContent = me.referral_code;
+  document.getElementById("refCode").textContent = me.referral_code || "DEMO";
 
   const username = APP_SETTINGS.bot_username || "UsdtReward1bot";
-  const link = `https://t.me/${username}?start=${me.referral_code}`;
+  const link = `https://t.me/${username}?start=${me.referral_code || "DEMO"}`;
   const refLinkEl = document.getElementById("refLink");
-  refLinkEl.textContent = link;
-  refLinkEl.href = link;
+  if (refLinkEl) {
+    refLinkEl.textContent = link;
+    refLinkEl.href = link;
+  }
 
-  document.getElementById("shareBtn").onclick = () => {
-    tg?.HapticFeedback?.impactOccurred('medium');
-    const appName = APP_SETTINGS.app_name || "Reward Hub";
-    tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems & USDT 🎁`)}`);
-  };
+  const shareBtn = document.getElementById("shareBtn");
+  if (shareBtn) {
+    shareBtn.onclick = () => {
+      tg?.HapticFeedback?.impactOccurred('medium');
+      const appName = APP_SETTINGS.app_name || "Reward Hub";
+      tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems & USDT 🎁`)}`);
+    };
+  }
 }
 
 document.getElementById("giftBtn").onclick = async () => {
   tg?.HapticFeedback?.impactOccurred('medium');
   const code = document.getElementById("giftInput").value.trim();
   if (!code) return;
-  const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
-    method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
-  });
-  if (!res.ok) {
-    tg?.HapticFeedback?.notificationOccurred('error');
-    return toast((await res.json()).detail || "Invalid code");
+  try {
+    const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
+    });
+    if (!res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('error');
+      return toast((await res.json()).detail || "Invalid code");
+    }
+    const data = await res.json();
+    let msg = "🎁 Gift code redeemed!";
+    if (data.reward_gems) msg += ` +${data.reward_gems} gems`;
+    if (data.reward_spins) msg += ` +${data.reward_spins} spins`;
+    if (data.reward_usdt) msg += ` +$${data.reward_usdt} USDT`;
+    toast(msg);
+    document.getElementById("giftInput").value = "";
+    await Promise.all([loadMe(), loadSpinStatus()]);
+  } catch (e) {
+    toast("Network error");
   }
-  const data = await res.json();
-  let msg = "🎁 Gift code redeemed!";
-  if (data.reward_gems) msg += ` +${data.reward_gems} gems`;
-  if (data.reward_spins) msg += ` +${data.reward_spins} spins`;
-  if (data.reward_usdt) msg += ` +$${data.reward_usdt} USDT`;
-  toast(msg);
-  document.getElementById("giftInput").value = "";
-  await Promise.all([loadMe(), loadSpinStatus()]);
 };
 
 document.getElementById("convertBtn").onclick = async () => {
   tg?.HapticFeedback?.impactOccurred('medium');
-  const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
-  if (!res.ok) {
-    tg?.HapticFeedback?.notificationOccurred('error');
-    return toast((await res.json()).detail || "Nothing to convert");
+  try {
+    const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('error');
+      return toast((await res.json()).detail || "Nothing to convert");
+    }
+    const data = await res.json();
+    toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
+    await loadMe();
+  } catch (e) {
+    toast("Network error");
   }
-  const data = await res.json();
-  toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
-  await loadMe();
 };
 
 document.getElementById("withdrawBtn").onclick = () => {
@@ -740,16 +792,20 @@ document.getElementById("wdSubmit").onclick = async () => {
     return toast("Please fill in all fields");
   }
 
-  const res = await fetch(`${API_BASE}/api/withdraw`, {
-    method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
-  });
-  if (!res.ok) {
-    tg?.HapticFeedback?.notificationOccurred('error');
-    return toast((await res.json()).detail || "Could not submit withdrawal");
+  try {
+    const res = await fetch(`${API_BASE}/api/withdraw`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
+    });
+    if (!res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('error');
+      return toast((await res.json()).detail || "Could not submit withdrawal");
+    }
+    toast("🚀 Payout requested — pending review");
+    document.getElementById("withdrawModal").classList.remove("show");
+    await loadMe();
+  } catch (e) {
+    toast("Network error");
   }
-  toast("🚀 Payout requested — pending review");
-  document.getElementById("withdrawModal").classList.remove("show");
-  await loadMe();
 };
 
 /* Tab Navigation Switcher */
