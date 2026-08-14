@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS gift_codes (
     code            TEXT UNIQUE NOT NULL,
     reward_gems     INTEGER NOT NULL DEFAULT 0,
     reward_spins    INTEGER NOT NULL DEFAULT 0,
+    reward_usdt     REAL NOT NULL DEFAULT 0.0,
     max_uses        INTEGER NOT NULL DEFAULT 1,
     used_count      INTEGER NOT NULL DEFAULT 0,
     expires_at      INTEGER,
@@ -132,6 +133,8 @@ DEFAULT_SETTINGS = {
     "bot_username": "",
     "gems_per_usdt": "1000",
     "app_name": "Reward Hub",
+    "referral_reward_gems": "250",
+    "admin_broadcast": "",
 }
 
 # Fallback used only if the DB row is somehow missing.
@@ -159,6 +162,12 @@ async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL;")
         await db.executescript(SCHEMA)
+        # Database migration: add reward_usdt column if it doesn't exist
+        try:
+            await db.execute("ALTER TABLE gift_codes ADD COLUMN reward_usdt REAL NOT NULL DEFAULT 0.0")
+            await db.commit()
+        except Exception:
+            pass
         await db.execute(
             "INSERT OR IGNORE INTO spin_config (id, min_reward, max_reward, max_spins_per_day) VALUES (1, 10, 500, 8)"
         )
@@ -218,11 +227,19 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
         await db.commit()
 
         if referred_by_id:
+            # Fetch dynamic referral gems reward from settings
+            cur_reward = await db.execute("SELECT value FROM app_settings WHERE key = 'referral_reward_gems'")
+            reward_gems_row = await cur_reward.fetchone()
+            ref_gems = int(reward_gems_row["value"]) if reward_gems_row else 250
+
             await db.execute(
                 "INSERT INTO referrals (referrer_id, referred_id, bonus_gems, created_at) VALUES (?, ?, ?, ?)",
-                (referred_by_id, cur.lastrowid, 0, now),
+                (referred_by_id, cur.lastrowid, ref_gems, now),
             )
-            await db.execute("UPDATE users SET bonus_spins = bonus_spins + 1 WHERE id = ?", (referred_by_id,))
+            await db.execute(
+                "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
+                (ref_gems, referred_by_id),
+            )
             await db.commit()
 
         cur = await db.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,))

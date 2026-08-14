@@ -100,6 +100,10 @@
     <div class="balance-pill">💎 <span id="gemsBalance">0</span></div>
   </div>
 
+  <div id="broadcastBanner" class="facet" style="display:none; background:rgba(242,183,5,0.12); border:1px solid rgba(242,183,5,0.4); padding:12px 16px; border-radius:12px; margin-bottom:16px; font-size:13px; color:#F2B705; font-weight:500; line-height:1.4;">
+    📣 <span id="broadcastText"></span>
+  </div>
+
   <div class="hero facet">
     <div class="label">Cash-out balance</div>
     <div class="amount" id="usdtBalance">$0.00 <span class="usdt">USDT</span></div>
@@ -107,6 +111,7 @@
       <button class="btn-convert" id="convertBtn">Convert gems</button>
       <button class="btn-withdraw" id="withdrawBtn">Withdraw</button>
     </div>
+    <div id="conversionRateLabel" style="font-size:12px; color:var(--ink-dim); margin-top:10px; text-align:center;">— gems = $1.00 USDT</div>
   </div>
 
   <div class="section-title"><h2>Daily Rewards</h2><span class="eyebrow" id="streakLabel">Streak: 0</span></div>
@@ -138,6 +143,9 @@
     <div class="ref-count" id="refCount">0</div>
     <div style="font-size:12px; color:var(--ink-dim); margin-top:2px;">friends invited</div>
     <div class="ref-code" id="refCode">—</div>
+    <div style="margin-top:8px; font-size:12px; color:var(--ink-dim); word-break:break-all;">
+      Link: <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline;">https://t.me/...</a>
+    </div>
     <button class="ref-btn" id="shareBtn">Share invite link</button>
   </div>
 
@@ -179,6 +187,19 @@ async function loadAppSettings() {
   } catch (e) { console.warn("Could not load app settings", e); }
 
   document.title = APP_SETTINGS.app_name || "Reward Hub";
+
+  // Broadcast banner
+  if (APP_SETTINGS.admin_broadcast) {
+    document.getElementById("broadcastText").textContent = APP_SETTINGS.admin_broadcast;
+    document.getElementById("broadcastBanner").style.display = "block";
+  } else {
+    document.getElementById("broadcastBanner").style.display = "none";
+  }
+
+  // Conversion rate label
+  const rate = APP_SETTINGS.gems_per_usdt || "1000";
+  document.getElementById("conversionRateLabel").textContent = `${Number(rate).toLocaleString()} gems = $1.00 USDT`;
+
   try {
     if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
       AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
@@ -354,9 +375,14 @@ async function loadReferral() {
   const data = await res.json();
   document.getElementById("refCount").textContent = data.invited_count;
   document.getElementById("refCode").textContent = data.referral_code;
+
+  const username = APP_SETTINGS.bot_username || "YourBot";
+  const link = `https://t.me/${username}?start=${data.referral_code}`;
+  const refLinkEl = document.getElementById("refLink");
+  refLinkEl.textContent = link;
+  refLinkEl.href = link;
+
   document.getElementById("shareBtn").onclick = () => {
-    const username = APP_SETTINGS.bot_username || "";
-    const link = `https://t.me/${username}?start=${data.referral_code}`;
     const appName = APP_SETTINGS.app_name || "Reward Hub";
     tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems 🎁`)}`);
   };

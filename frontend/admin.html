@@ -36,6 +36,8 @@
     <div style="margin-top:8px;">Bot username (no @) <input id="setBotUsername" style="width:220px;" placeholder="RewardHubBot"></div>
     <div style="margin-top:8px;">App name <input id="setAppName" style="width:220px;" placeholder="Reward Hub"></div>
     <div style="margin-top:8px;">Gems per 1 USDT <input id="setGemsPerUsdt" type="number" style="width:120px;" placeholder="1000"></div>
+    <div style="margin-top:8px;">Referral Reward Gems <input id="setRefGems" type="number" style="width:120px;" placeholder="250"></div>
+    <div style="margin-top:8px;">Admin Broadcast Message <input id="setBroadcast" style="width:300px;" placeholder="🔥 Important announcement here"></div>
     <div style="margin-top:10px;"><button id="saveSettings">Save settings</button></div>
     <div class="warn" id="settingsMsg"></div>
   </div>
@@ -76,11 +78,12 @@
 
   <h2>Gift Codes</h2>
   <div class="card">
-    <input placeholder="CODE" id="gcCode" style="width:120px;">
-    <input placeholder="Gems" type="number" id="gcGems" style="width:80px;">
-    <input placeholder="Spins" type="number" id="gcSpins" style="width:70px;">
-    <input placeholder="Max uses" type="number" id="gcMaxUses" style="width:80px;" value="1">
-    <input placeholder="Expires in days (opt)" type="number" id="gcExpires" style="width:150px;">
+    <input placeholder="CODE" id="gcCode" style="width:110px;">
+    <input placeholder="Gems" type="number" id="gcGems" style="width:75px;">
+    <input placeholder="Spins" type="number" id="gcSpins" style="width:65px;">
+    <input placeholder="USDT" type="number" step="0.01" id="gcUsdt" style="width:75px;" value="0">
+    <input placeholder="Max uses" type="number" id="gcMaxUses" style="width:70px;" value="1">
+    <input placeholder="Expires (days)" type="number" id="gcExpires" style="width:110px;">
     <button id="addGiftCode">Create</button>
   </div>
 
@@ -114,6 +117,8 @@ async function loadSettings() {
   document.getElementById("setBotUsername").value = s.bot_username || "";
   document.getElementById("setAppName").value = s.app_name || "";
   document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "";
+  document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
+  document.getElementById("setBroadcast").value = s.admin_broadcast || "";
 }
 
 document.getElementById("saveSettings").onclick = async () => {
@@ -122,9 +127,11 @@ document.getElementById("saveSettings").onclick = async () => {
     bot_username: document.getElementById("setBotUsername").value.trim(),
     app_name: document.getElementById("setAppName").value.trim(),
     gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),
+    referral_reward_gems: document.getElementById("setRefGems").value.trim(),
+    admin_broadcast: document.getElementById("setBroadcast").value.trim(),
   };
   await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  document.getElementById("settingsMsg").textContent = "Saved. Reload the Mini App to pick up AdsGram/bot changes.";
+  document.getElementById("settingsMsg").textContent = "Saved successfully!";
 };
 
 async function loadStats() {
@@ -192,6 +199,7 @@ document.getElementById("addGiftCode").onclick = async () => {
     code: document.getElementById("gcCode").value,
     reward_gems: parseInt(document.getElementById("gcGems").value) || 0,
     reward_spins: parseInt(document.getElementById("gcSpins").value) || 0,
+    reward_usdt: parseFloat(document.getElementById("gcUsdt").value) || 0,
     max_uses: parseInt(document.getElementById("gcMaxUses").value) || 1,
     expires_in_days: document.getElementById("gcExpires").value ? parseInt(document.getElementById("gcExpires").value) : null,
   };

@@ -139,6 +139,9 @@ async def public_settings():
         "app_name": s["app_name"],
         "adsgram_block_id": s["adsgram_block_id"],
         "bot_username": s["bot_username"],
+        "gems_per_usdt": s["gems_per_usdt"],
+        "referral_reward_gems": s["referral_reward_gems"],
+        "admin_broadcast": s["admin_broadcast"],
     }
 
 
@@ -371,8 +374,8 @@ async def redeem_gift_code(body: RedeemBody, user=Depends(current_user)):
             raise HTTPException(400, "You already used this code")
 
         await conn.execute(
-            "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ? WHERE id = ?",
-            (gc["reward_gems"], gc["reward_spins"], user["id"]),
+            "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ?, balance_usdt = balance_usdt + ? WHERE id = ?",
+            (gc["reward_gems"], gc["reward_spins"], gc["reward_usdt"], user["id"]),
         )
         await conn.execute("UPDATE gift_codes SET used_count = used_count + 1 WHERE id = ?", (gc["id"],))
         await conn.execute(
@@ -381,7 +384,7 @@ async def redeem_gift_code(body: RedeemBody, user=Depends(current_user)):
         )
         await conn.commit()
 
-    return {"reward_gems": gc["reward_gems"], "reward_spins": gc["reward_spins"]}
+    return {"reward_gems": gc["reward_gems"], "reward_spins": gc["reward_spins"], "reward_usdt": gc["reward_usdt"]}
 
 
 # ------------------------------------------------------------- withdrawal --
@@ -450,6 +453,8 @@ class SettingsBody(BaseModel):
     bot_username: str | None = None
     gems_per_usdt: str | None = None
     app_name: str | None = None
+    referral_reward_gems: str | None = None
+    admin_broadcast: str | None = None
 
 
 @app.get("/api/admin/settings")
@@ -582,6 +587,7 @@ class GiftCodeBody(BaseModel):
     code: str
     reward_gems: int = 0
     reward_spins: int = 0
+    reward_usdt: float = 0.0
     max_uses: int = 1
     expires_in_days: int | None = None
 
@@ -592,9 +598,9 @@ async def admin_create_gift_code(body: GiftCodeBody, _=Depends(require_admin)):
     async with db.get_db() as conn:
         try:
             await conn.execute(
-                """INSERT INTO gift_codes (code, reward_gems, reward_spins, max_uses, expires_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (body.code, body.reward_gems, body.reward_spins, body.max_uses, expires_at),
+                """INSERT INTO gift_codes (code, reward_gems, reward_spins, reward_usdt, max_uses, expires_at)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (body.code, body.reward_gems, body.reward_spins, body.reward_usdt, body.max_uses, expires_at),
             )
             await conn.commit()
         except Exception:
