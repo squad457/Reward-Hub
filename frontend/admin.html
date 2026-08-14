@@ -36,8 +36,9 @@
     <div style="margin-top:8px;">Bot username (no @) <input id="setBotUsername" style="width:220px;" placeholder="RewardHubBot"></div>
     <div style="margin-top:8px;">App name <input id="setAppName" style="width:220px;" placeholder="Reward Hub"></div>
     <div style="margin-top:8px;">Gems per 1 USDT <input id="setGemsPerUsdt" type="number" style="width:120px;" placeholder="1000"></div>
+    <div style="margin-top:8px;">Min Withdraw USDT <input id="setMinWd" type="number" step="0.1" style="width:120px;" placeholder="5.0"></div>
     <div style="margin-top:8px;">Referral Reward Gems <input id="setRefGems" type="number" style="width:120px;" placeholder="250"></div>
-    <div style="margin-top:8px;">Admin Broadcast Message <input id="setBroadcast" style="width:300px;" placeholder="🔥 Important announcement here"></div>
+    <div style="margin-top:8px;">Admin Broadcast Message <input id="setBroadcast" style="width:260px;" placeholder="🔥 Important announcement"> <button id="clearBroadcast" style="background:#E85D75; color:#fff; padding:6px 10px; font-size:12px;">Clear</button></div>
     <div style="margin-top:10px;"><button id="saveSettings">Save settings</button></div>
     <div class="warn" id="settingsMsg"></div>
   </div>
@@ -117,6 +118,7 @@ async function loadSettings() {
   document.getElementById("setBotUsername").value = s.bot_username || "";
   document.getElementById("setAppName").value = s.app_name || "";
   document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "";
+  document.getElementById("setMinWd").value = s.min_withdraw_usdt || "5.0";
   document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
   document.getElementById("setBroadcast").value = s.admin_broadcast || "";
 }
@@ -127,11 +129,19 @@ document.getElementById("saveSettings").onclick = async () => {
     bot_username: document.getElementById("setBotUsername").value.trim(),
     app_name: document.getElementById("setAppName").value.trim(),
     gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),
+    min_withdraw_usdt: document.getElementById("setMinWd").value.trim(),
     referral_reward_gems: document.getElementById("setRefGems").value.trim(),
     admin_broadcast: document.getElementById("setBroadcast").value.trim(),
   };
   await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   document.getElementById("settingsMsg").textContent = "Saved successfully!";
+};
+
+document.getElementById("clearBroadcast").onclick = async () => {
+  document.getElementById("setBroadcast").value = "";
+  const body = { admin_broadcast: "" };
+  await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  document.getElementById("settingsMsg").textContent = "Broadcast cleared successfully!";
 };
 
 async function loadStats() {

@@ -135,6 +135,7 @@ DEFAULT_SETTINGS = {
     "app_name": "Reward Hub",
     "referral_reward_gems": "250",
     "admin_broadcast": "",
+    "min_withdraw_usdt": "5.0",
 }
 
 # Fallback used only if the DB row is somehow missing.

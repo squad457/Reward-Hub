@@ -142,6 +142,7 @@ async def public_settings():
         "gems_per_usdt": s["gems_per_usdt"],
         "referral_reward_gems": s["referral_reward_gems"],
         "admin_broadcast": s["admin_broadcast"],
+        "min_withdraw_usdt": s["min_withdraw_usdt"],
     }
 
 
@@ -400,6 +401,11 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
     if body.amount_usdt <= 0:
         raise HTTPException(400, "Invalid amount")
 
+    async with db.get_db() as conn:
+        min_wd = float(await db.get_setting(conn, "min_withdraw_usdt", "5.0"))
+        if body.amount_usdt < min_wd:
+            raise HTTPException(400, f"Minimum withdrawal amount is ${min_wd:.2f} USDT")
+
     now = int(time.time())
     async with db.get_db() as conn:
         # Atomically deduct from balance only if user has sufficient USDT
@@ -455,6 +461,7 @@ class SettingsBody(BaseModel):
     app_name: str | None = None
     referral_reward_gems: str | None = None
     admin_broadcast: str | None = None
+    min_withdraw_usdt: str | None = None
 
 
 @app.get("/api/admin/settings")
