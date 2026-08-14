@@ -386,13 +386,17 @@ class WithdrawBody(BaseModel):
 async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
     if body.amount_usdt <= 0:
         raise HTTPException(400, "Invalid amount")
-    if user["balance_usdt"] < body.amount_usdt:
-        raise HTTPException(400, "Insufficient balance")
 
     now = int(time.time())
     async with db.get_db() as conn:
-        await conn.execute("UPDATE users SET balance_usdt = balance_usdt - ? WHERE id = ?",
-                            (body.amount_usdt, user["id"]))
+        # Atomically deduct from balance only if user has sufficient USDT
+        cur = await conn.execute(
+            "UPDATE users SET balance_usdt = balance_usdt - ? WHERE id = ? AND balance_usdt >= ?",
+            (body.amount_usdt, user["id"], body.amount_usdt)
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(400, "Insufficient balance")
+
         await conn.execute(
             """INSERT INTO withdrawals (user_id, amount_usdt, method, destination, status, created_at)
                VALUES (?, ?, ?, ?, 'pending', ?)""",
@@ -406,13 +410,23 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
 async def convert_gems_to_usdt(user=Depends(current_user)):
     """Convert all convertible gems into USDT balance at the admin-configured rate."""
     async with db.get_db() as conn:
-        rate = float(await db.get_setting(conn, "gems_per_usdt", str(db.GEMS_PER_USDT_FALLBACK)))
-        usdt = user["gems"] / rate
-        if usdt <= 0:
+        # Fetch current gems inside transaction to prevent concurrent modification
+        cur = await conn.execute("SELECT gems FROM users WHERE id = ?", (user["id"],))
+        row = await cur.fetchone()
+        current_gems = row["gems"] if row else 0
+        if current_gems <= 0:
             raise HTTPException(400, "Nothing to convert")
-        await conn.execute(
-            "UPDATE users SET gems = 0, balance_usdt = balance_usdt + ? WHERE id = ?", (usdt, user["id"])
+
+        rate = float(await db.get_setting(conn, "gems_per_usdt", str(db.GEMS_PER_USDT_FALLBACK)))
+        usdt = current_gems / rate
+
+        # Atomically zero out gems and credit USDT, verifying gems hasn't changed since read
+        cur = await conn.execute(
+            "UPDATE users SET gems = 0, balance_usdt = balance_usdt + ? WHERE id = ? AND gems = ?",
+            (usdt, user["id"], current_gems)
         )
+        if cur.rowcount == 0:
+            raise HTTPException(400, "Conversion failed due to concurrent update. Please try again.")
         await conn.commit()
     return {"converted_usdt": usdt}
 

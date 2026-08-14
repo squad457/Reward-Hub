@@ -122,6 +122,9 @@ CREATE TABLE IF NOT EXISTS app_settings (
     key             TEXT PRIMARY KEY,
     value           TEXT NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
 """
 
 DEFAULT_SETTINGS = {
@@ -154,6 +157,7 @@ def _gen_code(nbytes=4) -> str:
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
         await db.executescript(SCHEMA)
         await db.execute(
             "INSERT OR IGNORE INTO spin_config (id, min_reward, max_reward, max_spins_per_day) VALUES (1, 10, 500, 8)"
@@ -196,7 +200,14 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
             if r:
                 referred_by_id = r["id"]
 
+        # Loop to ensure referral code is unique and avoid IntegrityError collisions
         code = _gen_code()
+        for _ in range(5):
+            cur = await db.execute("SELECT 1 FROM users WHERE referral_code = ?", (code,))
+            if not await cur.fetchone():
+                break
+            code = _gen_code()
+
         now = int(time.time())
         cur = await db.execute(
             """INSERT INTO users (telegram_id, username, first_name, photo_url,
