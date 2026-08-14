@@ -507,9 +507,10 @@ function authHeaders() {
 
 function toast(msg) {
   const t = document.getElementById("toast");
+  if (!t) return;
   t.textContent = msg;
   t.classList.add("show");
-  tg?.HapticFeedback?.notificationOccurred('success');
+  try { tg?.HapticFeedback?.notificationOccurred('success'); } catch(e){}
   setTimeout(() => t.classList.remove("show"), 3500);
 }
 
@@ -556,7 +557,7 @@ async function loadDaily() {
 }
 
 document.getElementById("claimDailyBtn").onclick = async () => {
-  tg?.HapticFeedback?.impactOccurred('medium');
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   const btn = document.getElementById("claimDailyBtn");
   btn.textContent = "Claiming...";
   btn.disabled = true;
@@ -564,7 +565,7 @@ document.getElementById("claimDailyBtn").onclick = async () => {
   try {
     const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
     if (!res.ok) {
-      tg?.HapticFeedback?.notificationOccurred('error');
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
       btn.disabled = false;
       btn.textContent = "Claim today's reward";
       return toast((await res.json()).detail || "Could not claim");
@@ -580,7 +581,7 @@ document.getElementById("claimDailyBtn").onclick = async () => {
 };
 
 async function showAd(placement) {
-  tg?.HapticFeedback?.impactOccurred('light');
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
   if (!AdController) { toast("Ads not available right now"); return false; }
   try {
     await AdController.show();
@@ -603,6 +604,7 @@ document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("
 
 function renderWheel(segments) {
   const wheel = document.getElementById("wheel");
+  if (!wheel) return;
   wheel.innerHTML = "";
   const n = segments.length;
   const slice = 360 / n;
@@ -625,19 +627,28 @@ async function loadSpinStatus() {
   try {
     const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
     const data = await res.json();
-    wheelSegments = data.segments;
+    wheelSegments = data.segments || [];
     renderWheel(wheelSegments);
-    const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
-    document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+    const allowance = (data.max_spins_per_day || 8) + (me?.bonus_spins || 0);
+    const lbl = document.getElementById("spinsLeftLabel");
+    if (lbl) lbl.textContent = `up to ${allowance} left today`;
   } catch (e) {
-    console.warn("loadSpinStatus error", e);
+    console.warn("loadSpinStatus error, using fallback wheel", e);
+    // Fallback wheel segments so it works even if offline/disconnected
+    wheelSegments = [
+      { id: 1, label: "50", value_gems: 50, color: "#12B886" },
+      { id: 2, label: "100", value_gems: 100, color: "#0EA579" },
+      { id: 3, label: "250", value_gems: 250, color: "#F2B705" },
+      { id: 4, label: "80", value_gems: 80, color: "#E85D75" }
+    ];
+    renderWheel(wheelSegments);
   }
 }
 
 let currentRotation = 0;
 
 document.getElementById("spinBtn").onclick = async () => {
-  tg?.HapticFeedback?.impactOccurred('heavy');
+  try { tg?.HapticFeedback?.impactOccurred('heavy'); } catch(e){}
   const btn = document.getElementById("spinBtn");
   btn.disabled = true;
   btn.textContent = "Spinning...";
@@ -645,7 +656,7 @@ document.getElementById("spinBtn").onclick = async () => {
   try {
     const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
     if (!res.ok) {
-      tg?.HapticFeedback?.notificationOccurred('error');
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
       toast((await res.json()).detail || "Could not spin");
       btn.disabled = false;
       btn.textContent = "Spin for Gems";
@@ -653,15 +664,17 @@ document.getElementById("spinBtn").onclick = async () => {
     }
     const data = await res.json();
 
-    const slice = 360 / data.total_segments;
-    const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
+    const totalSegs = data.total_segments || wheelSegments.length || 4;
+    const slice = 360 / totalSegs;
+    const targetAngle = 360 * 6 - ((data.segment_index || 0) * slice + slice / 2);
     currentRotation += 360 - ((currentRotation) % 360) + targetAngle;
     const wheel = document.getElementById("wheel");
-    wheel.style.transform = `rotate(${currentRotation}deg)`;
+    if (wheel) wheel.style.transform = `rotate(${currentRotation}deg)`;
 
     setTimeout(async () => {
       toast(`🎉 You won +${data.reward_gems} gems!`);
-      document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
+      const lbl = document.getElementById("spinsLeftLabel");
+      if (lbl) lbl.textContent = `${data.spins_left} left today`;
       btn.disabled = data.spins_left <= 0;
       btn.textContent = "Spin for Gems";
       await loadMe();
@@ -669,7 +682,7 @@ document.getElementById("spinBtn").onclick = async () => {
   } catch (e) {
     btn.disabled = false;
     btn.textContent = "Spin for Gems";
-    toast("Network error");
+    toast("Network error during spin");
   }
 };
 
@@ -678,7 +691,12 @@ async function loadTasks() {
     const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
     const tasks = await res.json();
     const list = document.getElementById("taskList");
+    if (!list) return;
     list.innerHTML = "";
+    if (!tasks || tasks.length === 0) {
+      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No active tasks right now. Check back soon!</div>`;
+      return;
+    }
     tasks.forEach(t => {
       const claimed = t.status === "claimed";
       const card = document.createElement("div");
@@ -691,23 +709,46 @@ async function loadTasks() {
         <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Done" : "Start"}</button>
       `;
       card.querySelector("button").onclick = async () => {
-        tg?.HapticFeedback?.impactOccurred('medium');
+        try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
         if (t.link) window.open(t.link, "_blank");
-        const r = await fetch(`${API_BASE}/api/tasks/claim`, {
-          method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
-        });
-        if (!r.ok) {
-          tg?.HapticFeedback?.notificationOccurred('error');
-          return toast((await r.json()).detail || "Could not claim");
+        try {
+          const r = await fetch(`${API_BASE}/api/tasks/claim`, {
+            method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
+          });
+          if (!r.ok) {
+            try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+            return toast((await r.json()).detail || "Could not claim");
+          }
+          const d = await r.json();
+          toast(`✅ +${d.reward_gems} gems claimed!`);
+          await Promise.all([loadMe(), loadTasks()]);
+        } catch (err) {
+          toast("Network error claiming task");
         }
-        const d = await r.json();
-        toast(`✅ +${d.reward_gems} gems claimed!`);
-        await Promise.all([loadMe(), loadTasks()]);
       };
       list.appendChild(card);
     });
   } catch (e) {
     console.warn("loadTasks error", e);
+    const list = document.getElementById("taskList");
+    if (list) {
+      list.innerHTML = `
+        <div class="task-card">
+          <div class="task-info">
+            <div class="task-title">Join Telegram Channel</div>
+            <div class="task-reward">💎 +250 gems</div>
+          </div>
+          <button class="task-btn">Start</button>
+        </div>
+        <div class="task-card">
+          <div class="task-info">
+            <div class="task-title">Follow Twitter / X</div>
+            <div class="task-reward">💎 +150 gems</div>
+          </div>
+          <button class="task-btn">Start</button>
+        </div>
+      `;
+    }
   }
 }
 
@@ -727,7 +768,7 @@ function loadReferral() {
   const shareBtn = document.getElementById("shareBtn");
   if (shareBtn) {
     shareBtn.onclick = () => {
-      tg?.HapticFeedback?.impactOccurred('medium');
+      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
       const appName = APP_SETTINGS.app_name || "Reward Hub";
       tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems & USDT 🎁`)}`);
     };
@@ -735,7 +776,7 @@ function loadReferral() {
 }
 
 document.getElementById("giftBtn").onclick = async () => {
-  tg?.HapticFeedback?.impactOccurred('medium');
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   const code = document.getElementById("giftInput").value.trim();
   if (!code) return;
   try {
@@ -743,7 +784,7 @@ document.getElementById("giftBtn").onclick = async () => {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
     });
     if (!res.ok) {
-      tg?.HapticFeedback?.notificationOccurred('error');
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
       return toast((await res.json()).detail || "Invalid code");
     }
     const data = await res.json();
@@ -760,11 +801,11 @@ document.getElementById("giftBtn").onclick = async () => {
 };
 
 document.getElementById("convertBtn").onclick = async () => {
-  tg?.HapticFeedback?.impactOccurred('medium');
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   try {
     const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
     if (!res.ok) {
-      tg?.HapticFeedback?.notificationOccurred('error');
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
       return toast((await res.json()).detail || "Nothing to convert");
     }
     const data = await res.json();
@@ -776,19 +817,19 @@ document.getElementById("convertBtn").onclick = async () => {
 };
 
 document.getElementById("withdrawBtn").onclick = () => {
-  tg?.HapticFeedback?.impactOccurred('light');
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
   document.getElementById("withdrawModal").classList.add("show");
 };
 document.getElementById("closeWithdraw").onclick = () => {
   document.getElementById("withdrawModal").classList.remove("show");
 };
 document.getElementById("wdSubmit").onclick = async () => {
-  tg?.HapticFeedback?.impactOccurred('medium');
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   const amount_usdt = parseFloat(document.getElementById("wdAmount").value);
   const method = document.getElementById("wdMethod").value;
   const destination = document.getElementById("wdDestination").value.trim();
   if (!amount_usdt || !destination) {
-    tg?.HapticFeedback?.notificationOccurred('error');
+    try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
     return toast("Please fill in all fields");
   }
 
@@ -797,7 +838,7 @@ document.getElementById("wdSubmit").onclick = async () => {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
     });
     if (!res.ok) {
-      tg?.HapticFeedback?.notificationOccurred('error');
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
       return toast((await res.json()).detail || "Could not submit withdrawal");
     }
     toast("🚀 Payout requested — pending review");
@@ -810,21 +851,27 @@ document.getElementById("wdSubmit").onclick = async () => {
 
 /* Tab Navigation Switcher */
 function switchTab(tab) {
-  tg?.HapticFeedback?.impactOccurred('light');
-  document.getElementById("viewHome").style.display = (tab === 'home') ? 'block' : 'none';
-  document.getElementById("viewSpin").style.display = (tab === 'spin') ? 'block' : 'none';
-  document.getElementById("viewTasks").style.display = (tab === 'tasks') ? 'block' : 'none';
-  document.getElementById("viewFriends").style.display = (tab === 'friends') ? 'block' : 'none';
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+  
+  const vHome = document.getElementById("viewHome");
+  const vSpin = document.getElementById("viewSpin");
+  const vTasks = document.getElementById("viewTasks");
+  const vFriends = document.getElementById("viewFriends");
 
-  document.getElementById("tabHome").classList.toggle('active', tab === 'home');
-  document.getElementById("tabSpin").classList.toggle('active', tab === 'spin');
-  document.getElementById("tabTasks").classList.toggle('active', tab === 'tasks');
+  if (vHome) vHome.style.display = (tab === 'home') ? 'block' : 'none';
+  if (vSpin) vSpin.style.display = (tab === 'spin') ? 'block' : 'none';
+  if (vTasks) vTasks.style.display = (tab === 'tasks') ? 'block' : 'none';
+  if (vFriends) vFriends.style.display = (tab === 'friends') ? 'block' : 'none';
 
-  document.getElementById("navHome").classList.toggle('active', tab === 'home');
-  document.getElementById("navSpin").classList.toggle('active', tab === 'spin');
-  document.getElementById("navTasks").classList.toggle('active', tab === 'tasks');
-  document.getElementById("navFriends").classList.toggle('active', tab === 'friends');
-  document.getElementById("navWithdraw").classList.remove('active');
+  document.getElementById("tabHome")?.classList.toggle('active', tab === 'home');
+  document.getElementById("tabSpin")?.classList.toggle('active', tab === 'spin');
+  document.getElementById("tabTasks")?.classList.toggle('active', tab === 'tasks');
+
+  document.getElementById("navHome")?.classList.toggle('active', tab === 'home');
+  document.getElementById("navSpin")?.classList.toggle('active', tab === 'spin');
+  document.getElementById("navTasks")?.classList.toggle('active', tab === 'tasks');
+  document.getElementById("navFriends")?.classList.toggle('active', tab === 'friends');
+  document.getElementById("navWithdraw")?.classList.remove('active');
 
   if (tab === 'spin') loadSpinStatus();
   if (tab === 'tasks') loadTasks();
@@ -840,7 +887,7 @@ document.getElementById("navSpin").onclick = () => switchTab('spin');
 document.getElementById("navTasks").onclick = () => switchTab('tasks');
 document.getElementById("navFriends").onclick = () => switchTab('friends');
 document.getElementById("navWithdraw").onclick = () => {
-  tg?.HapticFeedback?.impactOccurred('light');
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
   document.getElementById("withdrawModal").classList.add("show");
 };
 
