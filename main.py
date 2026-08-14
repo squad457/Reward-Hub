@@ -16,6 +16,7 @@ import json
 import os
 import random
 import time
+import asyncio
 from urllib.parse import parse_qsl
 
 from fastapi import FastAPI, HTTPException, Header, Depends
@@ -23,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import database as db
+from bot import bot, dp
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 ADMIN_KEY_BOOTSTRAP = os.environ.get("ADMIN_KEY", "")
@@ -44,6 +46,14 @@ async def _startup():
         async with db.get_db() as conn:
             await conn.execute("INSERT OR IGNORE INTO admins (api_key) VALUES (?)", (ADMIN_KEY_BOOTSTRAP,))
             await conn.commit()
+    # Start the Telegram Bot in the background under the same asyncio loop
+    asyncio.create_task(dp.start_polling(bot))
+
+
+@app.on_event("shutdown")
+async def _shutdown():
+    # Gracefully close bot session
+    await bot.session.close()
 
 
 # ---------------------------------------------------------------- auth ----
