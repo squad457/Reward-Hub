@@ -21,7 +21,7 @@
     --gold-glow: rgba(245, 158, 11, 0.3);
     --ink: #FFFFFF;
     --ink-dim: #9CA3AF;
-    --border: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.12);
   }
   
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,27 +32,27 @@
   }
   h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
   
-  .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 100px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 110px; }
 
   /* Top Bar */
   .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px; }
   .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
   .logo-badge {
-    width: 32px; height: 32px; background: linear-gradient(135deg, #EC4899, #8B5CF6);
+    width: 32px; height: 32px; background: linear-gradient(135deg, #00F59B, #8B5CF6);
     border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px; box-shadow: 0 0 15px rgba(236,72,153,0.4);
+    font-weight: 800; font-size: 16px; color: #000; box-shadow: 0 0 15px rgba(0,245,155,0.4);
   }
   .top-pill {
-    display: flex; align-items: center; gap: 6px; background: rgba(0,245,155,0.1);
-    border: 1px solid rgba(0,245,155,0.3); padding: 6px 12px; border-radius: 999px;
-    font-weight: 800; font-size: 13px; color: var(--emerald);
+    display: flex; align-items: center; gap: 6px; background: rgba(0,245,155,0.15);
+    border: 1px solid rgba(0,245,155,0.4); padding: 7px 14px; border-radius: 999px;
+    font-weight: 800; font-size: 14px; color: var(--emerald);
   }
 
   /* Broadcast */
   .broadcast-banner {
-    display: none; background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.05));
-    border: 1px solid rgba(245,158,11,0.35); padding: 12px 16px; border-radius: 14px;
-    margin-bottom: 14px; font-size: 13px; color: #FCD34D; font-weight: 600; line-height: 1.4;
+    display: none; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.08));
+    border: 1px solid rgba(245,158,11,0.4); padding: 12px 16px; border-radius: 16px;
+    margin-bottom: 16px; font-size: 13px; color: #FDE68A; font-weight: 600; line-height: 1.5;
   }
 
   /* Tab Switcher */
@@ -69,39 +69,35 @@
     box-shadow: 0 4px 15px var(--emerald-glow);
   }
 
-  /* Gorgeous Balance Hero Card (matching screenshot 3) */
+  /* Gorgeous Balance Hero Card */
   .hero-card {
     background: linear-gradient(135deg, #059669 0%, #065F46 50%, #042F23 100%);
     border-radius: 24px; padding: 22px; border: 1px solid rgba(0,245,155,0.3);
     box-shadow: 0 15px 40px rgba(0,245,155,0.15); margin-bottom: 16px; position: relative; overflow: hidden;
   }
-  .hero-card::before {
-    content: ''; position: absolute; top: -50px; right: -50px; width: 140px; height: 140px;
-    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); pointer-events: none;
-  }
-  .hero-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 600; margin-bottom: 12px; }
+  .hero-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 700; margin-bottom: 12px; }
   .hero-balance-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); font-weight: 700; }
-  .hero-balance-amount { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 2px; }
-  .hero-usd { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 600; margin-bottom: 18px; }
+  .hero-balance-amount { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 2px; }
+  .hero-usd { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 700; margin-bottom: 18px; }
   .hero-actions { display: flex; gap: 10px; }
   .hero-btn {
-    flex: 1; background: #FFFFFF; color: #064E3B; border: none; padding: 12px; border-radius: 12px;
-    font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    flex: 1; background: #FFFFFF; color: #064E3B; border: none; padding: 13px; border-radius: 14px;
+    font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.15s;
   }
-  .hero-btn:active { transform: scale(0.97); }
-  .hero-btn.outline { background: rgba(0,0,0,0.25); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.2); }
+  .hero-btn:active { transform: scale(0.96); }
+  .hero-btn.outline { background: rgba(0,0,0,0.3); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.25); }
 
-  /* Stats Grid (3 cards matching screenshot 3) */
+  /* Stats Grid (Earned, Referrals, Streak) */
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
   .stat-card {
-    background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 14px 10px;
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 14px 8px;
     text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   }
   .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); font-weight: 700; }
   .stat-card .val { font-size: 15px; font-weight: 800; margin-top: 6px; color: var(--ink); }
 
-  /* Daily Streak Box (matching screenshot 1 & 2) */
+  /* Daily Streak Box */
   .streak-box {
     background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 18px;
@@ -118,58 +114,86 @@
     background: #040F0B; border: 1px solid var(--border); border-radius: 14px; padding: 12px 6px;
     text-align: center; font-size: 11px; color: var(--ink-dim); transition: all 0.2s;
   }
-  .day-cell.done { background: rgba(0,245,155,0.12); border-color: rgba(0,245,155,0.4); color: var(--emerald); }
-  .day-cell.today { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.6); color: #DDD6FE; box-shadow: 0 0 15px rgba(139,92,246,0.2); }
+  .day-cell.done { background: rgba(0,245,155,0.15); border-color: rgba(0,245,155,0.5); color: var(--emerald); }
+  .day-cell.today { background: rgba(139,92,246,0.25); border-color: rgba(139,92,246,0.7); color: #DDD6FE; box-shadow: 0 0 15px rgba(139,92,246,0.3); }
   .day-cell .d { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
   .day-cell .r { font-weight: 800; color: var(--gold); }
 
   .claim-main-btn {
     width: 100%; background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: #FFF; border: none;
-    padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer;
+    padding: 15px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
     box-shadow: 0 6px 20px rgba(139,92,246,0.4); transition: transform 0.15s;
   }
   .claim-main-btn:active { transform: scale(0.97); }
   .claim-main-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; box-shadow: none; }
 
+  .ad-btn {
+    width: 100%; margin-top: 10px; padding: 14px; background: rgba(139, 92, 246, 0.1); border: 1px dashed rgba(139,92,246,0.6);
+    color: #DDD6FE; border-radius: 16px; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+
   /* Wheel */
   .wheel-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; margin-bottom: 18px; }
-  .wheel-outer { position: relative; width: 230px; height: 230px; margin: 0 auto; }
+  .wheel-outer { position: relative; width: 240px; height: 240px; margin: 0 auto; }
   .wheel {
-    width: 230px; height: 230px; border-radius: 50%; position: relative;
-    border: 5px solid rgba(255,255,255,0.1); box-shadow: 0 0 0 3px rgba(0,245,155,0.3), 0 15px 35px rgba(0,0,0,0.5);
+    width: 240px; height: 240px; border-radius: 50%; position: relative;
+    border: 6px solid rgba(255,255,255,0.12); box-shadow: 0 0 0 3px rgba(0,245,155,0.3), 0 15px 40px rgba(0,0,0,0.6);
     transition: transform 4s cubic-bezier(0.12, 0.67, 0.1, 1);
   }
   .wheel-pointer {
     position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
-    border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid var(--gold); z-index: 5;
+    border-left: 11px solid transparent; border-right: 11px solid transparent; border-top: 20px solid var(--gold); z-index: 5;
   }
-  .wheel-label { position: absolute; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+  .wheel-label { position: absolute; font-size: 12px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
   .spin-action-btn {
-    margin-top: 18px; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
-    padding: 14px 36px; border-radius: 999px; font-weight: 800; font-size: 15px; cursor: pointer;
-    box-shadow: 0 6px 20px var(--gold-glow);
+    margin-top: 20px; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
+    padding: 15px 40px; border-radius: 999px; font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 6px 25px var(--gold-glow);
   }
 
   /* Tasks & Gift */
-  .card-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: 20px; padding: 18px; margin-bottom: 18px; }
+  .card-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
   .task-card {
-    display: flex; align-items: center; justify-content: space-between; padding: 14px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between; padding: 15px; margin-bottom: 10px;
     background: #040F0B; border: 1px solid var(--border); border-radius: 14px;
   }
-  .task-info { display: flex; flex-direction: column; gap: 3px; }
+  .task-info { display: flex; flex-direction: column; gap: 4px; }
   .task-title { font-size: 14px; font-weight: 700; color: var(--ink); }
   .task-reward { font-size: 12px; color: var(--gold); font-weight: 800; }
   .task-btn {
     background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none;
-    padding: 9px 18px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer;
+    padding: 10px 18px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer;
+    box-shadow: 0 4px 15px var(--emerald-glow);
   }
-  .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; }
+  .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; box-shadow: none; }
 
-  /* Bottom Navigation Bar (matching screenshot) */
+  /* Referral Card */
+  .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 18px; }
+  .ref-count { font-size: 34px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); }
+  .ref-code { margin-top: 10px; font-family: monospace; font-size: 15px; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 10px; display: inline-block; letter-spacing: 0.05em; color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+  .ref-btn {
+    margin-top: 16px; background: linear-gradient(135deg, var(--purple), #7C3AED); color: #fff; border: none;
+    padding: 14px 24px; border-radius: 999px; font-weight: 800; font-size: 15px; cursor: pointer; width: 100%;
+    box-shadow: 0 6px 20px rgba(139,92,246,0.4);
+  }
+
+  /* Gift Row */
+  .gift-row { display: flex; gap: 10px; margin-top: 10px; }
+  .gift-row input {
+    flex: 1; background: #040F0B; border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px;
+    color: var(--ink); font-size: 14px; outline: none; font-weight: 600;
+  }
+  .gift-row input:focus { border-color: var(--emerald); }
+  .gift-row button {
+    background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none; padding: 13px 22px;
+    border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px var(--emerald-glow);
+  }
+
+  /* Bottom Navigation Bar */
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
-    background: rgba(10, 27, 20, 0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border);
-    display: flex; justify-content: space-around; padding: 10px 6px 20px; z-index: 50;
+    background: rgba(10, 27, 20, 0.96); backdrop-filter: blur(14px); border-top: 1px solid var(--border);
+    display: flex; justify-content: space-around; padding: 10px 6px 22px; z-index: 50;
   }
   .nav-item {
     display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--ink-dim);
@@ -181,34 +205,35 @@
 
   /* Toast Notification */
   .toast {
-    position: fixed; top: 16px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
+    position: fixed; top: 18px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
     background: linear-gradient(135deg, #0F3D2E, #051C14); border: 1px solid var(--emerald);
-    padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-align: center;
-    color: var(--ink); transform: translateY(-180%); transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 100; box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    padding: 16px 22px; border-radius: 16px; font-size: 14px; font-weight: 700; text-align: center;
+    color: var(--ink); transform: translateY(-180%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.7);
   }
   .toast.show { transform: translateY(0); }
 
   /* Modal */
   .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
     display: none; align-items: flex-end; z-index: 70;
   }
   .modal-backdrop.show { display: flex; }
   .modal {
-    background: #0A1B14; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 24px 24px 0 0;
-    padding: 24px 20px 36px; border: 1px solid var(--border); box-shadow: 0 -15px 40px rgba(0,0,0,0.7);
+    background: #0A1B14; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 28px 28px 0 0;
+    padding: 26px 22px 40px; border: 1px solid var(--border); box-shadow: 0 -15px 50px rgba(0,0,0,0.8);
   }
-  .modal h3 { margin: 0 0 16px; font-size: 18px; font-weight: 800; }
+  .modal h3 { margin: 0 0 16px; font-size: 19px; font-weight: 800; color: var(--ink); }
   .modal input, .modal select {
-    width: 100%; background: #040F0B; border: 1px solid var(--border); border-radius: 12px;
-    padding: 13px 15px; color: var(--ink); font-size: 14px; margin-bottom: 12px; outline: none; font-weight: 600;
+    width: 100%; background: #040F0B; border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; color: var(--ink); font-size: 14px; margin-bottom: 14px; outline: none; font-weight: 600;
   }
   .modal button.primary {
     width: 100%; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
-    padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px;
+    padding: 15px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 6px 25px var(--gold-glow); margin-top: 8px;
   }
-  .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 18px; font-weight: 800; }
+  .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 20px; font-weight: 800; }
 </style>
 </head>
 <body>
@@ -252,19 +277,19 @@
       </div>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Stats Grid (Earned, Referrals, Streak) -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">Earned</div>
-        <div class="val" id="statEarned">0.00</div>
+        <div class="val" id="statEarned">$0.00</div>
       </div>
       <div class="stat-card">
         <div class="label">Referrals</div>
         <div class="val" id="statReferrals">0</div>
       </div>
       <div class="stat-card">
-        <div class="label">VIP Status</div>
-        <div class="val" id="statVip" style="color: var(--gold);">Regular</div>
+        <div class="label">Streak</div>
+        <div class="val" id="statStreak" style="color: var(--emerald);">0 Days</div>
       </div>
     </div>
 
@@ -287,8 +312,8 @@
 
     <!-- Gift Code Box -->
     <div class="card-box">
-      <div class="section-title" style="margin-top:0;"><h2>Gift Code</h2><span class="eyebrow">Redeem</span></div>
-      <div class="gift-row" style="padding:0; background:none; border:none; box-shadow:none;">
+      <div style="font-size:15px; font-weight:800; margin-bottom:10px;">Gift Code</div>
+      <div class="gift-row">
         <input type="text" id="giftInput" placeholder="Enter gift code" />
         <button id="giftBtn">Redeem</button>
       </div>
@@ -299,7 +324,7 @@
       <div class="ref-count" id="refCount">0</div>
       <div style="font-size:12px; color:var(--ink-dim); margin-top:4px; margin-bottom:12px; font-weight:700;">friends invited</div>
       <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
-      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.3); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
+      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.4); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
         🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
       </div>
       <button class="ref-btn" id="shareBtn">Share invite link</button>
@@ -314,15 +339,15 @@
         <div class="wheel" id="wheel"></div>
       </div>
       <button class="spin-action-btn" id="spinBtn">Spin for Gems</button>
-      <div class="spins-left" id="spinsLeftLabel">— left today</div>
-      <div class="bonus-spin-link" id="watchAdSpinBtn">▶ Watch ad for +1 spin</div>
+      <div class="spins-left" id="spinsLeftLabel" style="margin-top:12px; font-weight:700; color:var(--ink-dim);">— left today</div>
+      <div class="bonus-spin-link" id="watchAdSpinBtn" style="margin-top:8px; font-weight:700; color:#DDD6FE; text-decoration:underline; cursor:pointer;">▶ Watch ad for +1 spin</div>
     </div>
   </div>
 
   <!-- VIEW: TASKS -->
   <div id="viewTasks" style="display:none;">
     <div class="card-box">
-      <div class="section-title" style="margin-top:0;"><h2>Available Tasks</h2><span class="eyebrow">Earn gems</span></div>
+      <div style="font-size:16px; font-weight:800; margin-bottom:14px;">Available Tasks</div>
       <div id="taskList"></div>
     </div>
   </div>
@@ -345,7 +370,7 @@
   </button>
   <button class="nav-item" id="navWithdraw">
     <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-    <span>Wallet</span>
+    <span>Payout</span>
   </button>
 </div>
 
@@ -355,14 +380,15 @@
 <div class="modal-backdrop" id="withdrawModal">
   <div class="modal">
     <span class="close" id="closeWithdraw">✕</span>
-    <h3>Withdraw USDT</h3>
+    <h3>Request Payout</h3>
+    <div id="modalMinWdLabel" style="font-size:12px; color:var(--gold); margin-bottom:14px; font-weight:700;">Minimum withdrawal: 5.00 USDT</div>
     <input type="number" id="wdAmount" placeholder="Amount (USDT)" step="0.01" />
     <select id="wdMethod">
       <option value="binance_pay">Binance Pay</option>
       <option value="usdt_address">USDT Address (TRC20)</option>
     </select>
     <input type="text" id="wdDestination" placeholder="Binance Pay ID or wallet address" />
-    <button class="primary" id="wdSubmit">Request withdrawal</button>
+    <button class="primary" id="wdSubmit">Submit Payout</button>
   </div>
 </div>
 
@@ -374,7 +400,7 @@ const API_BASE = "https://reward-hub-production.up.railway.app";
 const urlParams = new URLSearchParams(window.location.search);
 const refFromLink = urlParams.get("ref");
 
-let APP_SETTINGS = { adsgram_block_id: "", bot_username: "", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
+let APP_SETTINGS = { adsgram_block_id: "", bot_username: "UsdtReward1bot", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
 let AdController = null;
 let me = null;
 let wheelSegments = [];
@@ -387,7 +413,10 @@ async function loadAppSettings() {
 
   document.title = APP_SETTINGS.app_name || "Reward Hub";
   document.getElementById("appNameTitle").textContent = APP_SETTINGS.app_name || "Reward Hub";
-  document.getElementById("minWdLabel").textContent = `${Number(APP_SETTINGS.min_withdraw_usdt || 5).toFixed(2)} USDT`;
+  
+  const minWd = Number(APP_SETTINGS.min_withdraw_usdt || 5).toFixed(2);
+  document.getElementById("minWdLabel").textContent = `${minWd} USDT`;
+  document.getElementById("modalMinWdLabel").textContent = `Minimum withdrawal: ${minWd} USDT`;
 
   if (APP_SETTINGS.admin_broadcast) {
     document.getElementById("broadcastText").textContent = APP_SETTINGS.admin_broadcast;
@@ -427,12 +456,11 @@ async function loadMe() {
   document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
   document.getElementById("userName").textContent = me.first_name || "User";
   document.getElementById("streakNum").textContent = me.daily_streak;
-  document.getElementById("refCount").textContent = me.invited_count || 0;
   document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
   document.getElementById("statReferrals").textContent = me.invited_count || 0;
-  document.getElementById("statVip").textContent = me.is_vip ? "VIP" : "Regular";
-  document.getElementById("refCode").textContent = me.referral_code;
-  document.getElementById("vipBadge").style.display = me.is_vip ? "inline-block" : "none";
+  document.getElementById("statStreak").textContent = `${me.daily_streak || 0} Days`;
+  
+  loadReferral();
 }
 
 async function loadDaily() {
@@ -580,14 +608,13 @@ async function loadTasks() {
   });
 }
 
-async function loadReferral() {
-  const res = await fetch(`${API_BASE}/api/referral`, { headers: authHeaders() });
-  const data = await res.json();
-  document.getElementById("refCount").textContent = data.invited_count;
-  document.getElementById("refCode").textContent = data.referral_code;
+function loadReferral() {
+  if (!me) return;
+  document.getElementById("refCount").textContent = me.invited_count || 0;
+  document.getElementById("refCode").textContent = me.referral_code;
 
-  const username = APP_SETTINGS.bot_username || "YourBot";
-  const link = `https://t.me/${username}?start=${data.referral_code}`;
+  const username = APP_SETTINGS.bot_username || "UsdtReward1bot";
+  const link = `https://t.me/${username}?start=${me.referral_code}`;
   const refLinkEl = document.getElementById("refLink");
   refLinkEl.textContent = link;
   refLinkEl.href = link;
@@ -656,7 +683,7 @@ document.getElementById("wdSubmit").onclick = async () => {
     tg?.HapticFeedback?.notificationOccurred('error');
     return toast((await res.json()).detail || "Could not submit withdrawal");
   }
-  toast("🚀 Withdrawal requested — pending review");
+  toast("🚀 Payout requested — pending review");
   document.getElementById("withdrawModal").classList.remove("show");
   await loadMe();
 };
@@ -693,7 +720,7 @@ document.getElementById("navWithdraw").onclick = () => {
 (async function init() {
   await loadAppSettings();
   await loadMe();
-  await Promise.all([loadDaily(), loadSpinStatus(), loadTasks(), loadReferral()]);
+  await Promise.all([loadDaily(), loadSpinStatus(), loadTasks()]);
 })();
 </script>
 </body>
