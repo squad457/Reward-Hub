@@ -813,6 +813,10 @@ async function loadTasks() {
     const tasks = await res.json();
     const list = document.getElementById("taskList");
     list.innerHTML = "";
+    if (!tasks || tasks.length === 0) {
+      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No tasks available right now. Check back soon!</div>`;
+      return;
+    }
     tasks.forEach(t => {
       const claimed = t.status === "claimed";
       const card = document.createElement("div");
@@ -856,22 +860,7 @@ async function loadTasks() {
     console.warn("loadTasks error", e);
     const list = document.getElementById("taskList");
     if (list) {
-      list.innerHTML = `
-        <div class="task-card">
-          <div class="task-info">
-            <div class="task-title">Join Telegram Channel</div>
-            <div class="task-reward">💎 +250 gems</div>
-          </div>
-          <button class="task-btn">Start</button>
-        </div>
-        <div class="task-card">
-          <div class="task-info">
-            <div class="task-title">Follow Twitter / X</div>
-            <div class="task-reward">💎 +150 gems</div>
-          </div>
-          <button class="task-btn">Start</button>
-        </div>
-      `;
+      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No tasks available right now. Check back soon!</div>`;
     }
   }
 }
