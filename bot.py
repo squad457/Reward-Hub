@@ -33,8 +33,7 @@ async def start(message: Message, command: CommandObject):
 
     await message.answer(
         "Welcome to <b>Reward Hub</b> 🎁\n\n"
-        "Earn gems by completing tasks, spinning the wheel, watching ads, and inviting friends — "
-        "then cash out in USDT.",
+        "Engage with community tasks, spin the daily wheel, collect reward gems, and connect with friends!",
         reply_markup=kb,
         parse_mode="HTML",
     )
