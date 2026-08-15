@@ -287,8 +287,8 @@ async def spin_wheel(user=Depends(current_user)):
         cfg = await _get_spin_config(conn)
         segments = await _get_wheel_segments(conn)
 
-        # Select all payable segments that do not exceed max_reward
-        real_segments = [s for s in segments if s["is_real"] and s["value_gems"] <= cfg["max_reward"]]
+        # Select all segments that do not exceed max_reward
+        real_segments = [s for s in segments if s["value_gems"] <= cfg["max_reward"]]
 
         if cfg["min_reward"] and cfg["min_reward"] > 1:
             filtered = [s for s in real_segments if s["value_gems"] >= cfg["min_reward"]]
@@ -296,7 +296,7 @@ async def spin_wheel(user=Depends(current_user)):
                 real_segments = filtered
 
         if not real_segments:
-            real_segments = [s for s in segments if s["is_real"]]
+            real_segments = segments
 
         if not real_segments:
             raise HTTPException(500, "No eligible wheel segments configured")

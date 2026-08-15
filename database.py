@@ -194,6 +194,7 @@ async def init_db():
         )
         try:
             await db.execute("UPDATE spin_config SET min_reward = 1 WHERE id = 1 AND min_reward > 1")
+            await db.execute("UPDATE wheel_segments SET is_real = 1")
             await db.commit()
         except Exception:
             pass
