@@ -640,6 +640,10 @@ async function loadAppSettings() {
   try {
     if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
       AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
+      const noop = () => {};
+      AdController.addEventListener("onBannerNotFound", noop);
+      AdController.addEventListener("onNonStopShow", noop);
+      AdController.addEventListener("onTooLongSession", noop);
     }
   } catch (e) { console.warn("AdsGram init failed", e); }
 }
@@ -765,7 +769,19 @@ document.getElementById("claimDailyBtn").onclick = async () => {
 };
 
 async function showAd(placement, btnId) {
-  if (!AdController) { toast("Ads not available"); return false; }
+  if (!AdController) {
+    if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
+      try {
+        AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
+        const noop = () => {};
+        AdController.addEventListener("onBannerNotFound", noop);
+        AdController.addEventListener("onNonStopShow", noop);
+        AdController.addEventListener("onTooLongSession", noop);
+      } catch(e) {}
+    }
+  }
+  if (!AdController) { toast("Ads not available right now"); return false; }
+
   const btn = btnId ? document.getElementById(btnId) : null;
   const originalHtml = btn ? btn.innerHTML : "";
   if (btn) {
@@ -778,7 +794,7 @@ async function showAd(placement, btnId) {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ placement }),
     });
     const data = await res.json();
-    if (data.reward_gems) toast(`+${data.reward_gems} gems from ad!`);
+    if (data.reward_gems) toast(`+${data.reward_gems} gems from sponsor!`);
     if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
     await loadMe();
     if (btn) {
@@ -787,7 +803,11 @@ async function showAd(placement, btnId) {
     }
     return true;
   } catch (e) {
-    toast("Ads not available");
+    if (e?.state !== "load" && e?.state !== "render") {
+      // Completed or dismissed normally
+    } else {
+      toast("Ad not completed");
+    }
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = originalHtml;
