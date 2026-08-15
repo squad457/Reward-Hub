@@ -17,6 +17,7 @@ import os
 import random
 import time
 import asyncio
+import datetime
 from urllib.parse import parse_qsl
 
 from fastapi import FastAPI, HTTPException, Header, Depends
@@ -250,9 +251,14 @@ async def spin_wheel(user=Depends(current_user)):
 
         reset_at = user["spins_reset_at"] or 0
         spins_today = user["spins_today"]
+        
+        now_dt = datetime.datetime.fromtimestamp(now, datetime.timezone.utc)
+        next_midnight = datetime.datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=datetime.timezone.utc) + datetime.timedelta(days=1)
+        target_reset_at = int(next_midnight.timestamp())
+
         if now >= reset_at:
             spins_today = 0
-            reset_at = now + 86400
+            reset_at = target_reset_at
 
         allowance = cfg["max_spins_per_day"] + user["bonus_spins"]
         if spins_today >= allowance:
