@@ -257,6 +257,8 @@
     box-shadow: 0 6px 25px var(--gold-glow); margin-top: 8px;
   }
   .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 20px; font-weight: 800; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .ad-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
 </style>
 </head>
 <body>
@@ -586,8 +588,14 @@ document.getElementById("claimDailyBtn").onclick = async () => {
   btn.disabled = false;
 };
 
-async function showAd(placement) {
-  if (!AdController) { toast("Ads not available right now"); return false; }
+async function showAd(placement, btnId) {
+  if (!AdController) { toast("Ads not available"); return false; }
+  const btn = btnId ? document.getElementById(btnId) : null;
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="ad-spinner"></span> Loading Ad...`;
+  }
   try {
     await AdController.show();
     const res = await fetch(`${API_BASE}/api/ads/reward`, {
@@ -597,15 +605,23 @@ async function showAd(placement) {
     if (data.reward_gems) toast(`+${data.reward_gems} gems from ad!`);
     if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
     await loadMe();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
     return true;
   } catch (e) {
-    toast("Ad was skipped or failed");
+    toast("Ads not available");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
     return false;
   }
 }
 
-document.getElementById("watchAdDailyBtn").onclick = () => showAd("daily_bonus");
-document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("spin_bonus"); await loadSpinStatus(); };
+document.getElementById("watchAdDailyBtn").onclick = () => showAd("daily_bonus", "watchAdDailyBtn");
+document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("spin_bonus", "watchAdSpinBtn"); await loadSpinStatus(); };
 
 function renderWheel(segments) {
   const wheel = document.getElementById("wheel");
