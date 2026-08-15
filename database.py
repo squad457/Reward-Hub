@@ -202,6 +202,11 @@ async def init_db():
                 )
         for k, v in DEFAULT_SETTINGS.items():
             await db.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)", (k, v))
+        try:
+            await db.execute("DELETE FROM tasks WHERE title LIKE '%Join Official Telegram Channel%' OR title LIKE '%Follow Us on X%'")
+            await db.commit()
+        except Exception:
+            pass
         await db.commit()
 
 

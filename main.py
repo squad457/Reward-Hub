@@ -651,6 +651,14 @@ class TaskBody(BaseModel):
     sort_order: int = 0
 
 
+@app.get("/api/admin/tasks")
+async def admin_list_tasks(_=Depends(require_admin)):
+    async with db.get_db() as conn:
+        cur = await conn.execute("SELECT * FROM tasks ORDER BY id DESC")
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.post("/api/admin/tasks")
 async def admin_create_task(body: TaskBody, _=Depends(require_admin)):
     async with db.get_db() as conn:
@@ -663,11 +671,27 @@ async def admin_create_task(body: TaskBody, _=Depends(require_admin)):
     return {"id": cur.lastrowid}
 
 
+@app.put("/api/admin/tasks/{task_id}")
+async def admin_update_task(task_id: int, body: TaskBody, _=Depends(require_admin)):
+    async with db.get_db() as conn:
+        await conn.execute(
+            """UPDATE tasks SET title=?, description=?, reward_gems=?, task_type=?, link=?, sort_order=? WHERE id=?""",
+            (body.title, body.description, body.reward_gems, body.task_type, body.link, body.sort_order, task_id),
+        )
+        await conn.commit()
+    return {"ok": True}
+
+
 @app.delete("/api/admin/tasks/{task_id}")
 async def admin_deactivate_task(task_id: int, _=Depends(require_admin)):
     async with db.get_db() as conn:
-        await conn.execute("UPDATE tasks SET active = 0 WHERE id = ?", (task_id,))
-        await conn.commit()
+        # Toggle or deactivate active status
+        cur = await conn.execute("SELECT active FROM tasks WHERE id = ?", (task_id,))
+        row = await cur.fetchone()
+        if row:
+            new_active = 0 if row["active"] else 1
+            await conn.execute("UPDATE tasks SET active = ? WHERE id = ?", (new_active, task_id))
+            await conn.commit()
     return {"ok": True}
 
 

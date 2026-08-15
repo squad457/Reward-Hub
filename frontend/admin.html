@@ -71,7 +71,8 @@
 
   <h2>Tasks</h2>
   <div class="card">
-    <div>
+    <table id="taskTable"><thead><tr><th>Title</th><th>Reward</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    <div style="margin-top:12px;">
       <input placeholder="Title" id="taskTitle" style="width:160px;">
       <input placeholder="Reward gems" type="number" id="taskReward" style="width:100px;">
       <input placeholder="Link (optional)" id="taskLink" style="width:200px;">
@@ -219,14 +220,48 @@ document.getElementById("addSegment").onclick = async () => {
   loadSegments();
 };
 
+let editingTaskId = null;
+
+async function loadTasks() {
+  const tasks = await (await fetch(`${API_BASE}/api/admin/tasks`, { headers: headers() })).json();
+  const tbody = document.querySelector("#taskTable tbody");
+  tbody.innerHTML = "";
+  tasks.forEach(t => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${t.title}</td><td>${t.reward_gems} gems</td><td>${t.active ? "Active" : "Stopped"}</td><td><button class="edit-btn" style="background:#8B5CF6; color:#fff; padding:4px 8px; font-size:11px; margin-right:4px;">Edit</button><button class="stop-btn" style="background:${t.active ? "#E85D75" : "#12B886"}; color:#fff; padding:4px 8px; font-size:11px;">${t.active ? "Stop" : "Activate"}</button></td>`;
+    tr.querySelector(".edit-btn").onclick = () => {
+      editingTaskId = t.id;
+      document.getElementById("taskTitle").value = t.title;
+      document.getElementById("taskReward").value = t.reward_gems;
+      document.getElementById("taskLink").value = t.link || "";
+      document.getElementById("addTask").textContent = "Update task";
+    };
+    tr.querySelector(".stop-btn").onclick = async () => {
+      await fetch(`${API_BASE}/api/admin/tasks/${t.id}`, { method: "DELETE", headers: headers() });
+      loadTasks();
+    };
+    tbody.appendChild(tr);
+  });
+}
+
 document.getElementById("addTask").onclick = async () => {
   const body = {
-    title: document.getElementById("taskTitle").value,
-    reward_gems: parseInt(document.getElementById("taskReward").value),
-    link: document.getElementById("taskLink").value || null,
+    title: document.getElementById("taskTitle").value.trim(),
+    reward_gems: parseInt(document.getElementById("taskReward").value) || 0,
+    link: document.getElementById("taskLink").value.trim() || null,
   };
-  await fetch(`${API_BASE}/api/admin/tasks`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  alert("Task added");
+  if (!body.title) return alert("Title required");
+  if (editingTaskId) {
+    await fetch(`${API_BASE}/api/admin/tasks/${editingTaskId}`, { method: "PUT", headers: headers(), body: JSON.stringify(body) });
+    editingTaskId = null;
+    document.getElementById("addTask").textContent = "Add task";
+  } else {
+    await fetch(`${API_BASE}/api/admin/tasks`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  }
+  document.getElementById("taskTitle").value = "";
+  document.getElementById("taskReward").value = "";
+  document.getElementById("taskLink").value = "";
+  loadTasks();
 };
 
 document.getElementById("addGiftCode").onclick = async () => {
@@ -259,7 +294,7 @@ async function loadWithdrawals() {
 }
 
 function loadAll() {
-  loadStats(); loadSettings(); loadSpinConfig(); loadSegments(); loadWithdrawals();
+  loadStats(); loadSettings(); loadSpinConfig(); loadSegments(); loadTasks(); loadWithdrawals();
 }
 </script>
 </body>
