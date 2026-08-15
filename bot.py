@@ -28,7 +28,7 @@ async def start(message: Message, command: CommandObject):
     url = WEBAPP_URL if not ref_code else f"{WEBAPP_URL}?ref={ref_code}"
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🚀 Open App & Earn USDT", web_app=WebAppInfo(url=url))]
+        [InlineKeyboardButton(text="🎁 Open Reward Hub", web_app=WebAppInfo(url=url))]
     ])
 
     await message.answer(
