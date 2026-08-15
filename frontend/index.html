@@ -827,18 +827,26 @@ async function loadTasks() {
       card.querySelector("button").onclick = async () => {
         try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
         if (t.link) window.open(t.link, "_blank");
+        const b = card.querySelector("button");
+        const origB = b.innerHTML;
+        b.disabled = true;
+        b.innerHTML = `<span class="ad-spinner"></span>`;
         try {
           const r = await fetch(`${API_BASE}/api/tasks/claim`, {
             method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
           });
           if (!r.ok) {
             try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+            b.disabled = false;
+            b.innerHTML = origB;
             return toast((await r.json()).detail || "Could not claim");
           }
           const d = await r.json();
           toast(`✅ +${d.reward_gems} gems claimed!`);
           await Promise.all([loadMe(), loadTasks()]);
         } catch (err) {
+          b.disabled = false;
+          b.innerHTML = origB;
           toast("Network error claiming task");
         }
       };
@@ -906,12 +914,18 @@ document.getElementById("giftBtn").onclick = async () => {
   try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   const code = document.getElementById("giftInput").value.trim();
   if (!code) return;
+  const btn = document.getElementById("giftBtn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span>`;
   try {
     const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
     });
     if (!res.ok) {
       try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
       return toast((await res.json()).detail || "Invalid code");
     }
     const data = await res.json();
@@ -922,23 +936,37 @@ document.getElementById("giftBtn").onclick = async () => {
     toast(msg);
     document.getElementById("giftInput").value = "";
     await Promise.all([loadMe(), loadSpinStatus()]);
+    btn.disabled = false;
+    btn.innerHTML = orig;
   } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
     toast("Network error");
   }
 };
 
 document.getElementById("convertBtn").onclick = async () => {
   try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+  const btn = document.getElementById("convertBtn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span> Converting...`;
   try {
     const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
     if (!res.ok) {
       try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
       return toast((await res.json()).detail || "Nothing to convert");
     }
     const data = await res.json();
     toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
     await loadMe();
+    btn.disabled = false;
+    btn.innerHTML = orig;
   } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
     toast("Network error");
   }
 };
@@ -960,18 +988,29 @@ document.getElementById("wdSubmit").onclick = async () => {
     return toast("Please fill in all fields");
   }
 
+  const btn = document.getElementById("wdSubmit");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span> Submitting...`;
+
   try {
     const res = await fetch(`${API_BASE}/api/withdraw`, {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
     });
     if (!res.ok) {
       try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
       return toast((await res.json()).detail || "Could not submit withdrawal");
     }
     toast("🚀 Payout requested — pending review");
     document.getElementById("withdrawModal").classList.remove("show");
     await loadMe();
+    btn.disabled = false;
+    btn.innerHTML = orig;
   } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
     toast("Network error");
   }
 };
