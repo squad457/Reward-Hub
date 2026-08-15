@@ -763,8 +763,13 @@ async function loadSpinStatus() {
     const data = await res.json();
     wheelSegments = data.segments;
     renderWheel(wheelSegments);
-    const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
-    document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+    const spinsLeft = data.total_spins_left !== undefined ? data.total_spins_left : (data.max_spins_per_day + (me?.bonus_spins || 0));
+    const bonusText = data.bonus_spins ? ` (${data.bonus_spins} bonus)` : "";
+    document.getElementById("spinsLeftLabel").textContent = `${spinsLeft} spin(s) left today${bonusText}`;
+    const btn = document.getElementById("spinBtn");
+    if (btn && btn.textContent !== "Spinning...") {
+      btn.disabled = spinsLeft <= 0;
+    }
   } catch (e) { console.warn("loadSpinStatus error", e); }
 }
 

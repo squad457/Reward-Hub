@@ -247,15 +247,36 @@ async def _get_wheel_segments(conn):
 
 @app.get("/api/spin/wheel")
 async def get_wheel(user=Depends(current_user)):
+    now = int(time.time())
     async with db.get_db() as conn:
         segments = await _get_wheel_segments(conn)
         cfg = await _get_spin_config(conn)
+        
+        reset_at = user["spins_reset_at"] or 0
+        spins_today = user["spins_today"]
+        now_dt = datetime.datetime.fromtimestamp(now, datetime.timezone.utc)
+        next_midnight = datetime.datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=datetime.timezone.utc) + datetime.timedelta(days=1)
+        target_reset_at = int(next_midnight.timestamp())
+
+        if now >= reset_at:
+            spins_today = 0
+            await conn.execute("UPDATE users SET spins_today = 0, spins_reset_at = ? WHERE id = ?", (target_reset_at, user["id"]))
+            await conn.commit()
+            
+        max_daily = cfg["max_spins_per_day"]
+        daily_left = max(0, max_daily - spins_today)
+        bonus_spins = user["bonus_spins"]
+        total_left = daily_left + bonus_spins
+
     return {
         "segments": [
             {"id": s["id"], "label": s["label"], "value_gems": s["value_gems"], "color": s["color"]}
             for s in segments
         ],
-        "max_spins_per_day": cfg["max_spins_per_day"],
+        "max_spins_per_day": max_daily,
+        "daily_spins_left": daily_left,
+        "bonus_spins": bonus_spins,
+        "total_spins_left": total_left,
     }
 
 
@@ -281,17 +302,27 @@ async def spin_wheel(user=Depends(current_user)):
             spins_today = 0
             reset_at = target_reset_at
 
-        allowance = cfg["max_spins_per_day"] + user["bonus_spins"]
-        if spins_today >= allowance:
-            raise HTTPException(400, f"Daily spin limit reached ({allowance}/day)")
+        max_daily = cfg["max_spins_per_day"]
+        daily_left = max(0, max_daily - spins_today)
+        bonus_spins = user["bonus_spins"]
+
+        if daily_left <= 0 and bonus_spins <= 0:
+            raise HTTPException(400, "No spins left today. Watch an ad or invite friends for bonus spins!")
+
+        # Deduct spin: use daily free spin first, then bonus spin
+        if daily_left > 0:
+            new_spins_today = spins_today + 1
+            new_bonus_spins = bonus_spins
+        else:
+            new_spins_today = spins_today
+            new_bonus_spins = bonus_spins - 1
 
         chosen = random.choice(real_segments)
-        bonus_spin_used = spins_today >= cfg["max_spins_per_day"]
 
         await conn.execute(
             """UPDATE users SET gems = gems + ?, spins_today = ?, spins_reset_at = ?,
-                                 bonus_spins = bonus_spins - ? WHERE id = ?""",
-            (chosen["value_gems"], spins_today + 1, reset_at, 1 if bonus_spin_used else 0, user["id"]),
+                                 bonus_spins = ? WHERE id = ?""",
+            (chosen["value_gems"], new_spins_today, reset_at, new_bonus_spins, user["id"]),
         )
         await conn.execute(
             "INSERT INTO spin_history (user_id, reward_gems, segment_id, created_at) VALUES (?, ?, ?, ?)",
@@ -302,12 +333,17 @@ async def spin_wheel(user=Depends(current_user)):
         all_segments = await _get_wheel_segments(conn)
 
     segment_index = next(i for i, s in enumerate(all_segments) if s["id"] == chosen["id"])
+    rem_daily = max(0, max_daily - new_spins_today)
+    total_left = rem_daily + new_bonus_spins
+
     return {
         "reward_gems": chosen["value_gems"],
         "segment_id": chosen["id"],
         "segment_index": segment_index,
         "total_segments": len(all_segments),
-        "spins_left": allowance - (spins_today + 1),
+        "spins_left": total_left,
+        "daily_left": rem_daily,
+        "bonus_spins": new_bonus_spins,
     }
 
 
