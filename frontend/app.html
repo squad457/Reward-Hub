@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Reward Hub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #040907;
+    --bg-1: #0A1B14;
+    --bg-2: #0F2E23;
+    --emerald: #00F59B;
+    --emerald-glow: rgba(0, 245, 155, 0.35);
+    --purple: #8B5CF6;
+    --gold: #F59E0B;
+    --gold-glow: rgba(245, 158, 11, 0.3);
+    --ink: #FFFFFF;
+    --ink-dim: #9CA3AF;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+  
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg-0); color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif; overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+  
+  .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 110px; }
+
+  /* Splash / Loading Screen */
+  #splashScreen {
+    position: fixed; inset: 0; background: #040907; z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.4s ease;
+  }
+  .splash-logo-wrap {
+    width: 90px; height: 90px; background: linear-gradient(135deg, #00F59B, #8B5CF6);
+    border-radius: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 42px; font-weight: 800; color: #040907; box-shadow: 0 0 40px rgba(0,245,155,0.4);
+    animation: pulseLogo 2s infinite alternate; margin-bottom: 20px;
+  }
+  @keyframes pulseLogo {
+    0% { transform: scale(0.95); box-shadow: 0 0 20px rgba(0,245,155,0.3); }
+    100% { transform: scale(1.05); box-shadow: 0 0 50px rgba(0,245,155,0.6); }
+  }
+  .splash-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .splash-subtitle { font-size: 11px; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.25em; font-weight: 700; margin-bottom: 40px; }
+  .splash-bar-wrap { width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+  .splash-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00F59B, #8B5CF6); animation: loadBar 1.2s forwards; }
+  @keyframes loadBar { 0% { width: 0%; } 100% { width: 100%; } }
+
+  /* Top Bar */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px; }
+  .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
+  .top-pill {
+    display: flex; align-items: center; gap: 6px; background: rgba(0,245,155,0.15);
+    border: 1px solid rgba(0,245,155,0.4); padding: 7px 14px; border-radius: 999px;
+    font-weight: 800; font-size: 14px; color: var(--emerald);
+  }
+
+  /* Broadcast */
+  .broadcast-banner {
+    display: none; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.08));
+    border: 1px solid rgba(245,158,11,0.4); padding: 12px 16px; border-radius: 16px;
+    margin-bottom: 16px; font-size: 13px; color: #FDE68A; font-weight: 600; line-height: 1.5;
+  }
+
+  /* Tab Switcher */
+  .tab-switcher {
+    display: flex; background: #0A1B14; border: 1px solid var(--border); border-radius: 14px;
+    padding: 4px; margin-bottom: 16px;
+  }
+  .tab-btn {
+    flex: 1; padding: 11px; text-align: center; font-weight: 700; font-size: 13px; color: var(--ink-dim);
+    border: none; background: transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #00F59B, #059669); color: #04100D;
+    box-shadow: 0 4px 15px var(--emerald-glow);
+  }
+
+  /* Gorgeous Balance Hero Card */
+  .hero-card {
+    background: linear-gradient(135deg, #059669 0%, #065F46 50%, #042F23 100%);
+    border-radius: 24px; padding: 22px; border: 1px solid rgba(0,245,155,0.3);
+    box-shadow: 0 15px 40px rgba(0,245,155,0.15); margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 700; margin-bottom: 12px; }
+  .hero-balance-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); font-weight: 700; }
+  .hero-balance-amount { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 2px; }
+  .hero-usd { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 700; margin-bottom: 18px; }
+  .hero-actions { display: flex; gap: 10px; }
+  .hero-btn {
+    flex: 1; background: #FFFFFF; color: #064E3B; border: none; padding: 13px; border-radius: 14px;
+    font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.15s;
+  }
+  .hero-btn:active { transform: scale(0.96); }
+  .hero-btn.outline { background: rgba(0,0,0,0.3); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.25); }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-card {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 14px 8px;
+    text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); font-weight: 700; }
+  .stat-card .val { font-size: 15px; font-weight: 800; margin-top: 6px; color: var(--ink); }
+
+  /* Daily Streak Box */
+  .streak-box {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 18px;
+  }
+  .streak-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .streak-title-area h3 { margin: 0; font-size: 15px; font-weight: 800; }
+  .streak-title-area p { margin: 2px 0 0; font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .streak-days-count { text-align: right; }
+  .streak-days-count .num { font-size: 20px; font-weight: 800; color: var(--emerald); }
+  .streak-days-count .lbl { font-size: 10px; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; }
+
+  .daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .day-cell {
+    background: #040F0B; border: 1px solid var(--border); border-radius: 14px; padding: 12px 6px;
+    text-align: center; font-size: 11px; color: var(--ink-dim); transition: all 0.2s;
+  }
+  .day-cell.done { background: rgba(0,245,155,0.15); border-color: rgba(0,245,155,0.5); color: var(--emerald); }
+  .day-cell.today { background: rgba(139,92,246,0.25); border-color: rgba(139,92,246,0.7); color: #DDD6FE; box-shadow: 0 0 15px rgba(139,92,246,0.3); }
+  .day-cell .d { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .day-cell .r { font-weight: 800; color: var(--gold); }
+
+  .claim-main-btn {
+    width: 100%; background: linear-gradient(135deg, #8B5CF6, #6D28D9); color: #FFF; border: none;
+    padding: 15px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(139,92,246,0.4); transition: transform 0.15s;
+  }
+  .claim-main-btn:active { transform: scale(0.97); }
+  .claim-main-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; box-shadow: none; }
+
+  .ad-btn {
+    width: 100%; margin-top: 10px; padding: 14px; background: rgba(139, 92, 246, 0.1); border: 1px dashed rgba(139,92,246,0.6);
+    color: #DDD6FE; border-radius: 16px; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+
+  /* Wheel */
+  .wheel-wrap { background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; margin-bottom: 18px; }
+  .wheel-outer { position: relative; width: 240px; height: 240px; margin: 0 auto; }
+  .wheel {
+    width: 240px; height: 240px; border-radius: 50%; position: relative;
+    border: 6px solid rgba(255,255,255,0.12); box-shadow: 0 0 0 3px rgba(0,245,155,0.3), 0 15px 40px rgba(0,0,0,0.6);
+    transition: transform 4s cubic-bezier(0.12, 0.67, 0.1, 1);
+  }
+  .wheel-pointer {
+    position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0;
+    border-left: 11px solid transparent; border-right: 11px solid transparent; border-top: 20px solid var(--gold); z-index: 5;
+  }
+  .wheel-label { position: absolute; font-size: 12px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
+  .spin-action-btn {
+    margin-top: 20px; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
+    padding: 15px 40px; border-radius: 999px; font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 6px 25px var(--gold-glow);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* Tasks & Gift */
+  .card-box { background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .task-card {
+    display: flex; align-items: center; justify-content: space-between; padding: 15px; margin-bottom: 10px;
+    background: #040F0B; border: 1px solid var(--border); border-radius: 14px;
+  }
+  .task-info { display: flex; flex-direction: column; gap: 4px; }
+  .task-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .task-reward { font-size: 12px; color: var(--gold); font-weight: 800; }
+  .task-btn {
+    background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none;
+    padding: 10px 18px; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer;
+    box-shadow: 0 4px 15px var(--emerald-glow);
+  }
+  .task-btn.claimed { background: transparent; border: 1px solid var(--border); color: var(--ink-dim); cursor: default; box-shadow: none; }
+
+  /* Friends / Referral View */
+  .friend-step-card {
+    background: #040F0B; border: 1px solid var(--border); border-radius: 16px; padding: 16px;
+    margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .friend-step-title { font-size: 14px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .friend-step-desc { font-size: 12px; color: var(--ink-dim); font-weight: 500; line-height: 1.4; }
+
+  .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--bg-1); border: 1px solid var(--border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 18px; }
+  .ref-count { font-size: 34px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); }
+  .ref-code { margin-top: 10px; font-family: monospace; font-size: 15px; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 10px; display: inline-block; letter-spacing: 0.05em; color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+  .ref-btn {
+    margin-top: 16px; background: linear-gradient(135deg, var(--purple), #7C3AED); color: #fff; border: none;
+    padding: 14px 24px; border-radius: 999px; font-weight: 800; font-size: 15px; cursor: pointer; width: 100%;
+    box-shadow: 0 6px 20px rgba(139,92,246,0.4);
+  }
+
+  /* Gift Row */
+  .gift-row { display: flex; gap: 10px; margin-top: 10px; }
+  .gift-row input {
+    flex: 1; background: #040F0B; border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px;
+    color: var(--ink); font-size: 14px; outline: none; font-weight: 600;
+  }
+  .gift-row input:focus { border-color: var(--emerald); }
+  .gift-row button {
+    background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; border: none; padding: 13px 22px;
+    border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px var(--emerald-glow);
+  }
+
+  /* Ultra-Premium Glassmorphism Floating Bottom Navigation */
+  .bottom-nav {
+    position: fixed; bottom: 16px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
+    background: rgba(10, 27, 20, 0.72);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid rgba(0, 245, 155, 0.22);
+    border-radius: 28px;
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 8px 10px; z-index: 50;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 245, 155, 0.12);
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; color: var(--ink-dim);
+    font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer;
+    background: transparent; border: none; padding: 6px 12px;
+    border-radius: 18px; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+  .nav-item:active { transform: scale(0.9); }
+  .nav-item.active {
+    color: var(--emerald);
+    background: rgba(0, 245, 155, 0.14);
+    box-shadow: inset 0 0 12px rgba(0, 245, 155, 0.2), 0 4px 15px rgba(0, 245, 155, 0.25);
+    transform: translateY(-2px);
+  }
+  .nav-item svg { width: 22px; height: 22px; fill: currentColor; transition: transform 0.25s ease; }
+  .nav-item.active svg { transform: scale(1.12); }
+
+  /* Smooth tab view animation */
+  #viewHome, #viewSpin, #viewTasks, #viewFriends {
+    animation: fadeInTab 0.25s ease-out;
+  }
+  @keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed; top: 18px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto;
+    background: linear-gradient(135deg, #0F3D2E, #051C14); border: 1px solid var(--emerald);
+    padding: 16px 22px; border-radius: 16px; font-size: 14px; font-weight: 700; text-align: center;
+    color: var(--ink); transform: translateY(-180%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  }
+  .toast.show { transform: translateY(0); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+    display: none; align-items: flex-end; z-index: 70;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: #0A1B14; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 28px 28px 0 0;
+    padding: 26px 22px 40px; border: 1px solid var(--border); box-shadow: 0 -15px 50px rgba(0,0,0,0.8);
+  }
+  .modal h3 { margin: 0 0 16px; font-size: 19px; font-weight: 800; color: var(--ink); }
+  .modal input, .modal select {
+    width: 100%; background: #040F0B; border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; color: var(--ink); font-size: 14px; margin-bottom: 14px; outline: none; font-weight: 600;
+  }
+  .modal button.primary {
+    width: 100%; background: linear-gradient(135deg, var(--gold), #D97706); color: #000; border: none;
+    padding: 15px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 6px 25px var(--gold-glow); margin-top: 8px;
+  }
+  .modal .close { float: right; color: var(--ink-dim); cursor: pointer; font-size: 20px; font-weight: 800; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .ad-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Browser Blocker (when not opened in Telegram) -->
+<div id="browserBlocker" style="display:none; position:fixed; inset:0; background:#040907; z-index:99999; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center;">
+  <div style="width:80px; height:80px; background:linear-gradient(135deg, #00F59B, #8B5CF6); border-radius:24px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow:0 0 30px rgba(0,245,155,0.4);"><svg width="40" height="40" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></div>
+  <h2 style="font-size:24px; font-weight:800; color:#fff; margin:0 0 10px;">Please open on Telegram this bot</h2>
+  <p style="font-size:14px; color:#9CA3AF; margin:0 0 24px; line-height:1.5;">This application can only be accessed inside Telegram.</p>
+  <a id="openBotBtn" href="https://t.me/UsdtReward1bot" target="_blank" style="background:linear-gradient(135deg, #00F59B, #059669); color:#04100D; text-decoration:none; padding:14px 28px; border-radius:14px; font-weight:800; font-size:15px; box-shadow:0 4px 20px rgba(0,245,155,0.3);">Open on Telegram</a>
+</div>
+
+<!-- Splash / Loading Screen -->
+<div id="splashScreen">
+  <div class="splash-title">Reward Hub</div>
+  <div class="splash-subtitle">PLAY · WIN · EARN</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+</div>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-area">
+      <span id="appNameTitle">Reward Hub</span>
+    </div>
+    <div class="top-pill">💎 <span id="gemsBalance">0</span> Gems</div>
+  </div>
+
+  <!-- Broadcast -->
+  <div id="broadcastBanner" class="broadcast-banner">
+    📣 <span id="broadcastText"></span>
+  </div>
+
+  <!-- VIEW: HOME / DASHBOARD -->
+  <div id="viewHome">
+    <!-- Gorgeous Balance Hero Card -->
+    <div class="hero-card">
+      <div class="hero-top">
+        <span>HELLO 👋 <span id="userName">User</span></span>
+        <span>MIN. WITHDRAW: <b id="minWdLabel">5.00 USDT</b></span>
+      </div>
+      <div class="hero-balance-label">USDT Balance</div>
+      <div class="hero-balance-amount" id="usdtBalance">$0.00</div>
+      <div class="hero-usd" id="conversionRateLabel">— gems = $1.00 USDT</div>
+      <div class="hero-actions">
+        <button class="hero-btn" id="withdrawBtn">💸 Withdraw</button>
+        <button class="hero-btn outline" id="convertBtn">✨ Convert Gems</button>
+      </div>
+    </div>
+
+    <!-- Stats Grid (Earned, Referrals, Streak) -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Earned</div>
+        <div class="val" id="statEarned">$0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Referrals</div>
+        <div class="val" id="statReferrals">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Streak</div>
+        <div class="val" id="statStreak" style="color: var(--emerald);">0 Days</div>
+      </div>
+    </div>
+
+    <!-- Daily Streak Box -->
+    <div class="streak-box">
+      <div class="streak-header">
+        <div class="streak-title-area">
+          <h3>Check in & earn rewards</h3>
+          <p>Daily Streak</p>
+        </div>
+        <div class="streak-days-count">
+          <div class="num" id="streakNum">0</div>
+          <div class="lbl">days</div>
+        </div>
+      </div>
+      <div class="daily-grid" id="dailyGrid"></div>
+      <button class="claim-main-btn" id="claimDailyBtn">Claim today's reward</button>
+      <button class="ad-btn" id="watchAdDailyBtn">View ad and claim bonus +40 💎</button>
+    </div>
+
+    <!-- Gift Code Box -->
+    <div class="card-box">
+      <div style="font-size:15px; font-weight:800; margin-bottom:10px;">Gift Code</div>
+      <div class="gift-row">
+        <input type="text" id="giftInput" placeholder="Enter gift code" />
+        <button id="giftBtn">Redeem</button>
+      </div>
+    </div>
+
+    <!-- Terms & Privacy Links (Required for Adsgram Moderation Compliance) -->
+    <div style="text-align: center; margin: 24px 0 32px; font-size: 12px; color: var(--ink-dim);">
+      <span id="openTermsBtn" style="cursor: pointer; text-decoration: underline; margin-right: 16px; font-weight: 700; color: var(--emerald);">Terms of Service</span>
+      <span id="openPrivacyBtn" style="cursor: pointer; text-decoration: underline; font-weight: 700; color: var(--emerald);">Privacy Policy</span>
+    </div>
+  </div>
+
+  <!-- VIEW: SPIN WHEEL -->
+  <div id="viewSpin" style="display:none;">
+    <div class="wheel-wrap">
+      <div class="wheel-outer">
+        <div class="wheel-pointer"></div>
+        <div class="wheel" id="wheel"></div>
+      </div>
+      <button class="spin-action-btn" id="spinBtn">Spin for Gems</button>
+      <div class="spins-left" id="spinsLeftLabel" style="margin-top:12px; font-weight:700; color:var(--ink-dim);">— left today</div>
+      <div class="bonus-spin-link" id="watchAdSpinBtn" style="margin-top:8px; font-weight:700; color:#DDD6FE; text-decoration:underline; cursor:pointer;">View ad claim 1 spin</div>
+    </div>
+  </div>
+
+  <!-- VIEW: TASKS -->
+  <div id="viewTasks" style="display:none;">
+    <div class="card-box">
+      <div style="font-size:16px; font-weight:800; margin-bottom:14px;">Available Tasks</div>
+      <div id="taskList"></div>
+    </div>
+  </div>
+
+  <!-- VIEW: FRIENDS / REFERRAL -->
+  <div id="viewFriends" style="display:none;">
+    <div class="ref-card">
+      <div class="ref-count" id="refCount">0</div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-top:4px; margin-bottom:12px; font-weight:700;">friends invited</div>
+      <div class="ref-code" id="refCode" style="margin-bottom:14px;">—</div>
+      <div style="margin-bottom:16px; font-size:12px; color:var(--ink-dim); word-break:break-all; background:rgba(0,0,0,0.4); padding:10px 12px; border-radius:10px; text-align:left; border: 1px solid var(--border);">
+        🔗 <a id="refLink" href="#" target="_blank" style="color:var(--emerald); text-decoration:underline; font-weight:700;">https://t.me/...</a>
+      </div>
+      <button class="ref-btn" id="shareBtn">Share invite link</button>
+    </div>
+
+    <div class="card-box">
+      <div style="font-size:16px; font-weight:800; margin-bottom:12px;">🤝 Invite & Earn</div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-bottom:16px; line-height:1.4;">Invite friends and earn rewards together on every step below.</div>
+
+      <div class="friend-step-card">
+        <div class="friend-step-title">📦 1. Share Your Link</div>
+        <div class="friend-step-desc">Send your Telegram referral link to friends.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">🎉 2. Friend Joins</div>
+        <div class="friend-step-desc" id="refRewardDesc">You earn bonus gems when your friend joins with your link.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">💎 3. Referral Commission</div>
+        <div class="friend-step-desc">You earn gems instantly when your friends complete tasks and spin.</div>
+      </div>
+      <div class="friend-step-card">
+        <div class="friend-step-title">🚀 4. Earn Forever <span style="background:rgba(0,245,155,0.15); color:var(--emerald); padding:2px 8px; border-radius:6px; font-size:11px;">10%</span></div>
+        <div class="friend-step-desc">Receive 10% lifetime commission on their eligible earnings.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Navigation Bar -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="navHome">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-item" id="navSpin">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    <span>Spin</span>
+  </button>
+  <button class="nav-item" id="navTasks">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Tasks</span>
+  </button>
+  <button class="nav-item" id="navFriends">
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    <span>Friends</span>
+  </button>
+  <button class="nav-item" id="navWithdraw">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payout</span>
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Withdraw Modal -->
+<div class="modal-backdrop" id="withdrawModal">
+  <div class="modal">
+    <span class="close" id="closeWithdraw">✕</span>
+    <h3>Request Payout</h3>
+    <div id="modalMinWdLabel" style="font-size:12px; color:var(--gold); margin-bottom:14px; font-weight:700;">Minimum withdrawal: 5.00 USDT</div>
+    <input type="number" id="wdAmount" placeholder="Amount (USDT)" step="0.01" />
+    <select id="wdMethod">
+      <option value="binance_pay">Binance Pay</option>
+      <option value="usdt_bep20">USDT (BEP-20)</option>
+    </select>
+    <input type="text" id="wdDestination" placeholder="Binance Pay ID or BEP-20 address" />
+    <button class="primary" id="wdSubmit">Submit Payout</button>
+  </div>
+</div>
+
+<!-- Anti-Cheat Warning Modal -->
+<div class="modal-backdrop" id="antiCheatModal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal" style="border-radius:24px; max-width:400px; text-align:center; padding:30px 24px;">
+    <div style="font-size:42px; margin-bottom:12px;">⚠️</div>
+    <h3 style="color:#FCA5A5; margin-bottom:12px; font-size:20px;">Strict Anti-Cheat Policy</h3>
+    <p style="font-size:13px; color:var(--ink-dim); line-height:1.6; margin-bottom:24px;">
+      Multi-accounts are <b>strictly prohibited</b>. Any user attempting to use multiple accounts or exploit the referral system will be permanently banned and all balances will be forfeited. Please play fair!
+    </p>
+    <button class="primary" id="acceptAntiCheatBtn" style="background:linear-gradient(135deg, #00F59B, #059669); color:#04100D;">I Understand & Agree</button>
+  </div>
+</div>
+
+<!-- Security Scan Loader Modal -->
+<div class="modal-backdrop" id="securityScanModal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal" style="border-radius:24px; max-width:360px; text-align:center; padding:32px 24px;">
+    <div style="margin-bottom:16px;">
+      <div class="ad-spinner" style="width:36px; height:36px; border-width:3px; margin:0 auto;"></div>
+    </div>
+    <h3 style="color:var(--emerald); margin-bottom:8px; font-size:18px;">Security & Multi-Check</h3>
+    <p id="scanStatusText" style="font-size:13px; color:var(--ink-dim); line-height:1.4; margin:0;">
+      Verifying session and device integrity...
+    </p>
+  </div>
+</div>
+
+<!-- Terms of Service Modal -->
+<div class="modal-backdrop" id="termsModal">
+  <div class="modal">
+    <span class="close" id="closeTerms">✕</span>
+    <h3>Terms of Service</h3>
+    <div style="font-size:13px; color:var(--ink-dim); line-height:1.6; max-height:280px; overflow-y:auto; padding-right:6px; margin-bottom:16px;">
+      <p><b>1. Acceptance of Terms:</b> By accessing and using Reward Hub, you agree to comply with all platform guidelines, Telegram terms of service, and anti-fraud rules.</p>
+      <p><b>2. Rewards & Earnings:</b> Gems, spins, and USDT rewards are distributed based on active participation, daily streaks, completed tasks, and ad views. Exploiting bugs or using bots/scripts will result in account termination and balance forfeiture.</p>
+      <p><b>3. Withdrawals:</b> Payout requests are processed securely to Binance Pay or BEP-20 wallets upon reaching the minimum withdrawal threshold.</p>
+      <p><b>4. Fair Play:</b> Each user is restricted to a single account. Multi-accounting and referral manipulation are strictly prohibited.</p>
+    </div>
+    <button class="primary" id="acceptTermsBtn" style="background:linear-gradient(135deg, var(--emerald), #059669); color:#04100D;">Close</button>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-backdrop" id="privacyModal">
+  <div class="modal">
+    <span class="close" id="closePrivacy">✕</span>
+    <h3>Privacy Policy</h3>
+    <div style="font-size:13px; color:var(--ink-dim); line-height:1.6; max-height:280px; overflow-y:auto; padding-right:6px; margin-bottom:16px;">
+      <p><b>1. Information Collected:</b> We collect your Telegram User ID, username, and basic interaction data necessary for authenticating your rewards and profile state.</p>
+      <p><b>2. Data Security:</b> We implement strict security measures and device fingerprinting to protect user balances and prevent unauthorized access or multi-accounting fraud.</p>
+      <p><b>3. Third-Party Ads:</b> We partner with authorized advertising networks to display rewarded ads. These networks may collect anonymous device identifiers for ad delivery.</p>
+      <p><b>4. Contact:</b> For support and inquiries, please reach out via our official Telegram bot support channel.</p>
+    </div>
+    <button class="primary" id="acceptPrivacyBtn" style="background:linear-gradient(135deg, var(--emerald), #059669); color:#04100D;">Close</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+
+function hideSplash() {
+  const splash = document.getElementById("splashScreen");
+  if (splash && splash.style.opacity !== '0') {
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.remove();
+      showAntiCheatModal();
+    }, 400);
+  } else {
+    showAntiCheatModal();
+  }
+}
+
+function showAntiCheatModal() {
+  if (localStorage.getItem("rh_anticheat_agreed_v4")) {
+    runSecurityScan();
+    return;
+  }
+  const modal = document.getElementById("antiCheatModal");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.add("show");
+  }
+}
+
+async function runSecurityScan() {
+  const scanModal = document.getElementById("securityScanModal");
+  const statusText = document.getElementById("scanStatusText");
+  if (scanModal) {
+    scanModal.style.display = "flex";
+    scanModal.classList.add("show");
+  }
+  
+  const steps = [
+    "Verifying Telegram session...",
+    "Running multi-account check...",
+    "Scanning device fingerprint...",
+    "Security check completed successfully!"
+  ];
+  
+  for (let i = 0; i < steps.length; i++) {
+    if (statusText) statusText.textContent = steps[i];
+    await new Promise(r => setTimeout(r, 450));
+  }
+  
+  if (scanModal) {
+    scanModal.style.display = "none";
+    scanModal.classList.remove("show");
+  }
+}
+
+const API_BASE = "https://reward-hub-production.up.railway.app";
+const urlParams = new URLSearchParams(window.location.search);
+const refFromLink = urlParams.get("ref") || tg?.initDataUnsafe?.start_param;
+
+let APP_SETTINGS = { adsgram_block_id: "", bot_username: "UsdtReward1bot", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
+let AdController = null;
+let me = null;
+let wheelSegments = [];
+
+async function loadAppSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/api/settings`);
+    APP_SETTINGS = await res.json();
+  } catch (e) { console.warn("Could not load app settings", e); }
+
+  const isInsideTelegram = tg && tg.initData && tg.initData.length > 0;
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (!isInsideTelegram && !isLocalhost) {
+    const blocker = document.getElementById("browserBlocker");
+    if (blocker) blocker.style.display = "flex";
+  }
+  if (APP_SETTINGS.bot_username) {
+    document.getElementById("openBotBtn").href = `https://t.me/${APP_SETTINGS.bot_username}`;
+  }
+
+  document.title = APP_SETTINGS.app_name || "Reward Hub";
+  document.getElementById("appNameTitle").textContent = APP_SETTINGS.app_name || "Reward Hub";
+  
+  const minWd = Number(APP_SETTINGS.min_withdraw_usdt || 5).toFixed(2);
+  document.getElementById("minWdLabel").textContent = `${minWd} USDT`;
+  document.getElementById("modalMinWdLabel").textContent = `Minimum withdrawal: ${minWd} USDT`;
+
+  if (APP_SETTINGS.admin_broadcast) {
+    document.getElementById("broadcastText").textContent = APP_SETTINGS.admin_broadcast;
+    document.getElementById("broadcastBanner").style.display = "block";
+  } else {
+    document.getElementById("broadcastBanner").style.display = "none";
+  }
+
+  const rate = APP_SETTINGS.gems_per_usdt || "1000";
+  document.getElementById("conversionRateLabel").textContent = `${Number(rate).toLocaleString()} gems = $1.00 USDT`;
+
+  try {
+    if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
+      AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
+      const noop = () => {};
+      AdController.addEventListener("onBannerNotFound", noop);
+      AdController.addEventListener("onNonStopShow", noop);
+      AdController.addEventListener("onTooLongSession", noop);
+    }
+  } catch (e) { console.warn("AdsGram init failed", e); }
+}
+
+function getDeviceFingerprint() {
+  try {
+    const components = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width,
+      screen.height,
+      screen.colorDepth,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+      navigator.hardwareConcurrency || ''
+    ];
+    let hash = 0;
+    const str = components.join('||');
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    return 'fp_' + Math.abs(hash).toString(36);
+  } catch (e) {
+    return 'fp_unknown';
+  }
+}
+const deviceFingerprint = getDeviceFingerprint();
+
+function authHeaders() {
+  const h = {
+    "Content-Type": "application/json",
+    "X-Init-Data": tg?.initData || "",
+    "X-Device-Fingerprint": deviceFingerprint
+  };
+  if (refFromLink) h["X-Ref-Code"] = refFromLink;
+  return h;
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  try { tg?.HapticFeedback?.notificationOccurred('success'); } catch(e){}
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+async function loadMe(retries = 4, delay = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!tg?.initData && attempt < retries) {
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
+      if (!res.ok) {
+        if (res.status === 401 && attempt < retries) {
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw new Error("Auth failed");
+      }
+      me = await res.json();
+      document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
+      document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
+      document.getElementById("userName").textContent = me.first_name || "User";
+      document.getElementById("streakNum").textContent = me.daily_streak || 0;
+      document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
+      document.getElementById("statReferrals").textContent = me.invited_count || 0;
+      document.getElementById("statStreak").textContent = `${me.daily_streak || 0} Days`;
+      loadReferral();
+      return;
+    } catch (e) {
+      if (attempt === retries) {
+        console.warn("Load user failed", e);
+        toast("Connection failed. Please reload the app.");
+        alert("Connection error or authentication failed. Please reload the app on Telegram.");
+        return;
+      }
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+async function loadDaily() {
+  try {
+    const res = await fetch(`${API_BASE}/api/daily-reward/status`, { headers: authHeaders() });
+    const data = await res.json();
+    const grid = document.getElementById("dailyGrid");
+    grid.innerHTML = "";
+    data.ladder.forEach((reward, i) => {
+      const day = i + 1;
+      const done = day <= data.current_streak && !data.claimable;
+      const isToday = data.claimable && day === Math.min(data.current_streak + 1, data.ladder.length);
+      const cell = document.createElement("div");
+      cell.className = "day-cell" + (done ? " done" : "") + (isToday ? " today" : "");
+      cell.innerHTML = `<div class="d">Day ${day}</div><div class="r">+${reward}</div>`;
+      grid.appendChild(cell);
+    });
+    document.getElementById("claimDailyBtn").disabled = !data.claimable;
+    document.getElementById("claimDailyBtn").textContent = data.claimable ? "Claim today's reward" : "Come back tomorrow";
+  } catch (e) { console.warn("loadDaily error", e); }
+}
+
+document.getElementById("claimDailyBtn").onclick = async () => {
+  const btn = document.getElementById("claimDailyBtn");
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+  btn.textContent = "Claiming...";
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      return toast((await res.json()).detail || "Could not claim");
+    }
+    const data = await res.json();
+    toast(`🎉 +${data.reward_gems} gems! Streak: ${data.new_streak}`);
+    await Promise.all([loadMe(), loadDaily()]);
+  } catch (e) { toast("Network error"); }
+  btn.textContent = "Claim today's reward";
+  btn.disabled = false;
+};
+
+async function showAd(placement, btnId) {
+  if (!AdController) {
+    if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
+      try {
+        AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
+        const noop = () => {};
+        AdController.addEventListener("onBannerNotFound", noop);
+        AdController.addEventListener("onNonStopShow", noop);
+        AdController.addEventListener("onTooLongSession", noop);
+      } catch(e) {}
+    }
+  }
+  if (!AdController) { toast("Ads not available right now"); return false; }
+
+  const btn = btnId ? document.getElementById(btnId) : null;
+  const originalHtml = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="ad-spinner"></span> Loading Ad...`;
+  }
+  try {
+    await AdController.show();
+    const res = await fetch(`${API_BASE}/api/ads/reward`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ placement }),
+    });
+    const data = await res.json();
+    if (data.reward_gems) toast(`+${data.reward_gems} gems from sponsor!`);
+    if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
+    await loadMe();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+    return true;
+  } catch (e) {
+    if (e?.state !== "load" && e?.state !== "render") {
+      // Completed or dismissed normally
+    } else {
+      toast("Ad not completed");
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+    return false;
+  }
+}
+
+document.getElementById("watchAdDailyBtn").onclick = () => showAd("daily_bonus", "watchAdDailyBtn");
+document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("spin_bonus", "watchAdSpinBtn"); await loadSpinStatus(); };
+
+function renderWheel(segments) {
+  const wheel = document.getElementById("wheel");
+  wheel.innerHTML = "";
+  const n = segments.length;
+  const slice = 360 / n;
+  const gradientStops = segments.map((s, i) => `${s.color} ${i * slice}deg ${(i + 1) * slice}deg`).join(", ");
+  wheel.style.background = `conic-gradient(${gradientStops})`;
+
+  segments.forEach((s, i) => {
+    const angle = i * slice + slice / 2;
+    const label = document.createElement("div");
+    label.className = "wheel-label";
+    label.textContent = s.label;
+    label.style.left = "50%";
+    label.style.top = "50%";
+    label.style.transform = `rotate(${angle}deg) translate(0, -85px) rotate(${-angle}deg) translate(-50%, -50%)`;
+    wheel.appendChild(label);
+  });
+}
+
+async function loadSpinStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
+    const data = await res.json();
+    wheelSegments = data.segments;
+    renderWheel(wheelSegments);
+    const spinsLeft = data.total_spins_left !== undefined ? data.total_spins_left : (data.max_spins_per_day + (me?.bonus_spins || 0));
+    const bonusText = data.bonus_spins ? ` (${data.bonus_spins} bonus)` : "";
+    const lbl = document.getElementById("spinsLeftLabel");
+    const adBtn = document.getElementById("watchAdSpinBtn");
+    if (spinsLeft <= 0) {
+      if (lbl) lbl.textContent = `0 free spins left today. View ad claim 1 spin below!`;
+      if (adBtn) {
+        adBtn.style.display = "block";
+        adBtn.style.marginTop = "14px";
+        adBtn.style.padding = "12px 16px";
+        adBtn.style.background = "rgba(139, 92, 246, 0.15)";
+        adBtn.style.border = "1px solid rgba(139, 92, 246, 0.5)";
+        adBtn.style.borderRadius = "12px";
+      }
+    } else {
+      if (lbl) lbl.textContent = `${spinsLeft} spin(s) left today${bonusText}`;
+    }
+    const btn = document.getElementById("spinBtn");
+    if (btn && !btn.innerHTML.includes("Spinning")) {
+      btn.disabled = spinsLeft <= 0;
+    }
+  } catch (e) { console.warn("loadSpinStatus error", e); }
+}
+
+let currentRotation = 0;
+
+document.getElementById("spinBtn").onclick = async () => {
+  const btn = document.getElementById("spinBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span> Spinning...`;
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+
+  try {
+    const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      toast((await res.json()).detail || "Could not spin");
+      btn.disabled = false;
+      btn.textContent = "Spin for Gems";
+      return;
+    }
+    const data = await res.json();
+
+    const slice = 360 / data.total_segments;
+    const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
+    currentRotation += 360 - ((currentRotation) % 360) + targetAngle;
+    const wheel = document.getElementById("wheel");
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+    setTimeout(async () => {
+      toast(`🎰 You won +${data.reward_gems} gems!`);
+      document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
+      btn.disabled = data.spins_left <= 0;
+      btn.textContent = "Spin for Gems";
+      await loadMe();
+    }, 4100);
+  } catch (e) {
+    toast("Network error");
+    btn.disabled = false;
+    btn.textContent = "Spin for Gems";
+  }
+};
+
+async function loadTasks() {
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
+    const tasks = await res.json();
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    if (!tasks || tasks.length === 0) {
+      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No tasks available right now. Check back soon!</div>`;
+      return;
+    }
+    tasks.forEach(t => {
+      const claimed = t.status === "claimed";
+      const isTg = t.task_type === "telegram" || (t.link && (t.link.includes("t.me/") || t.link.startsWith("@")));
+      const btnText = claimed ? "Done" : (isTg ? "Join" : "Start");
+      const card = document.createElement("div");
+      card.className = "task-card";
+      card.innerHTML = `
+        <div class="task-info">
+          <div class="task-title">${t.title}</div>
+          <div class="task-reward">💎 +${t.reward_gems} gems</div>
+        </div>
+        <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${btnText}</button>
+      `;
+      card.querySelector("button").onclick = async () => {
+        try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+        if (t.link) window.open(t.link, "_blank");
+        const b = card.querySelector("button");
+        const origB = b.innerHTML;
+        b.disabled = true;
+        b.innerHTML = `<span class="ad-spinner"></span> Checking...`;
+
+        await new Promise(r => setTimeout(r, 1200));
+
+        try {
+          const r = await fetch(`${API_BASE}/api/tasks/claim`, {
+            method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
+          });
+          if (!r.ok) {
+            try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+            b.disabled = false;
+            b.innerHTML = origB;
+            const errData = await r.json();
+            return toast(errData.detail || "Please join the channel first!");
+          }
+          const d = await r.json();
+          toast(`✅ +${d.reward_gems} gems claimed!`);
+          await Promise.all([loadMe(), loadTasks()]);
+        } catch (err) {
+          b.disabled = false;
+          b.innerHTML = origB;
+          toast("Please join the channel first!");
+        }
+      };
+      list.appendChild(card);
+    });
+  } catch (e) {
+    console.warn("loadTasks error", e);
+    const list = document.getElementById("taskList");
+    if (list) {
+      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No tasks available right now. Check back soon!</div>`;
+    }
+  }
+}
+
+function loadReferral() {
+  if (!me) return;
+  document.getElementById("refCount").textContent = me.invited_count || 0;
+  document.getElementById("refCode").textContent = me.referral_code || "DEMO";
+
+  const refGems = APP_SETTINGS.referral_reward_gems || "250";
+  const refSpins = Number(APP_SETTINGS.referral_reward_spins !== undefined ? APP_SETTINGS.referral_reward_spins : 1);
+  const descEl = document.getElementById("refRewardDesc");
+  if (descEl) {
+    if (refSpins > 0) {
+      descEl.textContent = `You earn +${refGems} Gems & +${refSpins} Spin for every friend who joins!`;
+    } else {
+      descEl.textContent = `You earn +${refGems} Gems for every friend who joins!`;
+    }
+  }
+
+  const username = APP_SETTINGS.bot_username || "UsdtReward1bot";
+  const link = `https://t.me/${username}?start=${me.referral_code || "DEMO"}`;
+  const refLinkEl = document.getElementById("refLink");
+  if (refLinkEl) {
+    refLinkEl.textContent = link;
+    refLinkEl.href = link;
+  }
+
+  const shareBtn = document.getElementById("shareBtn");
+  if (shareBtn) {
+    shareBtn.onclick = () => {
+      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+      const appName = APP_SETTINGS.app_name || "Reward Hub";
+      tg?.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join me on ${appName} and earn gems & USDT 🎁`)}`);
+    };
+  }
+}
+
+document.getElementById("giftBtn").onclick = async () => {
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+  const code = document.getElementById("giftInput").value.trim();
+  if (!code) return;
+  const btn = document.getElementById("giftBtn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span>`;
+  try {
+    const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
+    });
+    if (!res.ok) {
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      return toast((await res.json()).detail || "Invalid code");
+    }
+    const data = await res.json();
+    let msg = "🎁 Gift code redeemed!";
+    if (data.reward_gems) msg += ` +${data.reward_gems} gems`;
+    if (data.reward_spins) msg += ` +${data.reward_spins} spins`;
+    if (data.reward_usdt) msg += ` +$${data.reward_usdt} USDT`;
+    toast(msg);
+    document.getElementById("giftInput").value = "";
+    await Promise.all([loadMe(), loadSpinStatus()]);
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    toast("Network error");
+  }
+};
+
+document.getElementById("convertBtn").onclick = async () => {
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+  const btn = document.getElementById("convertBtn");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span> Converting...`;
+  try {
+    const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      return toast((await res.json()).detail || "Nothing to convert");
+    }
+    const data = await res.json();
+    toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
+    await loadMe();
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    toast("Network error");
+  }
+};
+
+document.getElementById("withdrawBtn").onclick = () => {
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+  document.getElementById("withdrawModal").classList.add("show");
+};
+document.getElementById("closeWithdraw").onclick = () => {
+  document.getElementById("withdrawModal").classList.remove("show");
+};
+document.getElementById("wdSubmit").onclick = async () => {
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+  const amount_usdt = parseFloat(document.getElementById("wdAmount").value);
+  const method = document.getElementById("wdMethod").value;
+  const destination = document.getElementById("wdDestination").value.trim();
+  if (!amount_usdt || !destination) {
+    try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+    return toast("Please fill in all fields");
+  }
+
+  const btn = document.getElementById("wdSubmit");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="ad-spinner"></span> Submitting...`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/withdraw`, {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
+    });
+    if (!res.ok) {
+      try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      return toast((await res.json()).detail || "Could not submit withdrawal");
+    }
+    toast("🚀 Payout requested — pending review");
+    document.getElementById("withdrawModal").classList.remove("show");
+    await loadMe();
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+    toast("Network error");
+  }
+};
+
+/* Tab Navigation Switcher */
+function switchTab(tab) {
+  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+  
+  const vHome = document.getElementById("viewHome");
+  const vSpin = document.getElementById("viewSpin");
+  const vTasks = document.getElementById("viewTasks");
+  const vFriends = document.getElementById("viewFriends");
+
+  if (vHome) vHome.style.display = (tab === 'home') ? 'block' : 'none';
+  if (vSpin) vSpin.style.display = (tab === 'spin') ? 'block' : 'none';
+  if (vTasks) vTasks.style.display = (tab === 'tasks') ? 'block' : 'none';
+  if (vFriends) vFriends.style.display = (tab === 'friends') ? 'block' : 'none';
+
+  document.getElementById("tabHome")?.classList.toggle('active', tab === 'home');
+  document.getElementById("tabSpin")?.classList.toggle('active', tab === 'spin');
+  document.getElementById("tabTasks")?.classList.toggle('active', tab === 'tasks');
+
+  document.getElementById("navHome")?.classList.toggle('active', tab === 'home');
+  document.getElementById("navSpin")?.classList.toggle('active', tab === 'spin');
+  document.getElementById("navTasks")?.classList.toggle('active', tab === 'tasks');
+  document.getElementById("navFriends")?.classList.toggle('active', tab === 'friends');
+  document.getElementById("navWithdraw")?.classList.remove('active');
+
+  if (tab === 'spin') loadSpinStatus();
+  if (tab === 'tasks') loadTasks();
+  if (tab === 'friends') loadReferral();
+}
+
+// Wait for DOM to be fully loaded before attaching event handlers
+document.addEventListener('DOMContentLoaded', function() {
+  const tabHome = document.getElementById("tabHome");
+  const tabSpin = document.getElementById("tabSpin");
+  const tabTasks = document.getElementById("tabTasks");
+  const navHome = document.getElementById("navHome");
+  const navSpin = document.getElementById("navSpin");
+  const navTasks = document.getElementById("navTasks");
+  const navFriends = document.getElementById("navFriends");
+  const navWithdraw = document.getElementById("navWithdraw");
+
+  if (tabHome) tabHome.onclick = () => switchTab('home');
+  if (tabSpin) tabSpin.onclick = () => switchTab('spin');
+  if (tabTasks) tabTasks.onclick = () => switchTab('tasks');
+
+  if (navHome) navHome.onclick = () => switchTab('home');
+  if (navSpin) navSpin.onclick = () => switchTab('spin');
+  if (navTasks) navTasks.onclick = () => switchTab('tasks');
+  if (navFriends) navFriends.onclick = () => switchTab('friends');
+  if (navWithdraw) {
+    navWithdraw.onclick = () => {
+      try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
+      const modal = document.getElementById("withdrawModal");
+      if (modal) modal.classList.add("show");
+    };
+  }
+
+  const acceptBtn = document.getElementById("acceptAntiCheatBtn");
+  if (acceptBtn) {
+    acceptBtn.onclick = () => {
+      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch(e){}
+      localStorage.setItem("rh_anticheat_agreed_v4", "true");
+      const modal = document.getElementById("antiCheatModal");
+      if (modal) {
+        modal.style.display = "none";
+        modal.classList.remove("show");
+      }
+      runSecurityScan();
+    };
+  }
+
+  // Terms & Privacy Modals handlers
+  const openTermsBtn = document.getElementById("openTermsBtn");
+  const termsModal = document.getElementById("termsModal");
+  const closeTerms = document.getElementById("closeTerms");
+  const acceptTermsBtn = document.getElementById("acceptTermsBtn");
+
+  if (openTermsBtn && termsModal) {
+    openTermsBtn.onclick = () => termsModal.classList.add("show");
+  }
+  if (closeTerms && termsModal) {
+    closeTerms.onclick = () => termsModal.classList.remove("show");
+  }
+  if (acceptTermsBtn && termsModal) {
+    acceptTermsBtn.onclick = () => termsModal.classList.remove("show");
+  }
+
+  const openPrivacyBtn = document.getElementById("openPrivacyBtn");
+  const privacyModal = document.getElementById("privacyModal");
+  const closePrivacy = document.getElementById("closePrivacy");
+  const acceptPrivacyBtn = document.getElementById("acceptPrivacyBtn");
+
+  if (openPrivacyBtn && privacyModal) {
+    openPrivacyBtn.onclick = () => privacyModal.classList.add("show");
+  }
+  if (closePrivacy && privacyModal) {
+    closePrivacy.onclick = () => privacyModal.classList.remove("show");
+  }
+  if (acceptPrivacyBtn && privacyModal) {
+    acceptPrivacyBtn.onclick = () => privacyModal.classList.remove("show");
+  }
+
+  // Initial load: fetch everything concurrently behind the splash screen
+  (async function init() {
+    const startTime = Date.now();
+    try {
+      await Promise.all([
+        loadAppSettings(),
+        loadMe(),
+        loadDaily(),
+        loadSpinStatus(),
+        loadTasks()
+      ]);
+    } catch (e) {
+      console.warn("Init load error", e);
+    }
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 600) {
+      await new Promise(r => setTimeout(r, 600 - elapsed));
+    }
+    hideSplash();
+  })();
+});
+</script>
+</body>
+</html>
