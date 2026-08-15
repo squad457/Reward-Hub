@@ -535,8 +535,10 @@ async function loadMe() {
     if (!res.ok) throw new Error("Auth failed");
     me = await res.json();
   } catch (e) {
-    console.warn("Using fallback demo user", e);
-    me = { id: 1, gems: 1250, balance_usdt: 1.25, daily_streak: 2, referral_code: "DEMO789", invited_count: 0, first_name: "DemoUser" };
+    console.warn("Load user failed", e);
+    toast("Connection failed. Please reload the app.");
+    alert("Connection error or authentication failed. Please reload the app on Telegram.");
+    return;
   }
   document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
   document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;

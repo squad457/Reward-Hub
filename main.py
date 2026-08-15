@@ -61,7 +61,7 @@ async def _shutdown():
 
 def verify_telegram_init_data(init_data: str) -> dict:
     if not init_data:
-        return {"id": 6762068908, "username": "yohannes244", "first_name": "Yohannes"}
+        return {}
 
     try:
         parsed = dict(parse_qsl(init_data, strict_parsing=False))
@@ -86,7 +86,7 @@ def verify_telegram_init_data(init_data: str) -> dict:
         except Exception:
             pass
 
-    return {"id": 6762068908, "username": "yohannes244", "first_name": "Yohannes"}
+    return {}
 
 
 async def current_user(x_init_data: str = Header(...), x_ref_code: str | None = Header(default=None)):
