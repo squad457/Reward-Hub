@@ -839,7 +839,7 @@ let currentRotation = 0;
 document.getElementById("spinBtn").onclick = async () => {
   const btn = document.getElementById("spinBtn");
   btn.disabled = true;
-  btn.textContent = "Spinning...";
+  btn.innerHTML = `<span class="ad-spinner"></span> Spinning...`;
   try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
 
   try {
