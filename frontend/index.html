@@ -376,6 +376,12 @@
         <button id="giftBtn">Redeem</button>
       </div>
     </div>
+
+    <!-- Terms & Privacy Links (Required for Adsgram Moderation Compliance) -->
+    <div style="text-align: center; margin: 24px 0 32px; font-size: 12px; color: var(--ink-dim);">
+      <span id="openTermsBtn" style="cursor: pointer; text-decoration: underline; margin-right: 16px; font-weight: 700; color: var(--emerald);">Terms of Service</span>
+      <span id="openPrivacyBtn" style="cursor: pointer; text-decoration: underline; font-weight: 700; color: var(--emerald);">Privacy Policy</span>
+    </div>
   </div>
 
   <!-- VIEW: SPIN WHEEL -->
@@ -500,6 +506,36 @@
     <p id="scanStatusText" style="font-size:13px; color:var(--ink-dim); line-height:1.4; margin:0;">
       Verifying session and device integrity...
     </p>
+  </div>
+</div>
+
+<!-- Terms of Service Modal -->
+<div class="modal-backdrop" id="termsModal">
+  <div class="modal">
+    <span class="close" id="closeTerms">✕</span>
+    <h3>Terms of Service</h3>
+    <div style="font-size:13px; color:var(--ink-dim); line-height:1.6; max-height:280px; overflow-y:auto; padding-right:6px; margin-bottom:16px;">
+      <p><b>1. Acceptance of Terms:</b> By accessing and using Reward Hub, you agree to comply with all platform guidelines, Telegram terms of service, and anti-fraud rules.</p>
+      <p><b>2. Rewards & Earnings:</b> Gems, spins, and USDT rewards are distributed based on active participation, daily streaks, completed tasks, and ad views. Exploiting bugs or using bots/scripts will result in account termination and balance forfeiture.</p>
+      <p><b>3. Withdrawals:</b> Payout requests are processed securely to Binance Pay or BEP-20 wallets upon reaching the minimum withdrawal threshold.</p>
+      <p><b>4. Fair Play:</b> Each user is restricted to a single account. Multi-accounting and referral manipulation are strictly prohibited.</p>
+    </div>
+    <button class="primary" id="acceptTermsBtn" style="background:linear-gradient(135deg, var(--emerald), #059669); color:#04100D;">Close</button>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-backdrop" id="privacyModal">
+  <div class="modal">
+    <span class="close" id="closePrivacy">✕</span>
+    <h3>Privacy Policy</h3>
+    <div style="font-size:13px; color:var(--ink-dim); line-height:1.6; max-height:280px; overflow-y:auto; padding-right:6px; margin-bottom:16px;">
+      <p><b>1. Information Collected:</b> We collect your Telegram User ID, username, and basic interaction data necessary for authenticating your rewards and profile state.</p>
+      <p><b>2. Data Security:</b> We implement strict security measures and device fingerprinting to protect user balances and prevent unauthorized access or multi-accounting fraud.</p>
+      <p><b>3. Third-Party Ads:</b> We partner with authorized advertising platforms (such as Adsgram) to display rewarded ads. These platforms may collect anonymous device identifiers for ad delivery.</p>
+      <p><b>4. Contact:</b> For support and inquiries, please reach out via our official Telegram bot support channel.</p>
+    </div>
+    <button class="primary" id="acceptPrivacyBtn" style="background:linear-gradient(135deg, var(--emerald), #059669); color:#04100D;">Close</button>
   </div>
 </div>
 
@@ -1108,6 +1144,37 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       runSecurityScan();
     };
+  }
+
+  // Terms & Privacy Modals handlers
+  const openTermsBtn = document.getElementById("openTermsBtn");
+  const termsModal = document.getElementById("termsModal");
+  const closeTerms = document.getElementById("closeTerms");
+  const acceptTermsBtn = document.getElementById("acceptTermsBtn");
+
+  if (openTermsBtn && termsModal) {
+    openTermsBtn.onclick = () => termsModal.classList.add("show");
+  }
+  if (closeTerms && termsModal) {
+    closeTerms.onclick = () => termsModal.classList.remove("show");
+  }
+  if (acceptTermsBtn && termsModal) {
+    acceptTermsBtn.onclick = () => termsModal.classList.remove("show");
+  }
+
+  const openPrivacyBtn = document.getElementById("openPrivacyBtn");
+  const privacyModal = document.getElementById("privacyModal");
+  const closePrivacy = document.getElementById("closePrivacy");
+  const acceptPrivacyBtn = document.getElementById("acceptPrivacyBtn");
+
+  if (openPrivacyBtn && privacyModal) {
+    openPrivacyBtn.onclick = () => privacyModal.classList.add("show");
+  }
+  if (closePrivacy && privacyModal) {
+    closePrivacy.onclick = () => privacyModal.classList.remove("show");
+  }
+  if (acceptPrivacyBtn && privacyModal) {
+    acceptPrivacyBtn.onclick = () => privacyModal.classList.remove("show");
   }
 
   // Initial load: fetch everything concurrently behind the splash screen
