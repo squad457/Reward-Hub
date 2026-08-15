@@ -148,6 +148,7 @@ DEFAULT_SETTINGS = {
     "referral_reward_gems": "250",
     "admin_broadcast": "",
     "min_withdraw_usdt": "5.0",
+    "daily_rewards_ladder": "80,80,200,90,90,90,6000",
 }
 
 # Fallback used only if the DB row is somehow missing.

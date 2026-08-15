@@ -138,6 +138,17 @@ async def get_me(user=Depends(current_user)):
 # Public, read-only subset the frontend needs at boot (no auth required —
 # it's config, not user data). Everything here is edited from /api/admin/settings.
 
+async def _get_daily_ladder(conn) -> list[int]:
+    ladder_str = await db.get_setting(conn, "daily_rewards_ladder", "80,80,200,90,90,90,6000")
+    try:
+        ladder = [int(x.strip()) for x in ladder_str.split(",") if x.strip()]
+        if ladder:
+            return ladder
+    except Exception:
+        pass
+    return [80, 80, 200, 90, 90, 90, 6000]
+
+
 @app.get("/api/settings")
 async def public_settings():
     async with db.get_db() as conn:
@@ -150,6 +161,7 @@ async def public_settings():
         "referral_reward_gems": s["referral_reward_gems"],
         "admin_broadcast": s["admin_broadcast"],
         "min_withdraw_usdt": s["min_withdraw_usdt"],
+        "daily_rewards_ladder": s["daily_rewards_ladder"],
     }
 
 
@@ -166,10 +178,11 @@ async def claim_daily_reward(user=Depends(current_user)):
 
     streak = user["daily_streak"]
     streak = (streak + 1) if (last and seconds_since < 172800) else 1
-    day_index = min(streak - 1, len(db.DAILY_REWARD_LADDER) - 1)
-    reward = db.DAILY_REWARD_LADDER[day_index]
-
+    
     async with db.get_db() as conn:
+        ladder = await _get_daily_ladder(conn)
+        day_index = min(streak - 1, len(ladder) - 1)
+        reward = ladder[day_index]
         await conn.execute(
             "UPDATE users SET gems = gems + ?, daily_streak = ?, last_daily_claim = ? WHERE id = ?",
             (reward, streak, now, user["id"]),
@@ -183,10 +196,12 @@ async def claim_daily_reward(user=Depends(current_user)):
 async def daily_reward_status(user=Depends(current_user)):
     now = int(time.time())
     last = user["last_daily_claim"] or 0
+    async with db.get_db() as conn:
+        ladder = await _get_daily_ladder(conn)
     return {
         "claimable": (now - last) >= 86400,
         "current_streak": user["daily_streak"],
-        "ladder": db.DAILY_REWARD_LADDER,
+        "ladder": ladder,
     }
 
 
@@ -469,6 +484,7 @@ class SettingsBody(BaseModel):
     referral_reward_gems: str | None = None
     admin_broadcast: str | None = None
     min_withdraw_usdt: str | None = None
+    daily_rewards_ladder: str | None = None
 
 
 @app.get("/api/admin/settings")
