@@ -85,6 +85,17 @@ CREATE TABLE IF NOT EXISTS referrals (
     created_at      INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS daily_rewards (
+    id              INTEGER PRIMARY KEY CHECK (id = 1),
+    day_1           INTEGER NOT NULL DEFAULT 80,
+    day_2           INTEGER NOT NULL DEFAULT 80,
+    day_3           INTEGER NOT NULL DEFAULT 200,
+    day_4           INTEGER NOT NULL DEFAULT 90,
+    day_5           INTEGER NOT NULL DEFAULT 90,
+    day_6           INTEGER NOT NULL DEFAULT 90,
+    day_7           INTEGER NOT NULL DEFAULT 6000
+);
+
 CREATE TABLE IF NOT EXISTS withdrawals (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id         INTEGER NOT NULL,

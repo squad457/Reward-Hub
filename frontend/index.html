@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Reward Hub</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- AdsGram SDK -->
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
@@ -192,7 +191,7 @@
   .friend-step-title { font-size: 14px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; }
   .friend-step-desc { font-size: 12px; color: var(--ink-dim); font-weight: 500; line-height: 1.4; }
 
-  .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 18px; }
+  .ref-card { padding: 24px; text-align: center; border-radius: 24px; background: var(--bg-1); border: 1px solid var(--border); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 18px; }
   .ref-count { font-size: 34px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); }
   .ref-code { margin-top: 10px; font-family: monospace; font-size: 15px; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 10px; display: inline-block; letter-spacing: 0.05em; color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
   .ref-btn {
@@ -264,7 +263,7 @@
 
 <!-- Splash / Loading Screen -->
 <div id="splashScreen">
-  <div class="splash-logo-wrap">R</div>
+  <div class="splash-logo-wrap">★</div>
   <div class="splash-title">Reward Hub</div>
   <div class="splash-subtitle">PLAY · WIN · EARN</div>
   <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
@@ -438,9 +437,9 @@
     <input type="number" id="wdAmount" placeholder="Amount (USDT)" step="0.01" />
     <select id="wdMethod">
       <option value="binance_pay">Binance Pay</option>
-      <option value="usdt_address">USDT Address (TRC20)</option>
+      <option value="usdt_bep20">USDT (BEP-20)</option>
     </select>
-    <input type="text" id="wdDestination" placeholder="Binance Pay ID or wallet address" />
+    <input type="text" id="wdDestination" placeholder="Binance Pay ID or BEP-20 address" />
     <button class="primary" id="wdSubmit">Submit Payout</button>
   </div>
 </div>
@@ -551,37 +550,29 @@ async function loadDaily() {
     });
     document.getElementById("claimDailyBtn").disabled = !data.claimable;
     document.getElementById("claimDailyBtn").textContent = data.claimable ? "Claim today's reward" : "Come back tomorrow";
-  } catch (e) {
-    console.warn("loadDaily error", e);
-  }
+  } catch (e) { console.warn("loadDaily error", e); }
 }
 
 document.getElementById("claimDailyBtn").onclick = async () => {
-  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   const btn = document.getElementById("claimDailyBtn");
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
   btn.textContent = "Claiming...";
   btn.disabled = true;
-
   try {
     const res = await fetch(`${API_BASE}/api/daily-reward/claim`, { method: "POST", headers: authHeaders() });
     if (!res.ok) {
       try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
-      btn.disabled = false;
-      btn.textContent = "Claim today's reward";
       return toast((await res.json()).detail || "Could not claim");
     }
     const data = await res.json();
-    toast(`🎁 +${data.reward_gems} gems claimed! Streak: ${data.new_streak}`);
+    toast(`🎉 +${data.reward_gems} gems! Streak: ${data.new_streak}`);
     await Promise.all([loadMe(), loadDaily()]);
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = "Claim today's reward";
-    toast("Network error");
-  }
+  } catch (e) { toast("Network error"); }
+  btn.textContent = "Claim today's reward";
+  btn.disabled = false;
 };
 
 async function showAd(placement) {
-  try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
   if (!AdController) { toast("Ads not available right now"); return false; }
   try {
     await AdController.show();
@@ -589,8 +580,8 @@ async function showAd(placement) {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ placement }),
     });
     const data = await res.json();
-    if (data.reward_gems) toast(`🎬 +${data.reward_gems} gems earned from ad!`);
-    if (data.bonus_spins) toast(`🎡 +${data.bonus_spins} bonus spin earned!`);
+    if (data.reward_gems) toast(`+${data.reward_gems} gems from ad!`);
+    if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
     await loadMe();
     return true;
   } catch (e) {
@@ -604,7 +595,6 @@ document.getElementById("watchAdSpinBtn").onclick = async () => { await showAd("
 
 function renderWheel(segments) {
   const wheel = document.getElementById("wheel");
-  if (!wheel) return;
   wheel.innerHTML = "";
   const n = segments.length;
   const slice = 360 / n;
@@ -627,31 +617,20 @@ async function loadSpinStatus() {
   try {
     const res = await fetch(`${API_BASE}/api/spin/wheel`, { headers: authHeaders() });
     const data = await res.json();
-    wheelSegments = data.segments || [];
+    wheelSegments = data.segments;
     renderWheel(wheelSegments);
-    const allowance = (data.max_spins_per_day || 8) + (me?.bonus_spins || 0);
-    const lbl = document.getElementById("spinsLeftLabel");
-    if (lbl) lbl.textContent = `up to ${allowance} left today`;
-  } catch (e) {
-    console.warn("loadSpinStatus error, using fallback wheel", e);
-    // Fallback wheel segments so it works even if offline/disconnected
-    wheelSegments = [
-      { id: 1, label: "50", value_gems: 50, color: "#12B886" },
-      { id: 2, label: "100", value_gems: 100, color: "#0EA579" },
-      { id: 3, label: "250", value_gems: 250, color: "#F2B705" },
-      { id: 4, label: "80", value_gems: 80, color: "#E85D75" }
-    ];
-    renderWheel(wheelSegments);
-  }
+    const allowance = data.max_spins_per_day + (me?.bonus_spins || 0);
+    document.getElementById("spinsLeftLabel").textContent = `up to ${allowance} left today`;
+  } catch (e) { console.warn("loadSpinStatus error", e); }
 }
 
 let currentRotation = 0;
 
 document.getElementById("spinBtn").onclick = async () => {
-  try { tg?.HapticFeedback?.impactOccurred('heavy'); } catch(e){}
   const btn = document.getElementById("spinBtn");
   btn.disabled = true;
   btn.textContent = "Spinning...";
+  try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
 
   try {
     const res = await fetch(`${API_BASE}/api/spin`, { method: "POST", headers: authHeaders() });
@@ -664,25 +643,23 @@ document.getElementById("spinBtn").onclick = async () => {
     }
     const data = await res.json();
 
-    const totalSegs = data.total_segments || wheelSegments.length || 4;
-    const slice = 360 / totalSegs;
-    const targetAngle = 360 * 6 - ((data.segment_index || 0) * slice + slice / 2);
+    const slice = 360 / data.total_segments;
+    const targetAngle = 360 * 6 - (data.segment_index * slice + slice / 2);
     currentRotation += 360 - ((currentRotation) % 360) + targetAngle;
     const wheel = document.getElementById("wheel");
-    if (wheel) wheel.style.transform = `rotate(${currentRotation}deg)`;
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
 
     setTimeout(async () => {
-      toast(`🎉 You won +${data.reward_gems} gems!`);
-      const lbl = document.getElementById("spinsLeftLabel");
-      if (lbl) lbl.textContent = `${data.spins_left} left today`;
+      toast(`🎰 You won +${data.reward_gems} gems!`);
+      document.getElementById("spinsLeftLabel").textContent = `${data.spins_left} left today`;
       btn.disabled = data.spins_left <= 0;
       btn.textContent = "Spin for Gems";
       await loadMe();
     }, 4100);
   } catch (e) {
+    toast("Network error");
     btn.disabled = false;
     btn.textContent = "Spin for Gems";
-    toast("Network error during spin");
   }
 };
 
@@ -691,12 +668,7 @@ async function loadTasks() {
     const res = await fetch(`${API_BASE}/api/tasks`, { headers: authHeaders() });
     const tasks = await res.json();
     const list = document.getElementById("taskList");
-    if (!list) return;
     list.innerHTML = "";
-    if (!tasks || tasks.length === 0) {
-      list.innerHTML = `<div style="text-align:center; color:var(--ink-dim); padding:20px; font-size:13px;">No active tasks right now. Check back soon!</div>`;
-      return;
-    }
     tasks.forEach(t => {
       const claimed = t.status === "claimed";
       const card = document.createElement("div");
@@ -902,100 +874,6 @@ document.addEventListener('DOMContentLoaded', function() {
       try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
       const modal = document.getElementById("withdrawModal");
       if (modal) modal.classList.add("show");
-    };
-  }
-
-  // Also fix other button handlers that might be called before DOM ready
-  const giftBtn = document.getElementById("giftBtn");
-  if (giftBtn) {
-    giftBtn.onclick = async () => {
-      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
-      const code = document.getElementById("giftInput").value.trim();
-      if (!code) return;
-      try {
-        const res = await fetch(`${API_BASE}/api/gift-code/redeem`, {
-          method: "POST", headers: authHeaders(), body: JSON.stringify({ code })
-        });
-        if (!res.ok) {
-          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
-          return toast((await res.json()).detail || "Invalid code");
-        }
-        const data = await res.json();
-        let msg = "🎁 Gift code redeemed!";
-        if (data.reward_gems) msg += ` +${data.reward_gems} gems`;
-        if (data.reward_spins) msg += ` +${data.reward_spins} spins`;
-        if (data.reward_usdt) msg += ` +$${data.reward_usdt} USDT`;
-        toast(msg);
-        document.getElementById("giftInput").value = "";
-        await Promise.all([loadMe(), loadSpinStatus()]);
-      } catch (e) {
-        toast("Network error");
-      }
-    };
-  }
-
-  const convertBtn = document.getElementById("convertBtn");
-  if (convertBtn) {
-    convertBtn.onclick = async () => {
-      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
-      try {
-        const res = await fetch(`${API_BASE}/api/gems/convert`, { method: "POST", headers: authHeaders() });
-        if (!res.ok) {
-          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
-          return toast((await res.json()).detail || "Nothing to convert");
-        }
-        const data = await res.json();
-        toast(`✨ Converted successfully to $${data.converted_usdt.toFixed(2)} USDT`);
-        await loadMe();
-      } catch (e) {
-        toast("Network error");
-      }
-    };
-  }
-
-  const withdrawBtn = document.getElementById("withdrawBtn");
-  if (withdrawBtn) {
-    withdrawBtn.onclick = () => {
-      try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
-      const modal = document.getElementById("withdrawModal");
-      if (modal) modal.classList.add("show");
-    };
-  }
-
-  const closeWithdraw = document.getElementById("closeWithdraw");
-  if (closeWithdraw) {
-    closeWithdraw.onclick = () => {
-      const modal = document.getElementById("withdrawModal");
-      if (modal) modal.classList.remove("show");
-    };
-  }
-
-  const wdSubmit = document.getElementById("wdSubmit");
-  if (wdSubmit) {
-    wdSubmit.onclick = async () => {
-      try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
-      const amount_usdt = parseFloat(document.getElementById("wdAmount").value);
-      const method = document.getElementById("wdMethod").value;
-      const destination = document.getElementById("wdDestination").value.trim();
-      if (!amount_usdt || !destination) {
-        try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
-        return toast("Please fill in all fields");
-      }
-      try {
-        const res = await fetch(`${API_BASE}/api/withdraw`, {
-          method: "POST", headers: authHeaders(), body: JSON.stringify({ amount_usdt, method, destination })
-        });
-        if (!res.ok) {
-          try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
-          return toast((await res.json()).detail || "Could not submit withdrawal");
-        }
-        toast("🚀 Payout requested — pending review");
-        const modal = document.getElementById("withdrawModal");
-        if (modal) modal.classList.remove("show");
-        await loadMe();
-      } catch (e) {
-        toast("Network error");
-      }
     };
   }
 
