@@ -819,6 +819,8 @@ async function loadTasks() {
     }
     tasks.forEach(t => {
       const claimed = t.status === "claimed";
+      const isTg = t.task_type === "telegram" || (t.link && (t.link.includes("t.me/") || t.link.startsWith("@")));
+      const btnText = claimed ? "Done" : (isTg ? "Join" : "Start");
       const card = document.createElement("div");
       card.className = "task-card";
       card.innerHTML = `
@@ -826,7 +828,7 @@ async function loadTasks() {
           <div class="task-title">${t.title}</div>
           <div class="task-reward">💎 +${t.reward_gems} gems</div>
         </div>
-        <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${claimed ? "Done" : "Start"}</button>
+        <button class="task-btn ${claimed ? "claimed" : ""}" ${claimed ? "disabled" : ""}>${btnText}</button>
       `;
       card.querySelector("button").onclick = async () => {
         try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
@@ -834,7 +836,10 @@ async function loadTasks() {
         const b = card.querySelector("button");
         const origB = b.innerHTML;
         b.disabled = true;
-        b.innerHTML = `<span class="ad-spinner"></span>`;
+        b.innerHTML = `<span class="ad-spinner"></span> Checking...`;
+
+        await new Promise(r => setTimeout(r, 1200));
+
         try {
           const r = await fetch(`${API_BASE}/api/tasks/claim`, {
             method: "POST", headers: authHeaders(), body: JSON.stringify({ task_id: t.id })
@@ -843,7 +848,8 @@ async function loadTasks() {
             try { tg?.HapticFeedback?.notificationOccurred('error'); } catch(e){}
             b.disabled = false;
             b.innerHTML = origB;
-            return toast((await r.json()).detail || "Could not claim");
+            const errData = await r.json();
+            return toast(errData.detail || "Please join the channel first!");
           }
           const d = await r.json();
           toast(`✅ +${d.reward_gems} gems claimed!`);
@@ -851,7 +857,7 @@ async function loadTasks() {
         } catch (err) {
           b.disabled = false;
           b.innerHTML = origB;
-          toast("Network error claiming task");
+          toast("Please join the channel first!");
         }
       };
       list.appendChild(card);
