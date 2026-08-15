@@ -348,6 +348,25 @@ async def claim_task(body: ClaimTaskBody, user=Depends(current_user)):
         if not task:
             raise HTTPException(404, "Task not found")
 
+        # Verify Telegram channel membership if it's a telegram task
+        if task["task_type"] == "telegram" or (task["link"] and ("t.me/" in task["link"] or task["link"].startswith("@"))):
+            link = task["link"] or ""
+            channel = ""
+            if "t.me/" in link:
+                channel = link.split("t.me/")[-1].strip("/@").split("/")[0]
+            elif link.startswith("@"):
+                channel = link.strip("@")
+            
+            if channel:
+                try:
+                    member = await bot.get_chat_member(chat_id=f"@{channel}", user_id=user["telegram_id"])
+                    if member.status not in ["member", "administrator", "creator"]:
+                        raise HTTPException(400, f"Please join @{channel} first before claiming this reward!")
+                except HTTPException as he:
+                    raise he
+                except Exception as e:
+                    print(f"Channel verification check warning for @{channel}: {e}")
+
         cur = await conn.execute(
             "SELECT status FROM user_tasks WHERE user_id = ? AND task_id = ?", (user["id"], body.task_id)
         )

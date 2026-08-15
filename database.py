@@ -169,6 +169,11 @@ DEFAULT_WHEEL_SEGMENTS = [
     ("30",    30,    "#C94560", 1),
 ]
 
+DEFAULT_TASKS = [
+    ("Join Official Telegram Channel", "Join @chanelone13 to get updates and earn gems", 250, "telegram", "https://t.me/chanelone13", 0),
+    ("Follow Us on X (Twitter)", "Follow our official X handle", 150, "social", "https://x.com", 1),
+]
+
 
 def _gen_code(nbytes=4) -> str:
     return secrets.token_hex(nbytes)
@@ -202,6 +207,16 @@ async def init_db():
                 )
         for k, v in DEFAULT_SETTINGS.items():
             await db.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)", (k, v))
+        
+        cur_tasks = await db.execute("SELECT COUNT(*) AS c FROM tasks")
+        t_row = await cur_tasks.fetchone()
+        if t_row and t_row[0] == 0:
+            for title, desc, reward, t_type, link, sort_order in DEFAULT_TASKS:
+                await db.execute(
+                    "INSERT INTO tasks (title, description, reward_gems, task_type, link, active, sort_order) VALUES (?, ?, ?, ?, ?, 1, ?)",
+                    (title, desc, reward, t_type, link, sort_order),
+                )
+
         await db.commit()
 
 
