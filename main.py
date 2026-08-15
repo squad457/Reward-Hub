@@ -175,6 +175,7 @@ async def public_settings():
         "bot_username": s["bot_username"],
         "gems_per_usdt": s["gems_per_usdt"],
         "referral_reward_gems": s["referral_reward_gems"],
+        "referral_reward_spins": s["referral_reward_spins"],
         "admin_broadcast": s["admin_broadcast"],
         "min_withdraw_usdt": s["min_withdraw_usdt"],
         "daily_rewards_ladder": s["daily_rewards_ladder"],
@@ -503,6 +504,7 @@ class SettingsBody(BaseModel):
     gems_per_usdt: str | None = None
     app_name: str | None = None
     referral_reward_gems: str | None = None
+    referral_reward_spins: str | None = None
     admin_broadcast: str | None = None
     min_withdraw_usdt: str | None = None
     daily_rewards_ladder: str | None = None

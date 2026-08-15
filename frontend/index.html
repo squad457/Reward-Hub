@@ -396,7 +396,7 @@
       </div>
       <div class="friend-step-card">
         <div class="friend-step-title">🎉 2. Friend Joins</div>
-        <div class="friend-step-desc">Your friend instantly receives bonus gems after joining with your link.</div>
+        <div class="friend-step-desc" id="refRewardDesc">You earn bonus gems when your friend joins with your link.</div>
       </div>
       <div class="friend-step-card">
         <div class="friend-step-title">💎 3. Referral Commission</div>
@@ -760,6 +760,17 @@ function loadReferral() {
   if (!me) return;
   document.getElementById("refCount").textContent = me.invited_count || 0;
   document.getElementById("refCode").textContent = me.referral_code || "DEMO";
+
+  const refGems = APP_SETTINGS.referral_reward_gems || "250";
+  const refSpins = Number(APP_SETTINGS.referral_reward_spins !== undefined ? APP_SETTINGS.referral_reward_spins : 1);
+  const descEl = document.getElementById("refRewardDesc");
+  if (descEl) {
+    if (refSpins > 0) {
+      descEl.textContent = `You earn +${refGems} Gems & +${refSpins} Spin for every friend who joins!`;
+    } else {
+      descEl.textContent = `You earn +${refGems} Gems for every friend who joins!`;
+    }
+  }
 
   const username = APP_SETTINGS.bot_username || "UsdtReward1bot";
   const link = `https://t.me/${username}?start=${me.referral_code || "DEMO"}`;

@@ -146,6 +146,7 @@ DEFAULT_SETTINGS = {
     "gems_per_usdt": "1000",
     "app_name": "Reward Hub",
     "referral_reward_gems": "250",
+    "referral_reward_spins": "1",
     "admin_broadcast": "",
     "min_withdraw_usdt": "5.0",
     "daily_rewards_ladder": "80,80,200,90,90,90,6000",
@@ -234,13 +235,17 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
                     reward_gems_row = await cur_reward.fetchone()
                     ref_gems = int(reward_gems_row["value"]) if reward_gems_row else 250
 
+                    cur_spins = await db.execute("SELECT value FROM app_settings WHERE key = 'referral_reward_spins'")
+                    reward_spins_row = await cur_spins.fetchone()
+                    ref_spins = int(reward_spins_row["value"]) if reward_spins_row else 1
+
                     await db.execute(
                         "INSERT INTO referrals (referrer_id, referred_id, bonus_gems, created_at) VALUES (?, ?, ?, ?)",
                         (referred_by_id, row["id"], ref_gems, now),
                     )
                     await db.execute(
-                        "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
-                        (ref_gems, referred_by_id),
+                        "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ? WHERE id = ?",
+                        (ref_gems, ref_spins, referred_by_id),
                     )
                 await db.commit()
                 cur = await db.execute("SELECT * FROM users WHERE id = ?", (row["id"],))
@@ -269,6 +274,10 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
             reward_gems_row = await cur_reward.fetchone()
             ref_gems = int(reward_gems_row["value"]) if reward_gems_row else 250
 
+            cur_spins = await db.execute("SELECT value FROM app_settings WHERE key = 'referral_reward_spins'")
+            reward_spins_row = await cur_spins.fetchone()
+            ref_spins = int(reward_spins_row["value"]) if reward_spins_row else 1
+
             cur_check = await db.execute("SELECT 1 FROM referrals WHERE referred_id = ?", (new_user_id,))
             if not await cur_check.fetchone():
                 await db.execute(
@@ -276,8 +285,8 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
                     (referred_by_id, new_user_id, ref_gems, now),
                 )
                 await db.execute(
-                    "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
-                    (ref_gems, referred_by_id),
+                    "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ? WHERE id = ?",
+                    (ref_gems, ref_spins, referred_by_id),
                 )
                 await db.commit()
 
