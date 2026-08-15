@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
     bonus_spins     INTEGER NOT NULL DEFAULT 0,
     is_vip          INTEGER NOT NULL DEFAULT 0,
     vip_expires_at  INTEGER,
-    created_at      INTEGER NOT NULL
+    created_at      INTEGER NOT NULL,
+    device_fingerprint TEXT
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
@@ -177,9 +178,14 @@ async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL;")
         await db.executescript(SCHEMA)
-        # Database migration: add reward_usdt column if it doesn't exist
+        # Database migrations
         try:
             await db.execute("ALTER TABLE gift_codes ADD COLUMN reward_usdt REAL NOT NULL DEFAULT 0.0")
+            await db.commit()
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN device_fingerprint TEXT")
             await db.commit()
         except Exception:
             pass
@@ -210,20 +216,28 @@ async def get_db():
 
 
 async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
-                              referred_by_code: str | None = None):
+                              referred_by_code: str | None = None,
+                              device_fingerprint: str | None = None):
     async with get_db() as db:
         referred_by_id = None
         if referred_by_code:
-            cur = await db.execute("SELECT id FROM users WHERE referral_code = ?", (referred_by_code,))
+            cur = await db.execute("SELECT id, device_fingerprint FROM users WHERE referral_code = ?", (referred_by_code,))
             r = await cur.fetchone()
             if r:
-                referred_by_id = r["id"]
+                if device_fingerprint and r["device_fingerprint"] and device_fingerprint == r["device_fingerprint"]:
+                    referred_by_id = None
+                else:
+                    referred_by_id = r["id"]
 
         cur = await db.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
         row = await cur.fetchone()
 
         now = int(time.time())
         if row:
+            if device_fingerprint and not row["device_fingerprint"]:
+                await db.execute("UPDATE users SET device_fingerprint = ? WHERE id = ?", (device_fingerprint, row["id"]))
+                await db.commit()
+
             if not row["referred_by"] and referred_by_id and referred_by_id != row["id"]:
                 await db.execute(
                     "UPDATE users SET referred_by = ? WHERE id = ?",
@@ -262,9 +276,9 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
 
         cur = await db.execute(
             """INSERT INTO users (telegram_id, username, first_name, photo_url,
-                                   referral_code, referred_by, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (telegram_id, username, first_name, photo_url, code, referred_by_id if (referred_by_id != cur.lastrowid) else None, now),
+                                   referral_code, referred_by, created_at, device_fingerprint)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (telegram_id, username, first_name, photo_url, code, referred_by_id if (referred_by_id != cur.lastrowid) else None, now, device_fingerprint),
         )
         new_user_id = cur.lastrowid
         await db.commit()

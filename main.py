@@ -89,7 +89,11 @@ def verify_telegram_init_data(init_data: str) -> dict:
     return {}
 
 
-async def current_user(x_init_data: str = Header(...), x_ref_code: str | None = Header(default=None)):
+async def current_user(
+    x_init_data: str = Header(...),
+    x_ref_code: str | None = Header(default=None),
+    x_device_fingerprint: str | None = Header(default=None, alias="X-Device-Fingerprint")
+):
     tg_user = verify_telegram_init_data(x_init_data)
     if not tg_user.get("id"):
         raise HTTPException(401, "No user in initData")
@@ -99,6 +103,7 @@ async def current_user(x_init_data: str = Header(...), x_ref_code: str | None = 
         first_name=tg_user.get("first_name"),
         photo_url=tg_user.get("photo_url"),
         referred_by_code=x_ref_code,
+        device_fingerprint=x_device_fingerprint,
     )
     return row
 

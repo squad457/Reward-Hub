@@ -540,8 +540,37 @@ async function loadAppSettings() {
   } catch (e) { console.warn("AdsGram init failed", e); }
 }
 
+function getDeviceFingerprint() {
+  try {
+    const components = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width,
+      screen.height,
+      screen.colorDepth,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+      navigator.hardwareConcurrency || ''
+    ];
+    let hash = 0;
+    const str = components.join('||');
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    return 'fp_' + Math.abs(hash).toString(36);
+  } catch (e) {
+    return 'fp_unknown';
+  }
+}
+const deviceFingerprint = getDeviceFingerprint();
+
 function authHeaders() {
-  const h = { "Content-Type": "application/json", "X-Init-Data": tg?.initData || "" };
+  const h = {
+    "Content-Type": "application/json",
+    "X-Init-Data": tg?.initData || "",
+    "X-Device-Fingerprint": deviceFingerprint
+  };
   if (refFromLink) h["X-Ref-Code"] = refFromLink;
   return h;
 }
