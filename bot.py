@@ -5,7 +5,7 @@ and shows the button that opens the Mini App.
 
 Env vars required:
     BOT_TOKEN     - Telegram bot token
-    WEBAPP_URL    - deployed frontend URL (Vercel), e.g. https://rewardhub.vercel.app
+    WEBAPP_URL    - deployed frontend URL, e.g. https://reward-hub-production.up.railway.app
 """
 
 import asyncio
@@ -16,7 +16,7 @@ from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "123456:TEST_TOKEN")
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://reward-hub-nu.vercel.app")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://reward-hub-production.up.railway.app")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -28,13 +28,14 @@ async def start(message: Message, command: CommandObject):
     url = WEBAPP_URL if not ref_code else f"{WEBAPP_URL}?ref={ref_code}"
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎁 Open Reward Hub", web_app=WebAppInfo(url=url))]
+        [InlineKeyboardButton(text="🚀 Open App & Earn USDT", web_app=WebAppInfo(url=url))]
     ])
 
     await message.answer(
-        "Welcome to <b>Reward Hub</b> 🎁\n\n"
-        "Earn gems by completing tasks, spinning the wheel, watching ads, and inviting friends — "
-        "then cash out in USDT.",
+        "👋 Welcome boss!\n\n"
+        "💰 Welcome to USDT Rewards!\n"
+        "You have successfully joined and activated your account.\n\n"
+        "Tap the button below anytime to open the app and start earning!",
         reply_markup=kb,
         parse_mode="HTML",
     )
