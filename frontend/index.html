@@ -496,7 +496,7 @@ function hideSplash() {
 }
 
 function showAntiCheatModal() {
-  if (localStorage.getItem("rh_anticheat_agreed")) {
+  if (localStorage.getItem("rh_anticheat_agreed_v4")) {
     runSecurityScan();
     return;
   }
@@ -1036,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (acceptBtn) {
     acceptBtn.onclick = () => {
       try { tg?.HapticFeedback?.notificationOccurred('success'); } catch(e){}
-      localStorage.setItem("rh_anticheat_agreed", "true");
+      localStorage.setItem("rh_anticheat_agreed_v4", "true");
       const modal = document.getElementById("antiCheatModal");
       if (modal) {
         modal.style.display = "none";

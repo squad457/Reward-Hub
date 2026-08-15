@@ -221,13 +221,10 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
     async with get_db() as db:
         referred_by_id = None
         if referred_by_code:
-            cur = await db.execute("SELECT id, device_fingerprint FROM users WHERE referral_code = ?", (referred_by_code,))
+            cur = await db.execute("SELECT id FROM users WHERE referral_code = ?", (referred_by_code,))
             r = await cur.fetchone()
             if r:
-                if device_fingerprint and r["device_fingerprint"] and device_fingerprint == r["device_fingerprint"]:
-                    referred_by_id = None
-                else:
-                    referred_by_id = r["id"]
+                referred_by_id = r["id"]
 
         cur = await db.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
         row = await cur.fetchone()
