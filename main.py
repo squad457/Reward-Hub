@@ -110,9 +110,22 @@ async def require_admin(x_admin_key: str = Header(...)):
     return x_admin_key
 
 
-def user_public(row) -> dict:
+async def user_public(row, conn=None) -> dict:
     now = int(time.time())
     vip_active = bool(row["is_vip"]) and (not row["vip_expires_at"] or row["vip_expires_at"] > now)
+    invited_count = 0
+    if conn:
+        cur = await conn.execute("SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = ?", (row["id"],))
+        r = await cur.fetchone()
+        if r:
+            invited_count = r["c"]
+    else:
+        async with db.get_db() as c:
+            cur = await c.execute("SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = ?", (row["id"],))
+            r = await cur.fetchone()
+            if r:
+                invited_count = r["c"]
+
     return {
         "id": row["id"],
         "telegram_id": row["telegram_id"],
@@ -123,6 +136,7 @@ def user_public(row) -> dict:
         "balance_usdt": row["balance_usdt"],
         "daily_streak": row["daily_streak"],
         "referral_code": row["referral_code"],
+        "invited_count": invited_count,
         "bonus_spins": row["bonus_spins"],
         "is_vip": vip_active,
     }
@@ -132,7 +146,8 @@ def user_public(row) -> dict:
 
 @app.get("/api/me")
 async def get_me(user=Depends(current_user)):
-    return user_public(user)
+    async with db.get_db() as conn:
+        return await user_public(user, conn)
 
 
 # ------------------------------------------------------------- settings --
