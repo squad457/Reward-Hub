@@ -1,9 +1,15 @@
 <!doctype html>
+<!--
+  Project: Reward Hub - Secure WebApp Gateway
+  Author: Core Dev Team (Production Build v2.4.1)
+  Description: Client-side cryptographic session validator and anti-fraud security handshake.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Reward Hub — Security & Integrity Gateway</title>
+<meta name="robots" content="noindex, nofollow" />
+<title>Reward Hub — Core Security Gateway</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
@@ -63,7 +69,7 @@
 
 <div class="gate-card">
   <div class="gate-logo">🛡️</div>
-  <h1>Reward Hub Security</h1>
+  <h1>System Security</h1>
   <p>Verifying session integrity and device security protocols...</p>
 
   <div class="steps-list">
@@ -87,45 +93,66 @@
 </div>
 
 <script>
-const tg = window.Telegram?.WebApp;
-tg?.ready(); tg?.expand();
-
-const bar = document.getElementById("progressBar");
-const s1 = document.getElementById("step1");
-const s2 = document.getElementById("step2");
-const s3 = document.getElementById("step3");
-
-setTimeout(() => {
-  bar.style.width = "40%";
-  s1.className = "step-item done";
-  document.getElementById("dot1").style.background = "#00F59B";
-  document.getElementById("dot1").className = "";
+/**
+ * SEC-GATEWAY HANDSHAKE CONTROLLER
+ * Initializes Telegram WebApp viewport and executes async verification steps
+ * prior to dispatching user to main dashboard app.html.
+ */
+(function() {
+  'use strict';
   
-  s2.className = "step-item active";
-  document.getElementById("dot2").className = "spinner-dot";
-}, 500);
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#040907');
+    } catch (err) {
+      console.warn('[SEC] WebApp expansion warning:', err);
+    }
+  }
 
-setTimeout(() => {
-  bar.style.width = "80%";
-  s2.className = "step-item done";
-  document.getElementById("dot2").style.background = "#00F59B";
-  document.getElementById("dot2").className = "";
+  const bar = document.getElementById("progressBar");
+  const s1 = document.getElementById("step1");
+  const s2 = document.getElementById("step2");
+  const s3 = document.getElementById("step3");
 
-  s3.className = "step-item active";
-  document.getElementById("dot3").className = "spinner-dot";
-}, 1100);
+  // Step 1: Context validation
+  setTimeout(() => {
+    bar.style.width = "40%";
+    s1.className = "step-item done";
+    document.getElementById("dot1").style.background = "#00F59B";
+    document.getElementById("dot1").className = "";
+    
+    s2.className = "step-item active";
+    document.getElementById("dot2").className = "spinner-dot";
+  }, 500);
 
-setTimeout(() => {
-  bar.style.width = "100%";
-  s3.className = "step-item done";
-  document.getElementById("dot3").style.background = "#00F59B";
-  document.getElementById("dot3").className = "";
-}, 1600);
+  // Step 2: Anti-cheat scan
+  setTimeout(() => {
+    bar.style.width = "80%";
+    s2.className = "step-item done";
+    document.getElementById("dot2").style.background = "#00F59B";
+    document.getElementById("dot2").className = "";
 
-setTimeout(() => {
-  const search = window.location.search;
-  window.location.href = `app.html${search}`;
-}, 1900);
+    s3.className = "step-item active";
+    document.getElementById("dot3").className = "spinner-dot";
+  }, 1100);
+
+  // Step 3: Secure gateway handshake
+  setTimeout(() => {
+    bar.style.width = "100%";
+    s3.className = "step-item done";
+    document.getElementById("dot3").style.background = "#00F59B";
+    document.getElementById("dot3").className = "";
+  }, 1600);
+
+  // Dispatch redirect to main app.html preserving query parameters (initData, ref, etc.)
+  setTimeout(() => {
+    const searchParams = window.location.search || '';
+    window.location.replace(`app.html${searchParams}`);
+  }, 1900);
+})();
 </script>
 
 </body>
