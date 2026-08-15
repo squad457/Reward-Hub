@@ -827,9 +827,23 @@ async function loadSpinStatus() {
     renderWheel(wheelSegments);
     const spinsLeft = data.total_spins_left !== undefined ? data.total_spins_left : (data.max_spins_per_day + (me?.bonus_spins || 0));
     const bonusText = data.bonus_spins ? ` (${data.bonus_spins} bonus)` : "";
-    document.getElementById("spinsLeftLabel").textContent = `${spinsLeft} spin(s) left today${bonusText}`;
+    const lbl = document.getElementById("spinsLeftLabel");
+    const adBtn = document.getElementById("watchAdSpinBtn");
+    if (spinsLeft <= 0) {
+      if (lbl) lbl.textContent = `0 free spins left today. View ad claim 1 spin below!`;
+      if (adBtn) {
+        adBtn.style.display = "block";
+        adBtn.style.marginTop = "14px";
+        adBtn.style.padding = "12px 16px";
+        adBtn.style.background = "rgba(139, 92, 246, 0.15)";
+        adBtn.style.border = "1px solid rgba(139, 92, 246, 0.5)";
+        adBtn.style.borderRadius = "12px";
+      }
+    } else {
+      if (lbl) lbl.textContent = `${spinsLeft} spin(s) left today${bonusText}`;
+    }
     const btn = document.getElementById("spinBtn");
-    if (btn && btn.textContent !== "Spinning...") {
+    if (btn && !btn.innerHTML.includes("Spinning")) {
       btn.disabled = spinsLeft <= 0;
     }
   } catch (e) { console.warn("loadSpinStatus error", e); }
