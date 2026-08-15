@@ -467,7 +467,7 @@ function hideSplash() {
 
 const API_BASE = "https://reward-hub-production.up.railway.app";
 const urlParams = new URLSearchParams(window.location.search);
-const refFromLink = urlParams.get("ref");
+const refFromLink = urlParams.get("ref") || tg?.initDataUnsafe?.start_param;
 
 let APP_SETTINGS = { adsgram_block_id: "", bot_username: "UsdtReward1bot", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
 let AdController = null;

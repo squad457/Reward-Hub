@@ -211,17 +211,41 @@ async def get_db():
 async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
                               referred_by_code: str | None = None):
     async with get_db() as db:
-        cur = await db.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
-        row = await cur.fetchone()
-        if row:
-            return row
-
         referred_by_id = None
         if referred_by_code:
             cur = await db.execute("SELECT id FROM users WHERE referral_code = ?", (referred_by_code,))
             r = await cur.fetchone()
             if r:
                 referred_by_id = r["id"]
+
+        cur = await db.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
+        row = await cur.fetchone()
+
+        now = int(time.time())
+        if row:
+            if not row["referred_by"] and referred_by_id and referred_by_id != row["id"]:
+                await db.execute(
+                    "UPDATE users SET referred_by = ? WHERE id = ?",
+                    (referred_by_id, row["id"]),
+                )
+                cur_check = await db.execute("SELECT 1 FROM referrals WHERE referred_id = ?", (row["id"],))
+                if not await cur_check.fetchone():
+                    cur_reward = await db.execute("SELECT value FROM app_settings WHERE key = 'referral_reward_gems'")
+                    reward_gems_row = await cur_reward.fetchone()
+                    ref_gems = int(reward_gems_row["value"]) if reward_gems_row else 250
+
+                    await db.execute(
+                        "INSERT INTO referrals (referrer_id, referred_id, bonus_gems, created_at) VALUES (?, ?, ?, ?)",
+                        (referred_by_id, row["id"], ref_gems, now),
+                    )
+                    await db.execute(
+                        "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
+                        (ref_gems, referred_by_id),
+                    )
+                await db.commit()
+                cur = await db.execute("SELECT * FROM users WHERE id = ?", (row["id"],))
+                row = await cur.fetchone()
+            return row
 
         # Loop to ensure referral code is unique and avoid IntegrityError collisions
         code = _gen_code()
@@ -231,32 +255,33 @@ async def get_or_create_user(telegram_id: int, username, first_name, photo_url,
                 break
             code = _gen_code()
 
-        now = int(time.time())
         cur = await db.execute(
             """INSERT INTO users (telegram_id, username, first_name, photo_url,
                                    referral_code, referred_by, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (telegram_id, username, first_name, photo_url, code, referred_by_id, now),
+            (telegram_id, username, first_name, photo_url, code, referred_by_id if (referred_by_id != cur.lastrowid) else None, now),
         )
+        new_user_id = cur.lastrowid
         await db.commit()
 
-        if referred_by_id:
-            # Fetch dynamic referral gems reward from settings
+        if referred_by_id and referred_by_id != new_user_id:
             cur_reward = await db.execute("SELECT value FROM app_settings WHERE key = 'referral_reward_gems'")
             reward_gems_row = await cur_reward.fetchone()
             ref_gems = int(reward_gems_row["value"]) if reward_gems_row else 250
 
-            await db.execute(
-                "INSERT INTO referrals (referrer_id, referred_id, bonus_gems, created_at) VALUES (?, ?, ?, ?)",
-                (referred_by_id, cur.lastrowid, ref_gems, now),
-            )
-            await db.execute(
-                "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
-                (ref_gems, referred_by_id),
-            )
-            await db.commit()
+            cur_check = await db.execute("SELECT 1 FROM referrals WHERE referred_id = ?", (new_user_id,))
+            if not await cur_check.fetchone():
+                await db.execute(
+                    "INSERT INTO referrals (referrer_id, referred_id, bonus_gems, created_at) VALUES (?, ?, ?, ?)",
+                    (referred_by_id, new_user_id, ref_gems, now),
+                )
+                await db.execute(
+                    "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + 1 WHERE id = ?",
+                    (ref_gems, referred_by_id),
+                )
+                await db.commit()
 
-        cur = await db.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,))
+        cur = await db.execute("SELECT * FROM users WHERE id = ?", (new_user_id,))
         return await cur.fetchone()
 
 
