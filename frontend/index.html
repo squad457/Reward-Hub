@@ -465,6 +465,19 @@
   </div>
 </div>
 
+<!-- Security Scan Loader Modal -->
+<div class="modal-backdrop" id="securityScanModal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal" style="border-radius:24px; max-width:360px; text-align:center; padding:32px 24px;">
+    <div style="margin-bottom:16px;">
+      <div class="ad-spinner" style="width:36px; height:36px; border-width:3px; margin:0 auto;"></div>
+    </div>
+    <h3 style="color:var(--emerald); margin-bottom:8px; font-size:18px;">Security & Multi-Check</h3>
+    <p id="scanStatusText" style="font-size:13px; color:var(--ink-dim); line-height:1.4; margin:0;">
+      Verifying session and device integrity...
+    </p>
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
@@ -483,11 +496,40 @@ function hideSplash() {
 }
 
 function showAntiCheatModal() {
-  if (localStorage.getItem("rh_anticheat_agreed")) return;
+  if (localStorage.getItem("rh_anticheat_agreed")) {
+    runSecurityScan();
+    return;
+  }
   const modal = document.getElementById("antiCheatModal");
   if (modal) {
     modal.style.display = "flex";
     modal.classList.add("show");
+  }
+}
+
+async function runSecurityScan() {
+  const scanModal = document.getElementById("securityScanModal");
+  const statusText = document.getElementById("scanStatusText");
+  if (scanModal) {
+    scanModal.style.display = "flex";
+    scanModal.classList.add("show");
+  }
+  
+  const steps = [
+    "Verifying Telegram session...",
+    "Running multi-account check...",
+    "Scanning device fingerprint...",
+    "Security check completed successfully!"
+  ];
+  
+  for (let i = 0; i < steps.length; i++) {
+    if (statusText) statusText.textContent = steps[i];
+    await new Promise(r => setTimeout(r, 450));
+  }
+  
+  if (scanModal) {
+    scanModal.style.display = "none";
+    scanModal.classList.remove("show");
   }
 }
 
@@ -584,26 +626,41 @@ function toast(msg) {
   setTimeout(() => t.classList.remove("show"), 3500);
 }
 
-async function loadMe() {
-  try {
-    const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Auth failed");
-    me = await res.json();
-  } catch (e) {
-    console.warn("Load user failed", e);
-    toast("Connection failed. Please reload the app.");
-    alert("Connection error or authentication failed. Please reload the app on Telegram.");
-    return;
+async function loadMe(retries = 4, delay = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!tg?.initData && attempt < retries) {
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      const res = await fetch(`${API_BASE}/api/me`, { headers: authHeaders() });
+      if (!res.ok) {
+        if (res.status === 401 && attempt < retries) {
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw new Error("Auth failed");
+      }
+      me = await res.json();
+      document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
+      document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
+      document.getElementById("userName").textContent = me.first_name || "User";
+      document.getElementById("streakNum").textContent = me.daily_streak || 0;
+      document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
+      document.getElementById("statReferrals").textContent = me.invited_count || 0;
+      document.getElementById("statStreak").textContent = `${me.daily_streak || 0} Days`;
+      loadReferral();
+      return;
+    } catch (e) {
+      if (attempt === retries) {
+        console.warn("Load user failed", e);
+        toast("Connection failed. Please reload the app.");
+        alert("Connection error or authentication failed. Please reload the app on Telegram.");
+        return;
+      }
+      await new Promise(r => setTimeout(r, delay));
+    }
   }
-  document.getElementById("gemsBalance").textContent = me.gems.toLocaleString();
-  document.getElementById("usdtBalance").textContent = `$${me.balance_usdt.toFixed(2)}`;
-  document.getElementById("userName").textContent = me.first_name || "User";
-  document.getElementById("streakNum").textContent = me.daily_streak || 0;
-  document.getElementById("statEarned").textContent = `$${me.balance_usdt.toFixed(2)}`;
-  document.getElementById("statReferrals").textContent = me.invited_count || 0;
-  document.getElementById("statStreak").textContent = `${me.daily_streak || 0} Days`;
-  
-  loadReferral();
 }
 
 async function loadDaily() {
@@ -985,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.display = "none";
         modal.classList.remove("show");
       }
+      runSecurityScan();
     };
   }
 
