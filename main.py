@@ -582,6 +582,17 @@ async def admin_add_segment(body: WheelSegmentBody, _=Depends(require_admin)):
     return {"id": cur.lastrowid}
 
 
+@app.put("/api/admin/wheel-segments/{segment_id}")
+async def admin_update_segment(segment_id: int, body: WheelSegmentBody, _=Depends(require_admin)):
+    async with db.get_db() as conn:
+        await conn.execute(
+            "UPDATE wheel_segments SET label=?, value_gems=?, color=?, is_real=?, sort_order=? WHERE id=?",
+            (body.label, body.value_gems, body.color, int(body.is_real), body.sort_order, segment_id),
+        )
+        await conn.commit()
+    return {"ok": True}
+
+
 @app.delete("/api/admin/wheel-segments/{segment_id}")
 async def admin_delete_segment(segment_id: int, _=Depends(require_admin)):
     async with db.get_db() as conn:

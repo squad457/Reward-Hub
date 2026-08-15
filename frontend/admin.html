@@ -170,14 +170,24 @@ document.getElementById("saveSpinConfig").onclick = async () => {
   document.getElementById("spinWarn").textContent = r.warning || `Saved. ${r.eligible_segments} segment(s) currently payable.`;
 };
 
+let editingSegmentId = null;
+
 async function loadSegments() {
   const segs = await (await fetch(`${API_BASE}/api/admin/wheel-segments`, { headers: headers() })).json();
   const tbody = document.querySelector("#segTable tbody");
   tbody.innerHTML = "";
   segs.forEach(s => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${s.label}</td><td>${s.value_gems}</td><td><span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:3px;vertical-align:middle;"></span> ${s.color}</td><td>${s.is_real ? "Real" : "Decorative"}</td><td><button data-id="${s.id}">Delete</button></td>`;
-    tr.querySelector("button").onclick = async () => {
+    tr.innerHTML = `<td>${s.label}</td><td>${s.value_gems}</td><td><span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:3px;vertical-align:middle;"></span> ${s.color}</td><td>${s.is_real ? "Real" : "Decorative"}</td><td><button class="edit-btn" style="background:#8B5CF6; color:#fff; padding:4px 8px; font-size:11px; margin-right:4px;">Edit</button><button class="del-btn" style="background:#E85D75; color:#fff; padding:4px 8px; font-size:11px;">Delete</button></td>`;
+    tr.querySelector(".edit-btn").onclick = () => {
+      editingSegmentId = s.id;
+      document.getElementById("segLabel").value = s.label;
+      document.getElementById("segValue").value = s.value_gems;
+      document.getElementById("segColor").value = s.color;
+      document.getElementById("segReal").value = s.is_real ? "1" : "0";
+      document.getElementById("addSegment").textContent = "Update segment";
+    };
+    tr.querySelector(".del-btn").onclick = async () => {
       await fetch(`${API_BASE}/api/admin/wheel-segments/${s.id}`, { method: "DELETE", headers: headers() });
       loadSegments();
     };
@@ -193,7 +203,16 @@ document.getElementById("addSegment").onclick = async () => {
     is_real: document.getElementById("segReal").value === "1",
     sort_order: 99,
   };
-  await fetch(`${API_BASE}/api/admin/wheel-segments`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  if (editingSegmentId) {
+    await fetch(`${API_BASE}/api/admin/wheel-segments/${editingSegmentId}`, { method: "PUT", headers: headers(), body: JSON.stringify(body) });
+    editingSegmentId = null;
+    document.getElementById("addSegment").textContent = "Add segment";
+  } else {
+    await fetch(`${API_BASE}/api/admin/wheel-segments`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  }
+  document.getElementById("segLabel").value = "";
+  document.getElementById("segValue").value = "";
+  document.getElementById("segColor").value = "";
   loadSegments();
 };
 

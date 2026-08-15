@@ -158,13 +158,13 @@ DAILY_REWARD_LADDER = [80, 80, 200, 90, 90, 90, 6000]
 
 DEFAULT_WHEEL_SEGMENTS = [
     ("50",    50,    "#12B886", 1),
-    ("5000",  5000,  "#9B6BFF", 0),   # decorative — outside default min/max
+    ("700",   700,   "#9B6BFF", 1),
     ("100",   100,   "#0EA579", 1),
-    ("1",     1,     "#7C4DE0", 0),   # decorative — below default min
+    ("20",    20,    "#7C4DE0", 1),
     ("250",   250,   "#F2B705", 1),
-    ("10000", 10000, "#D9A203", 0),   # decorative
+    ("400",   400,   "#D9A203", 1),
     ("80",    80,    "#E85D75", 1),
-    ("2",     2,     "#C94560", 0),   # decorative
+    ("30",    30,    "#C94560", 1),
 ]
 
 
@@ -183,7 +183,7 @@ async def init_db():
         except Exception:
             pass
         await db.execute(
-            "INSERT OR IGNORE INTO spin_config (id, min_reward, max_reward, max_spins_per_day) VALUES (1, 10, 500, 8)"
+            "INSERT OR IGNORE INTO spin_config (id, min_reward, max_reward, max_spins_per_day) VALUES (1, 10, 700, 8)"
         )
         cur = await db.execute("SELECT COUNT(*) AS c FROM wheel_segments")
         row = await cur.fetchone()
