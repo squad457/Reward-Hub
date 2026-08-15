@@ -295,11 +295,6 @@
 
   <!-- VIEW: HOME / DASHBOARD -->
   <div id="viewHome">
-    <!-- Anti-Cheat / Multi-Account Warning Notice -->
-    <div style="background: linear-gradient(135deg, rgba(232,93,117,0.15), rgba(153,27,27,0.1)); border: 1px solid rgba(232,93,117,0.4); padding: 12px 16px; border-radius: 16px; margin-bottom: 16px; font-size: 13px; color: #FCA5A5; font-weight: 600; line-height: 1.5;">
-      ⚠️ <b>Anti-Cheat Policy:</b> Multi-accounts are strictly prohibited. Users attempting to exploit multiple accounts will be permanently banned and balances forfeited.
-    </div>
-
     <!-- Gorgeous Balance Hero Card -->
     <div class="hero-card">
       <div class="hero-top">
@@ -458,6 +453,18 @@
   </div>
 </div>
 
+<!-- Anti-Cheat Warning Modal -->
+<div class="modal-backdrop" id="antiCheatModal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal" style="border-radius:24px; max-width:400px; text-align:center; padding:30px 24px;">
+    <div style="font-size:42px; margin-bottom:12px;">⚠️</div>
+    <h3 style="color:#FCA5A5; margin-bottom:12px; font-size:20px;">Strict Anti-Cheat Policy</h3>
+    <p style="font-size:13px; color:var(--ink-dim); line-height:1.6; margin-bottom:24px;">
+      Multi-accounts are <b>strictly prohibited</b>. Any user attempting to use multiple accounts or exploit the referral system will be permanently banned and all balances will be forfeited. Please play fair!
+    </p>
+    <button class="primary" id="acceptAntiCheatBtn" style="background:linear-gradient(135deg, #00F59B, #059669); color:#04100D;">I Understand & Agree</button>
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
@@ -466,7 +473,21 @@ function hideSplash() {
   const splash = document.getElementById("splashScreen");
   if (splash && splash.style.opacity !== '0') {
     splash.style.opacity = '0';
-    setTimeout(() => splash.remove(), 400);
+    setTimeout(() => {
+      splash.remove();
+      showAntiCheatModal();
+    }, 400);
+  } else {
+    showAntiCheatModal();
+  }
+}
+
+function showAntiCheatModal() {
+  if (localStorage.getItem("rh_anticheat_agreed")) return;
+  const modal = document.getElementById("antiCheatModal");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.add("show");
   }
 }
 
@@ -922,6 +943,19 @@ document.addEventListener('DOMContentLoaded', function() {
       try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
       const modal = document.getElementById("withdrawModal");
       if (modal) modal.classList.add("show");
+    };
+  }
+
+  const acceptBtn = document.getElementById("acceptAntiCheatBtn");
+  if (acceptBtn) {
+    acceptBtn.onclick = () => {
+      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch(e){}
+      localStorage.setItem("rh_anticheat_agreed", "true");
+      const modal = document.getElementById("antiCheatModal");
+      if (modal) {
+        modal.style.display = "none";
+        modal.classList.remove("show");
+      }
     };
   }
 
