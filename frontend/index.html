@@ -455,16 +455,13 @@
 const tg = window.Telegram?.WebApp;
 tg?.ready(); tg?.expand();
 
-// Hide splash screen after 1.2s
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const splash = document.getElementById("splashScreen");
-    if (splash) {
-      splash.style.opacity = '0';
-      setTimeout(() => splash.remove(), 400);
-    }
-  }, 1200);
-});
+function hideSplash() {
+  const splash = document.getElementById("splashScreen");
+  if (splash && splash.style.opacity !== '0') {
+    splash.style.opacity = '0';
+    setTimeout(() => splash.remove(), 400);
+  }
+}
 
 const API_BASE = "https://reward-hub-production.up.railway.app";
 const urlParams = new URLSearchParams(window.location.search);
@@ -894,11 +891,25 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  // Initial load
+  // Initial load: fetch everything concurrently behind the splash screen
   (async function init() {
-    await loadAppSettings();
-    await loadMe();
-    await Promise.all([loadDaily(), loadSpinStatus(), loadTasks()]);
+    const startTime = Date.now();
+    try {
+      await Promise.all([
+        loadAppSettings(),
+        loadMe(),
+        loadDaily(),
+        loadSpinStatus(),
+        loadTasks()
+      ]);
+    } catch (e) {
+      console.warn("Init load error", e);
+    }
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 600) {
+      await new Promise(r => setTimeout(r, 600 - elapsed));
+    }
+    hideSplash();
   })();
 });
 </script>
