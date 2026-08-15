@@ -32,10 +32,9 @@ async def start(message: Message, command: CommandObject):
     ])
 
     await message.answer(
-        "👋 Welcome boss!\n\n"
-        "💰 Welcome to USDT Rewards!\n"
-        "You have successfully joined and activated your account.\n\n"
-        "Tap the button below anytime to open the app and start earning!",
+        "Welcome to <b>Reward Hub</b> 🎁\n\n"
+        "Earn gems by completing tasks, spinning the wheel, watching ads, and inviting friends — "
+        "then cash out in USDT.",
         reply_markup=kb,
         parse_mode="HTML",
     )
