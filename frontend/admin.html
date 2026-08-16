@@ -638,19 +638,27 @@ async function inspectUser(userId) {
         </div>
       </div>
       
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
-        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
-          <div style="font-size:11px; color:var(--ink-dim);">Gems Balance</div>
-          <div style="font-size:16px; font-weight:800; color:var(--purple); margin-top:4px;">${u.gems.toLocaleString()} 💎</div>
+      <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:20px;">
+        <h4 style="margin:0 0 12px; font-size:14px; font-weight:800; color:var(--emerald);">⚙️ Edit User Balances & Rewards</h4>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:11px; color:var(--ink-dim);">Gems 💎</label>
+            <input type="number" id="editUserGems" value="${u.gems}" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--ink-dim);">USDT ($)</label>
+            <input type="number" step="0.01" id="editUserUsdt" value="${u.balance_usdt}" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--ink-dim);">Bonus Spins</label>
+            <input type="number" id="editUserSpins" value="${u.bonus_spins}" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--ink-dim);">Streak Day</label>
+            <input type="number" id="editUserStreak" value="${u.daily_streak}" />
+          </div>
         </div>
-        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
-          <div style="font-size:11px; color:var(--ink-dim);">USDT Balance</div>
-          <div style="font-size:16px; font-weight:800; color:var(--gold); margin-top:4px;">$${Number(u.balance_usdt).toFixed(2)}</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
-          <div style="font-size:11px; color:var(--ink-dim);">Daily Streak</div>
-          <div style="font-size:16px; font-weight:800; color:var(--emerald); margin-top:4px;">Day ${u.daily_streak}</div>
-        </div>
+        <button class="btn-primary" onclick="saveUserBalance(${u.id})" style="width:100%;">Save Balance Changes</button>
       </div>
 
       <div class="activity-section">
@@ -680,6 +688,26 @@ async function inspectUser(userId) {
 
 document.getElementById("closeActivityModal").onclick = () => {
   document.getElementById("userActivityModal").classList.remove("show");
+};
+
+window.saveUserBalance = async (userId) => {
+  const body = {
+    gems: parseInt(document.getElementById("editUserGems").value) || 0,
+    balance_usdt: parseFloat(document.getElementById("editUserUsdt").value) || 0,
+    bonus_spins: parseInt(document.getElementById("editUserSpins").value) || 0,
+    daily_streak: parseInt(document.getElementById("editUserStreak").value) || 1,
+  };
+  const res = await fetch(`${API_BASE}/api/admin/users/${userId}/balance`, {
+    method: "PUT", headers: headers(), body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    showToast("✅ User balance updated successfully!");
+    inspectUser(userId);
+    loadUsers();
+    loadStats();
+  } else {
+    alert("Failed to update user balance");
+  }
 };
 
 async function loadSettings() {

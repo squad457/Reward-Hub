@@ -745,6 +745,34 @@ async def admin_user_activity(user_id: int, _=Depends(require_admin)):
     }
 
 
+class UserBalanceUpdateBody(BaseModel):
+    gems: int | None = None
+    balance_usdt: float | None = None
+    bonus_spins: int | None = None
+    daily_streak: int | None = None
+
+
+@app.put("/api/admin/users/{user_id}/balance")
+async def admin_update_user_balance(user_id: int, body: UserBalanceUpdateBody, _=Depends(require_admin)):
+    async with db.get_db() as conn:
+        cur = await conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        u = await cur.fetchone()
+        if not u:
+            raise HTTPException(404, "User not found")
+        
+        new_gems = body.gems if body.gems is not None else u["gems"]
+        new_usdt = body.balance_usdt if body.balance_usdt is not None else u["balance_usdt"]
+        new_spins = body.bonus_spins if body.bonus_spins is not None else u["bonus_spins"]
+        new_streak = body.daily_streak if body.daily_streak is not None else u["daily_streak"]
+
+        await conn.execute(
+            "UPDATE users SET gems = ?, balance_usdt = ?, bonus_spins = ?, daily_streak = ? WHERE id = ?",
+            (new_gems, new_usdt, new_spins, new_streak, user_id)
+        )
+        await conn.commit()
+    return {"ok": True, "gems": new_gems, "balance_usdt": new_usdt, "bonus_spins": new_spins, "daily_streak": new_streak}
+
+
 class SpinConfigBody(BaseModel):
     min_reward: int
     max_reward: int
