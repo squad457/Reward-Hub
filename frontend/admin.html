@@ -307,12 +307,21 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Payout Proof Channel Username (@...)</label>
-            <input id="setPayoutChannel" placeholder="@rewardhubpayoutbot" />
+            <label>Force Join Channel Enabled?</label>
+            <select id="setForceJoin">
+              <option value="1">Enabled (Mandatory Join)</option>
+              <option value="0">Disabled (Bypass Check)</option>
+            </select>
           </div>
+          <div class="form-group">
+            <label>Payout Proof Channel Username (@...)</label>
+            <input id="setPayoutChannel" placeholder="@rewardhubpayout1" />
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group" style="flex:2;">
             <label>Payout Proof Channel Link (https://t.me/...)</label>
-            <input id="setPayoutChannelLink" placeholder="https://t.me/rewardhubpayoutbot" />
+            <input id="setPayoutChannelLink" placeholder="https://t.me/rewardhubpayout1" />
           </div>
         </div>
         <div class="form-row">
@@ -729,8 +738,9 @@ async function loadSettings() {
   document.getElementById("setAdsgram").value = s.adsgram_block_id || "";
   document.getElementById("setBotUsername").value = s.bot_username || "";
   document.getElementById("setAppName").value = s.app_name || "";
-  document.getElementById("setPayoutChannel").value = s.payout_channel_username || "@rewardhubpayoutbot";
-  document.getElementById("setPayoutChannelLink").value = s.payout_channel_link || "https://t.me/rewardhubpayoutbot";
+  document.getElementById("setForceJoin").value = s.force_join_enabled !== undefined ? s.force_join_enabled : "1";
+  document.getElementById("setPayoutChannel").value = s.payout_channel_username || "@rewardhubpayout1";
+  document.getElementById("setPayoutChannelLink").value = s.payout_channel_link || "https://t.me/rewardhubpayout1";
   document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "1000";
   document.getElementById("setMinWd").value = s.min_withdraw_usdt || "5.0";
   document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
@@ -744,6 +754,7 @@ document.getElementById("saveSettings").onclick = async () => {
     adsgram_block_id: document.getElementById("setAdsgram").value.trim(),
     bot_username: document.getElementById("setBotUsername").value.trim(),
     app_name: document.getElementById("setAppName").value.trim(),
+    force_join_enabled: document.getElementById("setForceJoin").value,
     payout_channel_username: document.getElementById("setPayoutChannel").value.trim(),
     payout_channel_link: document.getElementById("setPayoutChannelLink").value.trim(),
     gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),

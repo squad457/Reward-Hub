@@ -153,6 +153,7 @@ DEFAULT_SETTINGS = {
     "daily_rewards_ladder": "80,80,200,90,90,90,6000",
     "payout_channel_link": "https://t.me/rewardhubpayout1",
     "payout_channel_username": "@rewardhubpayout1",
+    "force_join_enabled": "1",
 }
 
 # Fallback used only if the DB row is somehow missing.

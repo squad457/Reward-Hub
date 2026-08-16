@@ -591,7 +591,12 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
 @app.get("/api/channel/check")
 async def check_channel_membership(user=Depends(current_user)):
     async with db.get_db() as conn:
-        channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
+        enabled = await db.get_setting(conn, "force_join_enabled", "1")
+        if enabled != "1":
+            return {"joined": True}
+        channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayout1")
+        channel_link = await db.get_setting(conn, "payout_channel_link", "https://t.me/rewardhubpayout1")
+
     if not channel_username:
         return {"joined": True}
     try:
@@ -601,7 +606,7 @@ async def check_channel_membership(user=Depends(current_user)):
     except Exception as e:
         print(f"Force join check warning: {e}")
         return {"joined": True}
-    return {"joined": False, "channel": channel_username}
+    return {"joined": False, "channel": channel_username, "link": channel_link}
 
 
 @app.get("/api/withdraw/history")
