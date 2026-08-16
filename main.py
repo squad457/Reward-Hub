@@ -472,6 +472,38 @@ async def ad_reward(body: AdRewardBody, user=Depends(current_user)):
     return {"reward_gems": gems, "bonus_spins": bonus_spin}
 
 
+@app.get("/api/ads/monetag-postback")
+@app.post("/api/ads/monetag-postback")
+async def monetag_postback(
+    telegram_id: int | None = None,
+    user_id: int | None = None,
+    reward: str | None = None,
+    reward_event_type: str | None = None,
+    event_type: str | None = None,
+):
+    tg_id = telegram_id or user_id
+    is_rewarded = (reward and reward.lower() in ("yes", "true", "1", "success", "paid")) or \
+                  (reward_event_type and reward_event_type.lower() in ("yes", "true", "1", "success", "paid")) or \
+                  (event_type and event_type.lower() in ("reward", "conversion", "paid"))
+
+    if not tg_id:
+        return {"status": "error", "message": "missing telegram_id"}
+
+    if is_rewarded or not reward:
+        async with db.get_db() as conn:
+            cur = await conn.execute("SELECT id FROM users WHERE telegram_id = ?", (tg_id,))
+            u = await cur.fetchone()
+            if u:
+                await conn.execute(
+                    "UPDATE users SET gems = gems + 40 WHERE id = ?",
+                    (u["id"],)
+                )
+                await conn.commit()
+                return {"status": "success", "telegram_id": tg_id, "rewarded_gems": 40}
+
+    return {"status": "received"}
+
+
 # -------------------------------------------------------------- referral --
 
 @app.get("/api/referral")
