@@ -595,8 +595,8 @@ async def check_channel_membership(user=Depends(current_user)):
         enabled = await db.get_setting(conn, "force_join_enabled", "1")
         if enabled != "1":
             return {"joined": True}
-        channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayout1")
-        channel_link = await db.get_setting(conn, "payout_channel_link", "https://t.me/rewardhubpayout1")
+        channel_username = await db.get_setting(conn, "force_join_channel_username", "@chanelone13")
+        channel_link = await db.get_setting(conn, "force_join_channel_link", "https://t.me/chanelone13")
 
     if not channel_username:
         return {"joined": True}
@@ -665,6 +665,8 @@ class SettingsBody(BaseModel):
     payout_channel_link: str | None = None
     payout_channel_username: str | None = None
     force_join_enabled: str | None = None
+    force_join_channel_username: str | None = None
+    force_join_channel_link: str | None = None
     webapp_url: str | None = None
 
 
