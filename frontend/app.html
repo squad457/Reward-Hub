@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Reward Hub</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<script src='//libtl.com/sdk.js' data-zone='11590296' data-sdk='show_11590296'></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -788,18 +788,10 @@ document.getElementById("claimDailyBtn").onclick = async () => {
 };
 
 async function showAd(placement, btnId) {
-  if (!AdController) {
-    if (window.Adsgram && APP_SETTINGS.adsgram_block_id) {
-      try {
-        AdController = window.Adsgram.init({ blockId: APP_SETTINGS.adsgram_block_id });
-        const noop = () => {};
-        AdController.addEventListener("onBannerNotFound", noop);
-        AdController.addEventListener("onNonStopShow", noop);
-        AdController.addEventListener("onTooLongSession", noop);
-      } catch(e) {}
-    }
+  if (typeof show_11590296 !== 'function') {
+    toast("Ad network loading... Please try again.");
+    return false;
   }
-  if (!AdController) { toast("Ads not available right now"); return false; }
 
   const btn = btnId ? document.getElementById(btnId) : null;
   const originalHtml = btn ? btn.innerHTML : "";
@@ -807,11 +799,16 @@ async function showAd(placement, btnId) {
     btn.disabled = true;
     btn.innerHTML = `<span class="ad-spinner"></span> Loading Ad...`;
   }
+
   try {
-    await AdController.show();
+    await show_11590296();
     const res = await fetch(`${API_BASE}/api/ads/reward`, {
       method: "POST", headers: authHeaders(), body: JSON.stringify({ placement }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Reward grant failed");
+    }
     const data = await res.json();
     if (data.reward_gems) toast(`+${data.reward_gems} gems from sponsor!`);
     if (data.bonus_spins) toast(`+${data.bonus_spins} bonus spin!`);
@@ -822,11 +819,7 @@ async function showAd(placement, btnId) {
     }
     return true;
   } catch (e) {
-    if (e?.state !== "load" && e?.state !== "render") {
-      // Completed or dismissed normally
-    } else {
-      toast("Ad not completed");
-    }
+    toast("Ad not completed or skipped");
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = originalHtml;
