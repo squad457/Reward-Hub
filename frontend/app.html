@@ -1105,7 +1105,7 @@ async function loadWithdrawHistory() {
       let badgeBg = "rgba(234,179,8,0.15)";
       let badgeColor = "#FACC15";
       let statusText = "Pending ⏳";
-      if (w.status === "approved" || w.status === "completed") {
+      if (w.status === "approved" || w.status === "completed" || w.status === "paid") {
         badgeBg = "rgba(0,245,155,0.15)";
         badgeColor = "#00F59B";
         statusText = "Approved ✓";
