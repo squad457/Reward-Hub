@@ -567,13 +567,11 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
         async with db.get_db() as conn:
             channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
         
-        username_display = f"@{user['username']}" if user['username'] else f"ID: {user['telegram_id']}"
         masked_dest = body.destination[:6] + "..." + body.destination[-4:] if len(body.destination) > 10 else body.destination
         
         caption = (
             f"🚀 <b>NEW WITHDRAWAL REQUEST</b>\n\n"
-            f"👤 <b>User:</b> {username_display}\n"
-            f"🆔 <b>Telegram ID:</b> <code>{user['telegram_id']}</code>\n"
+            f"🆔 <b>User ID:</b> <code>{user['telegram_id']}</code>\n"
             f"💵 <b>Amount:</b> <code>${body.amount_usdt:.2f} USDT</code>\n"
             f"💳 <b>Method:</b> {body.method.replace('_', ' ').title()}\n"
             f"🎯 <b>Destination:</b> <code>{masked_dest}</code>\n"
@@ -1007,13 +1005,13 @@ async def admin_update_withdrawal(withdrawal_id: int, body: WithdrawalUpdateBody
         if body.status == "paid":
             try:
                 channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
-                cur_u = await conn.execute("SELECT telegram_id, username FROM users WHERE id = ?", (wd["user_id"],))
+                cur_u = await conn.execute("SELECT telegram_id FROM users WHERE id = ?", (wd["user_id"],))
                 u_info = await cur_u.fetchone()
-                u_disp = f"@{u_info['username']}" if (u_info and u_info['username']) else f"ID: {u_info['telegram_id'] if u_info else wd['user_id']}"
+                tg_id = u_info['telegram_id'] if u_info else wd['user_id']
 
                 reply_text = (
                     f"✅ <b>PAYOUT COMPLETED & APPROVED!</b> 🎉\n\n"
-                    f"👤 <b>User:</b> {u_disp}\n"
+                    f"🆔 <b>User ID:</b> <code>{tg_id}</code>\n"
                     f"💵 <b>Paid Amount:</b> <code>${wd['amount_usdt']:.2f} USDT</code>\n"
                     f"💳 <b>Method:</b> {wd['method'].replace('_', ' ').title()}\n"
                     f"🎉 <b>Status:</b> <b>Paid ✓ (Success)</b>\n\n"

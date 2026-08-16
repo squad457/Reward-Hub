@@ -151,8 +151,8 @@ DEFAULT_SETTINGS = {
     "admin_broadcast": "",
     "min_withdraw_usdt": "5.0",
     "daily_rewards_ladder": "80,80,200,90,90,90,6000",
-    "payout_channel_link": "https://t.me/rewardhubpayoutbot",
-    "payout_channel_username": "@rewardhubpayoutbot",
+    "payout_channel_link": "https://t.me/rewardhubpayout1",
+    "payout_channel_username": "@rewardhubpayout1",
 }
 
 # Fallback used only if the DB row is somehow missing.
