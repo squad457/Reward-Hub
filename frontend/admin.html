@@ -707,16 +707,20 @@ window.saveUserBalance = async (userId) => {
     bonus_spins: parseInt(document.getElementById("editUserSpins").value) || 0,
     daily_streak: parseInt(document.getElementById("editUserStreak").value) || 1,
   };
-  const res = await fetch(`${API_BASE}/api/admin/users/${userId}/balance`, {
-    method: "PUT", headers: headers(), body: JSON.stringify(body)
-  });
-  if (res.ok) {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/balance`, {
+      method: "PUT", headers: headers(), body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
     showToast("✅ User balance updated successfully!");
     inspectUser(userId);
     loadUsers();
     loadStats();
-  } else {
-    alert("Failed to update user balance");
+  } catch (e) {
+    alert("Failed to update balance: " + e.message);
   }
 };
 
@@ -749,8 +753,16 @@ document.getElementById("saveSettings").onclick = async () => {
     daily_rewards_ladder: document.getElementById("setDailyLadder").value.trim(),
     admin_broadcast: document.getElementById("setBroadcast").value.trim(),
   };
-  await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  showToast("✅ Settings saved successfully!");
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error ${res.status}`);
+    }
+    showToast("✅ Settings saved successfully!");
+  } catch (e) {
+    alert("Failed to save settings: " + e.message);
+  }
 };
 
 document.getElementById("clearBroadcast").onclick = async () => {
