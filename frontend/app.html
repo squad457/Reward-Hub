@@ -1131,6 +1131,9 @@ document.getElementById("withdrawBtn").onclick = () => {
   document.getElementById("withdrawModal").classList.add("show");
   loadWithdrawHistory();
 };
+document.getElementById("closeWithdraw").onclick = () => {
+  document.getElementById("withdrawModal").classList.remove("show");
+};
 document.getElementById("wdRefreshHistory").onclick = () => {
   loadWithdrawHistory();
 };
