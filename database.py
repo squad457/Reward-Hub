@@ -189,6 +189,11 @@ async def init_db():
             await db.commit()
         except Exception:
             pass
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN last_ad_claim INTEGER DEFAULT 0")
+            await db.commit()
+        except Exception:
+            pass
         await db.execute(
             "INSERT OR IGNORE INTO spin_config (id, min_reward, max_reward, max_spins_per_day) VALUES (1, 1, 700, 8)"
         )

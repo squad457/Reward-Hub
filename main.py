@@ -206,7 +206,10 @@ async def claim_daily_reward(user=Depends(current_user)):
         raise HTTPException(400, "Already claimed today's reward")
 
     streak = user["daily_streak"]
-    streak = (streak + 1) if (last and seconds_since < 172800) else 1
+    if last and seconds_since < 172800:
+        streak = (streak % 7) + 1
+    else:
+        streak = 1
     
     async with db.get_db() as conn:
         ladder = await _get_daily_ladder(conn)
@@ -349,7 +352,7 @@ async def spin_wheel(user=Depends(current_user)):
 
         all_segments = await _get_wheel_segments(conn)
 
-    segment_index = next(i for i, s in enumerate(all_segments) if s["id"] == chosen["id"])
+    segment_index = next((i for i, s in enumerate(all_segments) if s["id"] == chosen["id"]), 0)
     rem_daily = max(0, max_daily - new_spins_today)
     total_left = rem_daily + new_bonus_spins
 
@@ -446,14 +449,21 @@ class AdRewardBody(BaseModel):
 @app.post("/api/ads/reward")
 async def ad_reward(body: AdRewardBody, user=Depends(current_user)):
     """Called after an AdsGram rewarded ad finishes successfully (frontend verifies completion)."""
-    grants = {"daily_bonus": 40, "spin_bonus": 0, "task": 0}
-    gems = grants.get(body.placement, 0)
-    bonus_spin = 1 if body.placement == "spin_bonus" else 0
-
+    now = int(time.time())
     async with db.get_db() as conn:
+        cur = await conn.execute("SELECT last_ad_claim FROM users WHERE id = ?", (user["id"],))
+        row = await cur.fetchone()
+        last_claim = row["last_ad_claim"] if (row and "last_ad_claim" in row.keys() and row["last_ad_claim"]) else 0
+        if now - last_claim < 15:
+            raise HTTPException(429, f"Please wait {15 - (now - last_claim)}s before claiming next ad reward")
+
+        grants = {"daily_bonus": 40, "spin_bonus": 0, "task": 0}
+        gems = grants.get(body.placement, 0)
+        bonus_spin = 1 if body.placement == "spin_bonus" else 0
+
         await conn.execute(
-            "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ? WHERE id = ?",
-            (gems, bonus_spin, user["id"]),
+            "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ?, last_ad_claim = ? WHERE id = ?",
+            (gems, bonus_spin, now, user["id"]),
         )
         await conn.commit()
 
@@ -495,11 +505,17 @@ async def redeem_gift_code(body: RedeemBody, user=Depends(current_user)):
         if await cur.fetchone():
             raise HTTPException(400, "You already used this code")
 
+        cur_upd = await conn.execute(
+            "UPDATE gift_codes SET used_count = used_count + 1 WHERE id = ? AND used_count < max_uses",
+            (gc["id"],)
+        )
+        if cur_upd.rowcount == 0:
+            raise HTTPException(400, "Gift code fully redeemed")
+
         await conn.execute(
             "UPDATE users SET gems = gems + ?, bonus_spins = bonus_spins + ?, balance_usdt = balance_usdt + ? WHERE id = ?",
             (gc["reward_gems"], gc["reward_spins"], gc["reward_usdt"], user["id"]),
         )
-        await conn.execute("UPDATE gift_codes SET used_count = used_count + 1 WHERE id = ?", (gc["id"],))
         await conn.execute(
             "INSERT INTO gift_code_redemptions (user_id, gift_code_id, redeemed_at) VALUES (?, ?, ?)",
             (user["id"], gc["id"], now),
@@ -569,6 +585,8 @@ async def convert_gems_to_usdt(user=Depends(current_user)):
             raise HTTPException(400, "Nothing to convert")
 
         rate = float(await db.get_setting(conn, "gems_per_usdt", str(db.GEMS_PER_USDT_FALLBACK)))
+        if rate <= 0:
+            rate = float(db.GEMS_PER_USDT_FALLBACK)
         usdt = current_gems / rate
 
         # Atomically zero out gems and credit USDT, verifying gems hasn't changed since read
@@ -623,11 +641,108 @@ async def admin_set_settings(body: SettingsBody, _=Depends(require_admin)):
 @app.get("/api/admin/stats")
 async def admin_stats(_=Depends(require_admin)):
     async with db.get_db() as conn:
-        users = (await (await conn.execute("SELECT COUNT(*) c FROM users")).fetchone())["c"]
-        pending_wd = (await (await conn.execute(
+        u_row = await (await conn.execute("SELECT COUNT(*) c FROM users")).fetchone()
+        users = u_row["c"] if u_row else 0
+        g_row = await (await conn.execute("SELECT COALESCE(SUM(gems),0) s FROM users")).fetchone()
+        total_gems = g_row["s"] if g_row else 0
+        b_row = await (await conn.execute("SELECT COALESCE(SUM(balance_usdt),0) s FROM users")).fetchone()
+        total_usdt = b_row["s"] if b_row else 0.0
+        pwd_row = await (await conn.execute(
             "SELECT COUNT(*) c, COALESCE(SUM(amount_usdt),0) s FROM withdrawals WHERE status='pending'"
-        )).fetchone())
-    return {"total_users": users, "pending_withdrawals": pending_wd["c"], "pending_withdrawal_usdt": pending_wd["s"]}
+        )).fetchone()
+        pending_count = pwd_row["c"] if pwd_row else 0
+        pending_usdt = pwd_row["s"] if pwd_row else 0.0
+    return {
+        "total_users": users,
+        "total_gems": total_gems,
+        "total_usdt": total_usdt,
+        "pending_withdrawals": pending_count,
+        "pending_withdrawal_usdt": pending_usdt
+    }
+
+
+@app.get("/api/admin/users")
+async def admin_list_users(search: str | None = None, _=Depends(require_admin)):
+    async with db.get_db() as conn:
+        query = """
+            SELECT u.id, u.telegram_id, u.username, u.first_name, u.gems, u.balance_usdt,
+                   u.daily_streak, u.spins_today, u.bonus_spins, u.created_at,
+                   (SELECT COUNT(*) FROM referrals r WHERE r.referrer_id = u.id) as invited_count,
+                   (SELECT COUNT(*) FROM user_tasks ut WHERE ut.user_id = u.id AND ut.status='claimed') as tasks_claimed,
+                   (SELECT COUNT(*) FROM spin_history sh WHERE sh.user_id = u.id) as total_spins,
+                   (SELECT COUNT(*) FROM withdrawals w WHERE w.user_id = u.id) as total_withdrawals
+            FROM users u
+        """
+        params = ()
+        if search:
+            query += " WHERE u.username LIKE ? OR CAST(u.telegram_id AS TEXT) LIKE ? OR u.first_name LIKE ?"
+            params = (f"%{search}%", f"%{search}%", f"%{search}%")
+        query += " ORDER BY u.id DESC LIMIT 100"
+        cur = await conn.execute(query, params)
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/admin/users/{user_id}/activity")
+async def admin_user_activity(user_id: int, _=Depends(require_admin)):
+    async with db.get_db() as conn:
+        cur_u = await conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user_row = await cur_u.fetchone()
+        if not user_row:
+            raise HTTPException(404, "User not found")
+
+        cur_tasks = await conn.execute(
+            """SELECT ut.claimed_at, t.title, t.reward_gems, t.task_type
+               FROM user_tasks ut
+               JOIN tasks t ON t.id = ut.task_id
+               WHERE ut.user_id = ? AND ut.status = 'claimed'
+               ORDER BY ut.claimed_at DESC LIMIT 20""",
+            (user_id,)
+        )
+        tasks = await cur_tasks.fetchall()
+
+        cur_spins = await conn.execute(
+            """SELECT sh.reward_gems, sh.created_at, ws.label as segment_label
+               FROM spin_history sh
+               LEFT JOIN wheel_segments ws ON ws.id = sh.segment_id
+               WHERE sh.user_id = ?
+               ORDER BY sh.created_at DESC LIMIT 20""",
+            (user_id,)
+        )
+        spins = await cur_spins.fetchall()
+
+        cur_wd = await conn.execute(
+            "SELECT * FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
+        withdrawals = await cur_wd.fetchall()
+
+        cur_refs = await conn.execute(
+            """SELECT r.bonus_gems, r.created_at, u.username, u.telegram_id, u.first_name
+               FROM referrals r
+               JOIN users u ON u.id = r.referred_id
+               WHERE r.referrer_id = ? ORDER BY r.created_at DESC LIMIT 20""",
+            (user_id,)
+        )
+        referrals = await cur_refs.fetchall()
+
+        cur_gc = await conn.execute(
+            """SELECT gcr.redeemed_at, gc.code, gc.reward_gems, gc.reward_usdt, gc.reward_spins
+               FROM gift_code_redemptions gcr
+               JOIN gift_codes gc ON gc.id = gcr.gift_code_id
+               WHERE gcr.user_id = ? ORDER BY gcr.redeemed_at DESC""",
+            (user_id,)
+        )
+        gift_codes = await cur_gc.fetchall()
+
+    return {
+        "user": dict(user_row),
+        "tasks": [dict(t) for t in tasks],
+        "spins": [dict(s) for s in spins],
+        "withdrawals": [dict(w) for w in withdrawals],
+        "referrals": [dict(r) for r in referrals],
+        "gift_codes": [dict(g) for g in gift_codes]
+    }
 
 
 class SpinConfigBody(BaseModel):

@@ -3,105 +3,517 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Reward Hub — Admin</title>
+<title>Reward Hub — Elite Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-  body{font-family:system-ui,sans-serif; background:#0B2E22; color:#EFF6F0; margin:0; padding:20px;}
-  h1{font-size:20px;} h2{font-size:15px; margin-top:32px; border-bottom:1px solid #234; padding-bottom:6px;}
-  input,select{background:#0F3D2E; border:1px solid #234; color:#EFF6F0; padding:8px; border-radius:6px; margin:4px 4px 4px 0;}
-  button{background:#12B886; color:#062018; border:none; padding:8px 14px; border-radius:6px; font-weight:700; cursor:pointer;}
-  table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;}
-  td,th{padding:6px 8px; border-bottom:1px solid #234; text-align:left;}
-  .warn{color:#F2B705; font-size:13px; margin-top:6px;}
-  .card{background:#0F3D2E; border:1px solid #234; border-radius:10px; padding:16px; margin-top:10px;}
-  #loginBox{max-width:320px; margin:80px auto;}
+  :root {
+    --bg-0: #040907;
+    --bg-1: #0A1B14;
+    --bg-card: rgba(15, 32, 24, 0.85);
+    --bg-card-hover: rgba(20, 42, 32, 0.95);
+    --emerald: #00F59B;
+    --emerald-dim: rgba(0, 245, 155, 0.12);
+    --purple: #8B5CF6;
+    --purple-dim: rgba(139, 92, 246, 0.15);
+    --gold: #FACC15;
+    --red: #F87171;
+    --ink: #FFFFFF;
+    --ink-dim: #9CA3AF;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-emerald: rgba(0, 245, 155, 0.3);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg-0);
+    color: var(--ink);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 10% 20%, rgba(0, 245, 155, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+  }
+  
+  /* Topbar */
+  .topbar {
+    background: rgba(10, 27, 20, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 18px; }
+  .brand-logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--emerald), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 15px rgba(0,245,155,0.3); }
+  .brand-tag { font-size: 10px; background: var(--emerald-dim); color: var(--emerald); padding: 3px 8px; border-radius: 99px; font-weight: 700; border: 1px solid var(--border-emerald); }
+
+  .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 24px 20px; flex: 1; position: relative; z-index: 1; }
+
+  /* Login Card */
+  #loginBox {
+    max-width: 400px;
+    margin: 80px auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 30px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px rgba(0,245,155,0.1);
+  }
+  
+  /* KPI Stats Cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px; padding: 20px;
+    display: flex; flex-direction: column; gap: 8px; transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--border-emerald); }
+  .stat-title { font-size: 12px; font-weight: 700; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 800; color: var(--ink); display: flex; align-items: baseline; gap: 6px; }
+  .stat-val.green { color: var(--emerald); }
+  .stat-val.gold { color: var(--gold); }
+  .stat-val.purple { color: var(--purple); }
+
+  /* Nav Tabs */
+  .tabs-nav {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: transparent; color: var(--ink-dim); border: 1px solid transparent;
+    padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer;
+    white-space: nowrap; transition: all 0.2s ease;
+  }
+  .tab-btn:hover { color: var(--ink); background: rgba(255,255,255,0.04); }
+  .tab-btn.active { background: var(--emerald-dim); color: var(--emerald); border-color: var(--border-emerald); }
+
+  /* Section Containers */
+  .card-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .panel-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+  /* Forms & Inputs */
+  input, select, textarea {
+    background: rgba(4, 12, 9, 0.7); border: 1px solid var(--border); color: var(--ink);
+    padding: 10px 14px; border-radius: 10px; font-size: 13px; font-family: inherit; width: 100%;
+    outline: none; transition: border-color 0.2s ease;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--emerald); box-shadow: 0 0 10px rgba(0,245,155,0.2); }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 700; color: var(--ink-dim); }
+
+  /* Buttons */
+  button {
+    font-family: inherit; font-weight: 700; cursor: pointer; border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; border: none; transition: all 0.2s ease;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--emerald), #059669); color: #04100D; box-shadow: 0 4px 15px rgba(0,245,155,0.25); }
+  .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.06); color: var(--ink); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+  .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .btn-danger:hover { background: rgba(248,113,113,0.25); }
+  .btn-purple { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+
+  /* Tables */
+  .table-responsive { width: 100%; overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+  th { background: rgba(4, 15, 11, 0.8); padding: 14px 16px; font-weight: 700; color: var(--ink-dim); border-bottom: 1px solid var(--border); }
+  td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+  .badge-green { background: var(--emerald-dim); color: var(--emerald); border: 1px solid var(--border-emerald); }
+  .badge-gold { background: rgba(250,204,21,0.15); color: var(--gold); border: 1px solid rgba(250,204,21,0.3); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .badge-purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+
+  /* Activity Modal */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+    z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 24px;
+    width: 100%; max-width: 700px; max-height: 88vh; overflow-y: auto; padding: 28px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 30px rgba(0,245,155,0.15); position: relative;
+  }
+  .modal-close { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--ink-dim); font-size: 20px; cursor: pointer; padding: 4px; }
+  .modal-close:hover { color: #fff; }
+
+  .activity-section { margin-top: 20px; }
+  .activity-section h4 { font-size: 14px; font-weight: 800; color: var(--emerald); margin: 0 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: rgba(10,27,20,0.95);
+    border: 1px solid var(--emerald); color: var(--ink); padding: 12px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; z-index: 9999; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    display: none; animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>
 </head>
 <body>
 
-<div id="loginBox">
-  <h1>Reward Hub Admin</h1>
-  <input type="password" id="adminKeyInput" placeholder="Admin key" style="width:100%;" />
-  <button id="loginBtn" style="width:100%; margin-top:8px;">Enter</button>
-</div>
-
-<div id="dash" style="display:none;">
-  <h1>Reward Hub — Admin</h1>
-
-  <h2>Stats</h2>
-  <div class="card" id="statsCard">—</div>
-
-  <h2>App Settings</h2>
-  <div class="card">
-    <div>AdsGram Block ID <input id="setAdsgram" style="width:220px;" placeholder="from AdsGram dashboard"></div>
-    <div style="margin-top:8px;">Bot username (no @) <input id="setBotUsername" style="width:220px;" placeholder="RewardHubBot"></div>
-    <div style="margin-top:8px;">App name <input id="setAppName" style="width:220px;" placeholder="Reward Hub"></div>
-    <div style="margin-top:8px;">Gems per 1 USDT <input id="setGemsPerUsdt" type="number" style="width:120px;" placeholder="1000"></div>
-    <div style="margin-top:8px;">Min Withdraw USDT <input id="setMinWd" type="number" step="0.1" style="width:120px;" placeholder="5.0"></div>
-    <div style="margin-top:8px;">Referral Reward Gems <input id="setRefGems" type="number" style="width:120px;" placeholder="250"></div>
-    <div style="margin-top:8px;">Referral Reward Bonus Spins (0 to disable) <input id="setRefSpins" type="number" style="width:120px;" placeholder="1"></div>
-    <div style="margin-top:8px;">Daily Rewards Ladder (Day 1-7, comma-separated) <input id="setDailyLadder" style="width:260px;" placeholder="80,80,200,90,90,90,6000"></div>
-    <div style="margin-top:8px;">Admin Broadcast Message <input id="setBroadcast" style="width:260px;" placeholder="🔥 Important announcement"> <button id="clearBroadcast" style="background:#E85D75; color:#fff; padding:6px 10px; font-size:12px;">Clear</button></div>
-    <div style="margin-top:10px;"><button id="saveSettings">Save settings</button></div>
-    <div class="warn" id="settingsMsg"></div>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">🛡️</div>
+    <span>Reward Hub</span>
+    <span class="brand-tag">ADMIN PRO</span>
   </div>
-
-  <h2>Spin Wheel — Payout Range</h2>
-  <div class="card">
-    <div>Only wheel segments whose value falls in this range can ever be the actual payout. Segments outside it stay on the wheel for excitement but never pay.</div>
-    <div style="margin-top:10px;">
-      Min <input type="number" id="minReward" style="width:90px;">
-      Max <input type="number" id="maxReward" style="width:90px;">
-      Max spins/day <input type="number" id="maxSpins" style="width:70px;">
-      <button id="saveSpinConfig">Save</button>
-    </div>
-    <div class="warn" id="spinWarn"></div>
-  </div>
-
-  <h2>Wheel Segments</h2>
-  <div class="card">
-    <table id="segTable"><thead><tr><th>Label</th><th>Value</th><th>Color</th><th>Real?</th><th></th></tr></thead><tbody></tbody></table>
-    <div style="margin-top:10px;">
-      <input placeholder="Label" id="segLabel" style="width:80px;">
-      <input placeholder="Value" type="number" id="segValue" style="width:80px;">
-      <input placeholder="#RRGGBB" id="segColor" style="width:90px;">
-      <select id="segReal"><option value="1">Real (payable)</option><option value="0">Decorative only</option></select>
-      <button id="addSegment">Add segment</button>
-    </div>
-  </div>
-
-  <h2>Tasks</h2>
-  <div class="card">
-    <table id="taskTable"><thead><tr><th>Title</th><th>Reward</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
-    <div style="margin-top:12px;">
-      <input placeholder="Title" id="taskTitle" style="width:160px;">
-      <input placeholder="Reward gems" type="number" id="taskReward" style="width:100px;">
-      <input placeholder="Link (optional)" id="taskLink" style="width:200px;">
-      <button id="addTask">Add task</button>
-    </div>
-  </div>
-
-  <h2>Gift Codes</h2>
-  <div class="card">
-    <input placeholder="CODE" id="gcCode" style="width:110px;">
-    <input placeholder="Gems" type="number" id="gcGems" style="width:75px;">
-    <input placeholder="Spins" type="number" id="gcSpins" style="width:65px;">
-    <input placeholder="USDT" type="number" step="0.01" id="gcUsdt" style="width:75px;" value="0">
-    <input placeholder="Max uses" type="number" id="gcMaxUses" style="width:70px;" value="1">
-    <input placeholder="Expires (days)" type="number" id="gcExpires" style="width:110px;">
-    <button id="addGiftCode">Create</button>
-  </div>
-
-  <h2>Pending Withdrawals</h2>
-  <div class="card">
-    <table id="wdTable"><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Destination</th><th></th></tr></thead><tbody></tbody></table>
+  <div id="topbarActions" style="display:none;">
+    <button class="btn-secondary" id="logoutBtn" style="font-size:12px; padding:6px 12px;">Logout</button>
   </div>
 </div>
+
+<div class="container">
+
+  <!-- Login Card -->
+  <div id="loginBox">
+    <div style="font-size:42px; margin-bottom:12px;">🔐</div>
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-size:22px; margin:0 0 8px;">Admin Authentication</h2>
+    <p style="font-size:13px; color:var(--ink-dim); margin:0 0 20px;">Enter your admin secret key to access the control center.</p>
+    <input type="password" id="adminKeyInput" placeholder="Enter Admin Secret Key" style="margin-bottom:12px;" />
+    <button class="btn-primary" id="loginBtn" style="width:100%;">Enter Dashboard ➔</button>
+  </div>
+
+  <!-- Main Dashboard Container -->
+  <div id="dash" style="display:none;">
+
+    <!-- Top KPI Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-title">Total Users</span>
+        <div class="stat-val green" id="kpiUsers">0</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">Gems In Circulation</span>
+        <div class="stat-val purple" id="kpiGems">0 💎</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">Total User Balances</span>
+        <div class="stat-val gold" id="kpiUsdt">$0.00 USDT</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">Pending Withdrawals</span>
+        <div class="stat-val" id="kpiPendingWd" style="color:var(--red);">0 ($0.00)</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tabUsers">👥 Users & Activity</button>
+      <button class="tab-btn" data-tab="tabWithdrawals">💸 Withdrawals</button>
+      <button class="tab-btn" data-tab="tabSettings">⚙️ App Settings</button>
+      <button class="tab-btn" data-tab="tabSpin">🎡 Spin Wheel</button>
+      <button class="tab-btn" data-tab="tabTasks">📋 Tasks Manager</button>
+      <button class="tab-btn" data-tab="tabGiftCodes">🎁 Gift Codes</button>
+    </div>
+
+    <!-- TAB 1: USERS & ACTIVITY -->
+    <div id="tabUsers" class="tab-content">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">👥 Registered Users & Activity Explorer</div>
+          <div style="display:flex; gap:10px; width:100%; max-width:320px;">
+            <input type="text" id="userSearchInput" placeholder="Search by username / ID..." />
+            <button class="btn-secondary" id="searchUserBtn">Search</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th>User / Telegram</th>
+                <th>Gems 💎</th>
+                <th>USDT Balance</th>
+                <th>Streak</th>
+                <th>Spins</th>
+                <th>Referrals</th>
+                <th>Tasks Done</th>
+                <th>Joined</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="9" style="text-align:center; color:var(--ink-dim); padding:30px;">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WITHDRAWALS -->
+    <div id="tabWithdrawals" class="tab-content" style="display:none;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">💸 Pending Withdrawal Requests</div>
+          <button class="btn-secondary" onclick="loadWithdrawals()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table id="wdTable">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Destination / Wallet</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="5" style="text-align:center; color:var(--ink-dim); padding:30px;">Loading withdrawals...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: APP SETTINGS -->
+    <div id="tabSettings" class="tab-content" style="display:none;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">⚙️ Global Platform Settings</div>
+          <button class="btn-primary" id="saveSettings">💾 Save All Settings</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>AdsGram Block ID</label>
+            <input id="setAdsgram" placeholder="from AdsGram dashboard" />
+          </div>
+          <div class="form-group">
+            <label>Bot Username (without @)</label>
+            <input id="setBotUsername" placeholder="UsdtReward1bot" />
+          </div>
+          <div class="form-group">
+            <label>App Name</label>
+            <input id="setAppName" placeholder="Reward Hub" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Gems per 1 USDT</label>
+            <input type="number" id="setGemsPerUsdt" placeholder="1000" />
+          </div>
+          <div class="form-group">
+            <label>Minimum Withdraw (USDT)</label>
+            <input type="number" step="0.1" id="setMinWd" placeholder="5.0" />
+          </div>
+          <div class="form-group">
+            <label>Referral Reward Gems</label>
+            <input type="number" id="setRefGems" placeholder="250" />
+          </div>
+          <div class="form-group">
+            <label>Referral Bonus Spins</label>
+            <input type="number" id="setRefSpins" placeholder="1" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Daily Streak Rewards Ladder (Day 1-7 Gems, comma separated)</label>
+          <input id="setDailyLadder" placeholder="80,80,200,90,90,90,6000" />
+        </div>
+        <div class="form-group">
+          <label>Admin Broadcast Message (Shows as glowing banner in Mini App)</label>
+          <div style="display:flex; gap:10px;">
+            <input id="setBroadcast" placeholder="🔥 Welcome to Reward Hub! Special weekend bonus active." />
+            <button class="btn-danger" id="clearBroadcast" style="white-space:nowrap;">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SPIN WHEEL -->
+    <div id="tabSpin" class="tab-content" style="display:none;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">🎡 Spin Wheel — Reward Boundaries & Limits</div>
+          <button class="btn-primary" id="saveSpinConfig">Save Limits</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Minimum Reward (Gems)</label>
+            <input type="number" id="minReward" />
+          </div>
+          <div class="form-group">
+            <label>Maximum Reward (Gems)</label>
+            <input type="number" id="maxReward" />
+          </div>
+          <div class="form-group">
+            <label>Max Daily Free Spins</label>
+            <input type="number" id="maxSpins" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">🎡 Wheel Segments Editor</div>
+        </div>
+        <div class="table-responsive" style="margin-bottom:16px;">
+          <table id="segTable">
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Gems Value</th>
+                <th>Color</th>
+                <th>Type</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="form-group">
+            <label>Label</label>
+            <input placeholder="e.g. 50" id="segLabel" />
+          </div>
+          <div class="form-group">
+            <label>Gems Value</label>
+            <input type="number" placeholder="50" id="segValue" />
+          </div>
+          <div class="form-group">
+            <label>Color (#HEX)</label>
+            <input placeholder="#12B886" id="segColor" />
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="segReal">
+              <option value="1">Payable (Real)</option>
+              <option value="0">Decorative (Display Only)</option>
+            </select>
+          </div>
+          <button class="btn-primary" id="addSegment" style="height:42px;">Add Segment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: TASKS -->
+    <div id="tabTasks" class="tab-content" style="display:none;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">📋 Tasks & Mission Manager</div>
+        </div>
+        <div class="table-responsive" style="margin-bottom:20px;">
+          <table id="taskTable">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Reward</th>
+                <th>Type / Link</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="form-group" style="flex:2;">
+            <label>Task Title</label>
+            <input placeholder="e.g. Join Official Channel" id="taskTitle" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Reward (Gems)</label>
+            <input type="number" placeholder="200" id="taskReward" />
+          </div>
+          <div class="form-group" style="flex:2;">
+            <label>Link (e.g. https://t.me/chanelone13)</label>
+            <input placeholder="https://t.me/..." id="taskLink" />
+          </div>
+          <button class="btn-primary" id="addTask" style="height:42px;">Add Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: GIFT CODES -->
+    <div id="tabGiftCodes" class="tab-content" style="display:none;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">🎁 Create Promotional Gift Code</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Promo Code</label>
+            <input placeholder="e.g. BONUS2026" id="gcCode" />
+          </div>
+          <div class="form-group">
+            <label>Reward Gems</label>
+            <input type="number" id="gcGems" placeholder="100" />
+          </div>
+          <div class="form-group">
+            <label>Reward Spins</label>
+            <input type="number" id="gcSpins" placeholder="1" />
+          </div>
+          <div class="form-group">
+            <label>Reward USDT ($)</label>
+            <input type="number" step="0.01" id="gcUsdt" placeholder="0.50" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Max Uses</label>
+            <input type="number" id="gcMaxUses" value="1" />
+          </div>
+          <div class="form-group">
+            <label>Expires (Days)</label>
+            <input type="number" id="gcExpires" placeholder="e.g. 7" />
+          </div>
+        </div>
+        <button class="btn-primary" id="addGiftCode">Create Promo Code</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- USER ACTIVITY INSPECTION MODAL -->
+<div class="modal-backdrop" id="userActivityModal">
+  <div class="modal">
+    <button class="modal-close" id="closeActivityModal">✕</button>
+    <div id="activityModalContent">
+      <div style="text-align:center; padding:30px; color:var(--ink-dim);">Loading activity details...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastMsg"></div>
 
 <script>
 const API_BASE = "https://reward-hub-production.up.railway.app";
-let ADMIN_KEY = localStorage.getItem("rh_admin_key") || ""; // note: fine for a trusted admin-only page
+let ADMIN_KEY = localStorage.getItem("rh_admin_key") || "";
 
 function headers() { return { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY }; }
+
+function showToast(msg) {
+  const t = document.getElementById("toastMsg");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 3000);
+}
+
+// Tab Switching
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).style.display = "block";
+  };
+});
 
 document.getElementById("loginBtn").onclick = async () => {
   ADMIN_KEY = document.getElementById("adminKeyInput").value.trim();
@@ -110,17 +522,172 @@ document.getElementById("loginBtn").onclick = async () => {
   localStorage.setItem("rh_admin_key", ADMIN_KEY);
   document.getElementById("loginBox").style.display = "none";
   document.getElementById("dash").style.display = "block";
+  document.getElementById("topbarActions").style.display = "block";
   loadAll();
 };
 
-if (ADMIN_KEY) document.getElementById("loginBtn").click(), document.getElementById("adminKeyInput").value = ADMIN_KEY;
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("rh_admin_key");
+  location.reload();
+};
+
+if (ADMIN_KEY) {
+  document.getElementById("adminKeyInput").value = ADMIN_KEY;
+  document.getElementById("loginBtn").click();
+}
+
+async function loadStats() {
+  try {
+    const r = await (await fetch(`${API_BASE}/api/admin/stats`, { headers: headers() })).json();
+    document.getElementById("kpiUsers").textContent = r.total_users || 0;
+    document.getElementById("kpiGems").textContent = (r.total_gems || 0).toLocaleString() + " 💎";
+    document.getElementById("kpiUsdt").textContent = "$" + Number(r.total_usdt || 0).toFixed(2) + " USDT";
+    document.getElementById("kpiPendingWd").textContent = `${r.pending_withdrawals || 0} ($${Number(r.pending_withdrawal_usdt || 0).toFixed(2)})`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadUsers(search = "") {
+  const url = search ? `${API_BASE}/api/admin/users?search=${encodeURIComponent(search)}` : `${API_BASE}/api/admin/users`;
+  const tbody = document.querySelector("#usersTable tbody");
+  try {
+    const res = await fetch(url, { headers: headers() });
+    if (!res.ok) throw new Error("Failed");
+    const users = await res.json();
+    if (!users || users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--ink-dim); padding:30px;">No users found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = users.map(u => {
+      const dateStr = u.created_at ? new Date(u.created_at * 1000).toLocaleDateString() : "-";
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700; color:#fff;">${u.first_name || 'Anonymous'}</div>
+            <div style="font-size:11px; color:var(--emerald);">@${u.username || u.telegram_id}</div>
+          </td>
+          <td><span class="badge badge-purple">${u.gems.toLocaleString()} 💎</span></td>
+          <td><span class="badge badge-gold">$${Number(u.balance_usdt).toFixed(2)}</span></td>
+          <td>Day ${u.daily_streak}</td>
+          <td>${u.spins_today} today / ${u.bonus_spins} bonus</td>
+          <td><span class="badge badge-green">${u.invited_count} invited</span></td>
+          <td>${u.tasks_claimed} tasks</td>
+          <td style="color:var(--ink-dim); font-size:11px;">${dateStr}</td>
+          <td>
+            <button class="btn-purple" onclick="inspectUser(${u.id})" style="padding:6px 12px; font-size:11px;">🔍 View Activity</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--red); padding:30px;">Failed to load users</td></tr>`;
+  }
+}
+
+document.getElementById("searchUserBtn").onclick = () => {
+  loadUsers(document.getElementById("userSearchInput").value.trim());
+};
+
+async function inspectUser(userId) {
+  const modal = document.getElementById("userActivityModal");
+  const content = document.getElementById("activityModalContent");
+  modal.classList.add("show");
+  content.innerHTML = `<div style="text-align:center; padding:30px; color:var(--ink-dim);">Loading activity details...</div>`;
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/activity`, { headers: headers() });
+    if (!res.ok) throw new Error("Failed");
+    const data = await res.json();
+    const u = data.user;
+
+    let tasksHtml = data.tasks.length ? data.tasks.map(t => `
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px;">
+        <span>${t.title} (${t.task_type})</span>
+        <span style="color:var(--emerald); font-weight:700;">+${t.reward_gems} 💎</span>
+      </div>
+    `).join('') : '<div style="color:var(--ink-dim); font-size:12px;">No tasks completed yet.</div>';
+
+    let spinsHtml = data.spins.length ? data.spins.map(s => `
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px;">
+        <span>Spin (${s.segment_label || 'Wheel'})</span>
+        <span style="color:var(--gold); font-weight:700;">+${s.reward_gems} 💎</span>
+      </div>
+    `).join('') : '<div style="color:var(--ink-dim); font-size:12px;">No wheel spins recorded.</div>';
+
+    let wdHtml = data.withdrawals.length ? data.withdrawals.map(w => `
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px;">
+        <span>$${Number(w.amount_usdt).toFixed(2)} USDT via ${w.method}</span>
+        <span class="badge ${w.status === 'paid' ? 'badge-green' : (w.status === 'pending' ? 'badge-gold' : 'badge-red')}">${w.status.toUpperCase()}</span>
+      </div>
+    `).join('') : '<div style="color:var(--ink-dim); font-size:12px;">No withdrawals requested.</div>';
+
+    let refsHtml = data.referrals.length ? data.referrals.map(r => `
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px;">
+        <span>${r.first_name || 'Friend'} (@${r.username || r.telegram_id})</span>
+        <span style="color:var(--purple); font-weight:700;">+${r.bonus_gems} 💎</span>
+      </div>
+    `).join('') : '<div style="color:var(--ink-dim); font-size:12px;">No friends referred yet.</div>';
+
+    content.innerHTML = `
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, var(--emerald), var(--purple)); display:flex; align-items:center; justify-content:center; font-size:22px;">👤</div>
+        <div>
+          <h3 style="margin:0; font-size:18px;">${u.first_name || 'User'} (@${u.username || u.telegram_id})</h3>
+          <div style="font-size:12px; color:var(--ink-dim); margin-top:2px;">Telegram ID: <code>${u.telegram_id}</code> · Ref Code: <code>${u.referral_code}</code></div>
+        </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--ink-dim);">Gems Balance</div>
+          <div style="font-size:16px; font-weight:800; color:var(--purple); margin-top:4px;">${u.gems.toLocaleString()} 💎</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--ink-dim);">USDT Balance</div>
+          <div style="font-size:16px; font-weight:800; color:var(--gold); margin-top:4px;">$${Number(u.balance_usdt).toFixed(2)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--ink-dim);">Daily Streak</div>
+          <div style="font-size:16px; font-weight:800; color:var(--emerald); margin-top:4px;">Day ${u.daily_streak}</div>
+        </div>
+      </div>
+
+      <div class="activity-section">
+        <h4>📋 Claimed Tasks History</h4>
+        ${tasksHtml}
+      </div>
+
+      <div class="activity-section">
+        <h4>🎡 Wheel Spins Activity</h4>
+        ${spinsHtml}
+      </div>
+
+      <div class="activity-section">
+        <h4>💸 Withdrawal History</h4>
+        ${wdHtml}
+      </div>
+
+      <div class="activity-section">
+        <h4>👥 Invited Referrals</h4>
+        ${refsHtml}
+      </div>
+    `;
+  } catch (e) {
+    content.innerHTML = `<div style="text-align:center; padding:30px; color:var(--red);">Failed to load activity details.</div>`;
+  }
+}
+
+document.getElementById("closeActivityModal").onclick = () => {
+  document.getElementById("userActivityModal").classList.remove("show");
+};
 
 async function loadSettings() {
   const s = await (await fetch(`${API_BASE}/api/admin/settings`, { headers: headers() })).json();
   document.getElementById("setAdsgram").value = s.adsgram_block_id || "";
   document.getElementById("setBotUsername").value = s.bot_username || "";
   document.getElementById("setAppName").value = s.app_name || "";
-  document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "";
+  document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "1000";
   document.getElementById("setMinWd").value = s.min_withdraw_usdt || "5.0";
   document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
   document.getElementById("setRefSpins").value = s.referral_reward_spins !== undefined ? s.referral_reward_spins : "1";
@@ -141,21 +708,14 @@ document.getElementById("saveSettings").onclick = async () => {
     admin_broadcast: document.getElementById("setBroadcast").value.trim(),
   };
   await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  document.getElementById("settingsMsg").textContent = "Saved successfully!";
+  showToast("✅ Settings saved successfully!");
 };
 
 document.getElementById("clearBroadcast").onclick = async () => {
   document.getElementById("setBroadcast").value = "";
-  const body = { admin_broadcast: "" };
-  await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  document.getElementById("settingsMsg").textContent = "Broadcast cleared successfully!";
+  await fetch(`${API_BASE}/api/admin/settings`, { method: "POST", headers: headers(), body: JSON.stringify({ admin_broadcast: "" }) });
+  showToast("📢 Broadcast cleared!");
 };
-
-async function loadStats() {
-  const r = await (await fetch(`${API_BASE}/api/admin/stats`, { headers: headers() })).json();
-  document.getElementById("statsCard").innerHTML =
-    `Total users: <b>${r.total_users}</b> · Pending withdrawals: <b>${r.pending_withdrawals}</b> ($${r.pending_withdrawal_usdt.toFixed(2)})`;
-}
 
 async function loadSpinConfig() {
   const r = await (await fetch(`${API_BASE}/api/admin/spin-config`, { headers: headers() })).json();
@@ -170,34 +730,43 @@ document.getElementById("saveSpinConfig").onclick = async () => {
     max_reward: parseInt(document.getElementById("maxReward").value),
     max_spins_per_day: parseInt(document.getElementById("maxSpins").value),
   };
-  const r = await (await fetch(`${API_BASE}/api/admin/spin-config`, { method: "POST", headers: headers(), body: JSON.stringify(body) })).json();
-  document.getElementById("spinWarn").textContent = r.warning || `Saved. ${r.eligible_segments} segment(s) currently payable.`;
+  await fetch(`${API_BASE}/api/admin/spin-config`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  showToast("🎡 Spin config updated!");
 };
 
 let editingSegmentId = null;
-
 async function loadSegments() {
   const segs = await (await fetch(`${API_BASE}/api/admin/wheel-segments`, { headers: headers() })).json();
   const tbody = document.querySelector("#segTable tbody");
-  tbody.innerHTML = "";
-  segs.forEach(s => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${s.label}</td><td>${s.value_gems}</td><td><span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:3px;vertical-align:middle;"></span> ${s.color}</td><td>${s.is_real ? "Real" : "Decorative"}</td><td><button class="edit-btn" style="background:#8B5CF6; color:#fff; padding:4px 8px; font-size:11px; margin-right:4px;">Edit</button><button class="del-btn" style="background:#E85D75; color:#fff; padding:4px 8px; font-size:11px;">Delete</button></td>`;
-    tr.querySelector(".edit-btn").onclick = () => {
-      editingSegmentId = s.id;
-      document.getElementById("segLabel").value = s.label;
-      document.getElementById("segValue").value = s.value_gems;
-      document.getElementById("segColor").value = s.color;
-      document.getElementById("segReal").value = s.is_real ? "1" : "0";
-      document.getElementById("addSegment").textContent = "Update segment";
-    };
-    tr.querySelector(".del-btn").onclick = async () => {
-      await fetch(`${API_BASE}/api/admin/wheel-segments/${s.id}`, { method: "DELETE", headers: headers() });
-      loadSegments();
-    };
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = segs.map(s => `
+    <tr>
+      <td><b>${s.label}</b></td>
+      <td>${s.value_gems} 💎</td>
+      <td><span style="display:inline-block;width:14px;height:14px;background:${s.color};border-radius:4px;vertical-align:middle;margin-right:6px;"></span> ${s.color}</td>
+      <td><span class="badge ${s.is_real ? 'badge-green' : 'badge-gold'}">${s.is_real ? "Payable" : "Decorative"}</span></td>
+      <td>
+        <button class="btn-purple" onclick="editSeg(${s.id}, '${s.label}', ${s.value_gems}, '${s.color}', ${s.is_real})" style="padding:4px 8px; font-size:11px;">Edit</button>
+        <button class="btn-danger" onclick="deleteSeg(${s.id})" style="padding:4px 8px; font-size:11px;">Delete</button>
+      </td>
+    </tr>
+  `).join('');
 }
+
+window.editSeg = (id, label, val, color, isReal) => {
+  editingSegmentId = id;
+  document.getElementById("segLabel").value = label;
+  document.getElementById("segValue").value = val;
+  document.getElementById("segColor").value = color;
+  document.getElementById("segReal").value = isReal ? "1" : "0";
+  document.getElementById("addSegment").textContent = "Update";
+};
+
+window.deleteSeg = async (id) => {
+  if (!confirm("Delete segment?")) return;
+  await fetch(`${API_BASE}/api/admin/wheel-segments/${id}`, { method: "DELETE", headers: headers() });
+  loadSegments();
+  showToast("Segment deleted");
+};
 
 document.getElementById("addSegment").onclick = async () => {
   const body = {
@@ -210,7 +779,7 @@ document.getElementById("addSegment").onclick = async () => {
   if (editingSegmentId) {
     await fetch(`${API_BASE}/api/admin/wheel-segments/${editingSegmentId}`, { method: "PUT", headers: headers(), body: JSON.stringify(body) });
     editingSegmentId = null;
-    document.getElementById("addSegment").textContent = "Add segment";
+    document.getElementById("addSegment").textContent = "Add Segment";
   } else {
     await fetch(`${API_BASE}/api/admin/wheel-segments`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   }
@@ -218,31 +787,40 @@ document.getElementById("addSegment").onclick = async () => {
   document.getElementById("segValue").value = "";
   document.getElementById("segColor").value = "";
   loadSegments();
+  showToast("Segment saved!");
 };
 
 let editingTaskId = null;
-
 async function loadTasks() {
   const tasks = await (await fetch(`${API_BASE}/api/admin/tasks`, { headers: headers() })).json();
   const tbody = document.querySelector("#taskTable tbody");
-  tbody.innerHTML = "";
-  tasks.forEach(t => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.title}</td><td>${t.reward_gems} gems</td><td>${t.active ? "Active" : "Stopped"}</td><td><button class="edit-btn" style="background:#8B5CF6; color:#fff; padding:4px 8px; font-size:11px; margin-right:4px;">Edit</button><button class="stop-btn" style="background:${t.active ? "#E85D75" : "#12B886"}; color:#fff; padding:4px 8px; font-size:11px;">${t.active ? "Stop" : "Activate"}</button></td>`;
-    tr.querySelector(".edit-btn").onclick = () => {
-      editingTaskId = t.id;
-      document.getElementById("taskTitle").value = t.title;
-      document.getElementById("taskReward").value = t.reward_gems;
-      document.getElementById("taskLink").value = t.link || "";
-      document.getElementById("addTask").textContent = "Update task";
-    };
-    tr.querySelector(".stop-btn").onclick = async () => {
-      await fetch(`${API_BASE}/api/admin/tasks/${t.id}`, { method: "DELETE", headers: headers() });
-      loadTasks();
-    };
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = tasks.map(t => `
+    <tr>
+      <td><b>${t.title}</b></td>
+      <td><span class="badge badge-purple">+${t.reward_gems} 💎</span></td>
+      <td style="font-size:11px; color:var(--ink-dim); max-width:180px; overflow:hidden; text-overflow:ellipsis;">${t.link || 'In-App Mission'}</td>
+      <td><span class="badge ${t.active ? 'badge-green' : 'badge-red'}">${t.active ? "Active" : "Stopped"}</span></td>
+      <td>
+        <button class="btn-purple" onclick="editTask(${t.id}, '${t.title.replace(/'/g, "\\'")}', ${t.reward_gems}, '${t.link || ''}')" style="padding:4px 8px; font-size:11px;">Edit</button>
+        <button class="${t.active ? 'btn-danger' : 'btn-primary'}" onclick="toggleTask(${t.id})" style="padding:4px 8px; font-size:11px;">${t.active ? "Deactivate" : "Activate"}</button>
+      </td>
+    </tr>
+  `).join('');
 }
+
+window.editTask = (id, title, reward, link) => {
+  editingTaskId = id;
+  document.getElementById("taskTitle").value = title;
+  document.getElementById("taskReward").value = reward;
+  document.getElementById("taskLink").value = link;
+  document.getElementById("addTask").textContent = "Update Task";
+};
+
+window.toggleTask = async (id) => {
+  await fetch(`${API_BASE}/api/admin/tasks/${id}`, { method: "DELETE", headers: headers() });
+  loadTasks();
+  showToast("Task status updated");
+};
 
 document.getElementById("addTask").onclick = async () => {
   const body = {
@@ -254,7 +832,7 @@ document.getElementById("addTask").onclick = async () => {
   if (editingTaskId) {
     await fetch(`${API_BASE}/api/admin/tasks/${editingTaskId}`, { method: "PUT", headers: headers(), body: JSON.stringify(body) });
     editingTaskId = null;
-    document.getElementById("addTask").textContent = "Add task";
+    document.getElementById("addTask").textContent = "Add Task";
   } else {
     await fetch(`${API_BASE}/api/admin/tasks`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   }
@@ -262,39 +840,68 @@ document.getElementById("addTask").onclick = async () => {
   document.getElementById("taskReward").value = "";
   document.getElementById("taskLink").value = "";
   loadTasks();
+  showToast("Task saved!");
 };
 
 document.getElementById("addGiftCode").onclick = async () => {
   const body = {
-    code: document.getElementById("gcCode").value,
+    code: document.getElementById("gcCode").value.trim(),
     reward_gems: parseInt(document.getElementById("gcGems").value) || 0,
     reward_spins: parseInt(document.getElementById("gcSpins").value) || 0,
     reward_usdt: parseFloat(document.getElementById("gcUsdt").value) || 0,
     max_uses: parseInt(document.getElementById("gcMaxUses").value) || 1,
     expires_in_days: document.getElementById("gcExpires").value ? parseInt(document.getElementById("gcExpires").value) : null,
   };
+  if (!body.code) return alert("Promo code required");
   const res = await fetch(`${API_BASE}/api/admin/gift-codes`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
-  alert(res.ok ? "Gift code created" : "Could not create (duplicate code?)");
+  if (res.ok) {
+    showToast("🎁 Promo Gift Code Created!");
+    document.getElementById("gcCode").value = "";
+  } else {
+    alert("Could not create code (Already exists?)");
+  }
 };
 
 async function loadWithdrawals() {
   const rows = await (await fetch(`${API_BASE}/api/admin/withdrawals?status=pending`, { headers: headers() })).json();
   const tbody = document.querySelector("#wdTable tbody");
-  tbody.innerHTML = "";
-  rows.forEach(w => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>@${w.username || w.telegram_id}</td><td>$${w.amount_usdt.toFixed(2)}</td><td>${w.method}</td><td>${w.destination}</td>
-      <td><button data-a="paid">Mark paid</button> <button data-a="rejected">Reject</button></td>`;
-    tr.querySelectorAll("button").forEach(btn => btn.onclick = async () => {
-      await fetch(`${API_BASE}/api/admin/withdrawals/${w.id}`, { method: "POST", headers: headers(), body: JSON.stringify({ status: btn.dataset.a }) });
-      loadWithdrawals();
-    });
-    tbody.appendChild(tr);
-  });
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--ink-dim); padding:30px;">No pending withdrawals 🎉</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(w => `
+    <tr>
+      <td>
+        <div style="font-weight:700; color:#fff;">${w.first_name || 'User'}</div>
+        <div style="font-size:11px; color:var(--emerald);">@${w.username || w.telegram_id}</div>
+      </td>
+      <td><span class="badge badge-gold" style="font-size:13px;">$${Number(w.amount_usdt).toFixed(2)} USDT</span></td>
+      <td><span class="badge badge-purple">${w.method.toUpperCase()}</span></td>
+      <td><code style="background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:6px; font-size:11px;">${w.destination}</code></td>
+      <td>
+        <button class="btn-primary" onclick="updateWithdrawal(${w.id}, 'paid')" style="padding:6px 12px; font-size:11px;">✓ Mark Paid</button>
+        <button class="btn-danger" onclick="updateWithdrawal(${w.id}, 'rejected')" style="padding:6px 12px; font-size:11px;">✕ Reject</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
+window.updateWithdrawal = async (id, status) => {
+  if (!confirm(`Are you sure you want to mark withdrawal as ${status.toUpperCase()}?`)) return;
+  await fetch(`${API_BASE}/api/admin/withdrawals/${id}`, { method: "POST", headers: headers(), body: JSON.stringify({ status }) });
+  loadWithdrawals();
+  loadStats();
+  showToast(`Withdrawal marked as ${status}!`);
+};
+
 function loadAll() {
-  loadStats(); loadSettings(); loadSpinConfig(); loadSegments(); loadTasks(); loadWithdrawals();
+  loadStats();
+  loadUsers();
+  loadWithdrawals();
+  loadSettings();
+  loadSpinConfig();
+  loadSegments();
+  loadTasks();
 }
 </script>
 </body>
