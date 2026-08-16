@@ -143,7 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
 
 DEFAULT_SETTINGS = {
     "adsgram_block_id": "",
-    "bot_username": "",
+    "bot_username": "Rewardhubot",
     "gems_per_usdt": "1000",
     "app_name": "Reward Hub",
     "referral_reward_gems": "250",

@@ -298,7 +298,7 @@
   <div style="width:80px; height:80px; background:linear-gradient(135deg, #2AABEE, #229ED9); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow:0 0 30px rgba(34,158,217,0.4);"><svg width="40" height="40" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></div>
   <h2 style="font-size:24px; font-weight:800; color:#fff; margin:0 0 10px;">Please open on Telegram this bot</h2>
   <p style="font-size:14px; color:#9CA3AF; margin:0 0 24px; line-height:1.5;">This application can only be accessed inside Telegram.</p>
-  <a id="openBotBtn" href="https://t.me/UsdtReward1bot" target="_blank" style="background:linear-gradient(135deg, #2AABEE, #229ED9); color:#FFFFFF; text-decoration:none; padding:14px 28px; border-radius:14px; font-weight:800; font-size:15px; box-shadow:0 4px 20px rgba(34,158,217,0.4);">📱 Open in Telegram</a>
+  <a id="openBotBtn" href="https://t.me/Rewardhubot" target="_blank" style="background:linear-gradient(135deg, #2AABEE, #229ED9); color:#FFFFFF; text-decoration:none; padding:14px 28px; border-radius:14px; font-weight:800; font-size:15px; box-shadow:0 4px 20px rgba(34,158,217,0.4);">📱 Open in Telegram</a>
 </div>
 
 <!-- Splash / Loading Screen -->
@@ -618,7 +618,7 @@ const API_BASE = "https://reward-hub-production.up.railway.app";
 const urlParams = new URLSearchParams(window.location.search);
 const refFromLink = urlParams.get("ref") || tg?.initDataUnsafe?.start_param;
 
-let APP_SETTINGS = { adsgram_block_id: "", bot_username: "UsdtReward1bot", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
+let APP_SETTINGS = { adsgram_block_id: "", bot_username: "Rewardhubot", app_name: "Reward Hub", gems_per_usdt: "1000", admin_broadcast: "", min_withdraw_usdt: "5.0" };
 let AdController = null;
 let me = null;
 let wheelSegments = [];
@@ -1000,7 +1000,7 @@ function loadReferral() {
     }
   }
 
-  const username = APP_SETTINGS.bot_username || "UsdtReward1bot";
+  const username = APP_SETTINGS.bot_username || "Rewardhubot";
   const link = `https://t.me/${username}?start=${me.referral_code || "DEMO"}`;
   const refLinkEl = document.getElementById("refLink");
   if (refLinkEl) {
