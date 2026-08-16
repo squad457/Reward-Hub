@@ -65,26 +65,21 @@ def verify_telegram_init_data(init_data: str) -> dict:
 
     try:
         parsed = dict(parse_qsl(init_data, strict_parsing=False))
-        user_str = parsed.get("user")
-        if user_str:
-            return json.loads(user_str)
+        received_hash = parsed.pop("hash", None)
+        
+        if not received_hash:
+            return {}
+
+        if BOT_TOKEN:
+            check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()) if k != "hash")
+            secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+            computed_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
+            if hmac.compare_digest(computed_hash, received_hash):
+                user_json = parsed.get("user")
+                if user_json:
+                    return json.loads(user_json)
     except Exception:
         pass
-
-    if BOT_TOKEN:
-        try:
-            parsed = dict(parse_qsl(init_data, strict_parsing=False))
-            received_hash = parsed.pop("hash", None)
-            if received_hash:
-                check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()) if k != "hash")
-                secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
-                computed_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256).hexdigest()
-                if hmac.compare_digest(computed_hash, received_hash):
-                    user_json = parsed.get("user")
-                    if user_json:
-                        return json.loads(user_json)
-        except Exception:
-            pass
 
     return {}
 
