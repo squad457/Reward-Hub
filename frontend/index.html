@@ -1,24 +1,20 @@
 <!doctype html>
-<!--
-  Project: Reward Hub - Secure WebApp Gateway
-  Author: Core Dev Team (Production Build v2.4.1)
-  Description: Client-side cryptographic session validator and anti-fraud security handshake.
--->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Reward Hub — Core Security Gateway</title>
+<title>Reward Hub — Loading</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-0: #040907;
-    --bg-1: #0A1B14;
+    --bg-card: rgba(15, 27, 21, 0.75);
     --emerald: #00F59B;
     --purple: #8B5CF6;
+    --gold: #FACC15;
     --ink: #FFFFFF;
     --ink-dim: #9CA3AF;
     --border: rgba(255, 255, 255, 0.08);
@@ -31,127 +27,89 @@
   }
   body::before {
     content: ''; position: fixed; inset: 0; pointer-events: none;
-    background: radial-gradient(circle at 50% 20%, rgba(0, 245, 155, 0.12) 0%, transparent 60%),
-                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+    background: radial-gradient(circle at 50% 30%, rgba(0, 245, 155, 0.15) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 60%);
   }
-  .gate-card {
-    position: relative; z-index: 2; width: 90%; max-width: 380px;
-    background: var(--bg-1); border: 1px solid var(--border); border-radius: 28px;
-    padding: 32px 24px; text-align: center;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,245,155,0.1);
+  .splash-card {
+    position: relative; z-index: 2; width: 90%; max-width: 360px;
+    background: var(--bg-card); backdrop-filter: blur(20px);
+    border: 1px solid var(--border); border-radius: 32px;
+    padding: 36px 28px; text-align: center;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 40px rgba(0,245,155,0.15);
   }
-  .gate-logo {
-    width: 76px; height: 76px; background: linear-gradient(135deg, var(--emerald), var(--purple));
-    border-radius: 22px; display: flex; align-items: center; justify-content: center;
-    font-size: 36px; margin: 0 auto 20px; box-shadow: 0 0 30px rgba(0,245,155,0.3);
-    animation: pulseLogo 2s infinite alternate;
+  .gem-icon {
+    width: 88px; height: 88px; background: linear-gradient(135deg, rgba(0,245,155,0.2), rgba(139,92,246,0.2));
+    border: 1.5px solid rgba(0,245,155,0.4); border-radius: 28px; display: flex; align-items: center; justify-content: center;
+    font-size: 44px; margin: 0 auto 24px; box-shadow: 0 0 35px rgba(0,245,155,0.3);
+    animation: floatGem 3s ease-in-out infinite alternate;
   }
-  @keyframes pulseLogo {
-    0% { transform: scale(0.95); box-shadow: 0 0 15px rgba(0,245,155,0.2); }
-    100% { transform: scale(1.05); box-shadow: 0 0 35px rgba(0,245,155,0.5); }
+  @keyframes floatGem {
+    0% { transform: translateY(0) scale(0.98); box-shadow: 0 0 20px rgba(0,245,155,0.2); }
+    100% { transform: translateY(-6px) scale(1.02); box-shadow: 0 0 40px rgba(0,245,155,0.5); }
   }
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 800; margin: 0 0 6px; }
-  p { font-size: 13px; color: var(--ink-dim); margin: 0 0 24px; line-height: 1.5; }
-  .steps-list { text-align: left; margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; }
-  .step-item {
-    display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; color: var(--ink-dim);
-    background: rgba(4, 15, 11, 0.6); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border);
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .badge {
+    display: inline-block; background: rgba(0,245,155,0.1); color: var(--emerald);
+    font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; border: 1px solid rgba(0,245,155,0.2);
   }
-  .step-item.active { color: var(--emerald); border-color: rgba(0,245,155,0.4); background: rgba(0,245,155,0.06); }
-  .step-item.done { color: var(--ink); border-color: rgba(255,255,255,0.15); }
-  .spinner-dot { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--emerald); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .progress-bar-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-top: 10px; }
-  .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--emerald), var(--purple)); transition: width 0.4s ease; }
+  p { font-size: 13px; color: var(--ink-dim); margin: 0 0 28px; line-height: 1.5; }
+  .progress-wrap { width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; position: relative; }
+  .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--emerald), var(--purple)); border-radius: 99px; transition: width 0.3s ease; box-shadow: 0 0 15px var(--emerald); }
+  .loading-status { font-size: 12px; font-weight: 700; color: var(--ink-dim); margin-top: 14px; letter-spacing: 0.5px; }
 </style>
 </head>
 <body>
 
-<div class="gate-card">
-  <div class="gate-logo">🛡️</div>
-  <h1>System Security</h1>
-  <p>Verifying session integrity and device security protocols...</p>
+<div class="splash-card">
+  <div class="gem-icon">💎</div>
+  <div class="badge">Reward Hub</div>
+  <h1>Loading App...</h1>
+  <p id="statusText">Initializing secure WebApp session & reward hub...</p>
 
-  <div class="steps-list">
-    <div class="step-item active" id="step1">
-      <div class="spinner-dot" id="dot1"></div>
-      <span id="txt1">Validating Telegram WebApp Context</span>
-    </div>
-    <div class="step-item" id="step2">
-      <div style="width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,0.2);" id="dot2"></div>
-      <span id="txt2">Anti-Cheat & Device Integrity Scan</span>
-    </div>
-    <div class="step-item" id="step3">
-      <div style="width:12px; height:12px; border-radius:50%; background:rgba(255,255,255,0.2);" id="dot3"></div>
-      <span id="txt3">Establishing Secure Gateway</span>
-    </div>
-  </div>
-
-  <div class="progress-bar-wrap">
+  <div class="progress-wrap">
     <div class="progress-bar" id="progressBar"></div>
   </div>
+  <div class="loading-status" id="statusPercent">0%</div>
 </div>
 
 <script>
-/**
- * SEC-GATEWAY HANDSHAKE CONTROLLER
- * Initializes Telegram WebApp viewport and executes async verification steps
- * prior to dispatching user to main dashboard app.html.
- */
 (function() {
   'use strict';
-  
   const tg = window.Telegram?.WebApp;
   if (tg) {
     try {
       tg.ready();
       tg.expand();
       if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#040907');
-    } catch (err) {
-      console.warn('[SEC] WebApp expansion warning:', err);
-    }
+    } catch (e) {}
   }
 
   const bar = document.getElementById("progressBar");
-  const s1 = document.getElementById("step1");
-  const s2 = document.getElementById("step2");
-  const s3 = document.getElementById("step3");
+  const percentEl = document.getElementById("statusPercent");
+  const statusEl = document.getElementById("statusText");
 
-  // Step 1: Context validation
-  setTimeout(() => {
-    bar.style.width = "40%";
-    s1.className = "step-item done";
-    document.getElementById("dot1").style.background = "#00F59B";
-    document.getElementById("dot1").className = "";
+  let progress = 0;
+  const timer = setInterval(() => {
+    progress += Math.floor(Math.random() * 18) + 10;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(timer);
+      statusEl.textContent = "Launching Reward Hub...";
+      setTimeout(() => {
+        const searchParams = window.location.search || '';
+        window.location.replace(`app.html${searchParams}`);
+      }, 300);
+    }
+    bar.style.width = progress + "%";
+    percentEl.textContent = progress + "%";
     
-    s2.className = "step-item active";
-    document.getElementById("dot2").className = "spinner-dot";
-  }, 500);
-
-  // Step 2: Anti-cheat scan
-  setTimeout(() => {
-    bar.style.width = "80%";
-    s2.className = "step-item done";
-    document.getElementById("dot2").style.background = "#00F59B";
-    document.getElementById("dot2").className = "";
-
-    s3.className = "step-item active";
-    document.getElementById("dot3").className = "spinner-dot";
-  }, 1100);
-
-  // Step 3: Secure gateway handshake
-  setTimeout(() => {
-    bar.style.width = "100%";
-    s3.className = "step-item done";
-    document.getElementById("dot3").style.background = "#00F59B";
-    document.getElementById("dot3").className = "";
-  }, 1600);
-
-  // Dispatch redirect to main app.html preserving query parameters (initData, ref, etc.)
-  setTimeout(() => {
-    const searchParams = window.location.search || '';
-    window.location.replace(`app.html${searchParams}`);
-  }, 1900);
+    if (progress > 60) {
+      statusEl.textContent = "Loading your balance & rewards...";
+    } else if (progress > 30) {
+      statusEl.textContent = "Connecting to secure server...";
+    }
+  }, 200);
 })();
 </script>
 
