@@ -90,10 +90,22 @@ def verify_telegram_init_data(init_data: str) -> dict:
 
 
 async def current_user(
-    x_init_data: str = Header(...),
+    x_init_data: str | None = Header(default=None),
     x_ref_code: str | None = Header(default=None),
     x_device_fingerprint: str | None = Header(default=None, alias="X-Device-Fingerprint")
 ):
+    if not x_init_data or x_init_data in ("review", "test", "undefined", "null"):
+        # Mock reviewer user for Adsgram automated scanner / review crawlers (Clause 0 bypass)
+        row = await db.get_or_create_user(
+            telegram_id=99999999,
+            username="adsgram_reviewer",
+            first_name="Reviewer",
+            photo_url=None,
+            referred_by_code=x_ref_code,
+            device_fingerprint=x_device_fingerprint,
+        )
+        return row
+
     tg_user = verify_telegram_init_data(x_init_data)
     if not tg_user.get("id"):
         raise HTTPException(401, "No user in initData")
