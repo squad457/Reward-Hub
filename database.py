@@ -152,6 +152,7 @@ DEFAULT_SETTINGS = {
     "min_withdraw_usdt": "5.0",
     "daily_rewards_ladder": "80,80,200,90,90,90,6000",
     "payout_channel_link": "https://t.me/rewardhubpayoutbot",
+    "payout_channel_username": "@rewardhubpayoutbot",
 }
 
 # Fallback used only if the DB row is somehow missing.
@@ -192,6 +193,11 @@ async def init_db():
             pass
         try:
             await db.execute("ALTER TABLE users ADD COLUMN last_ad_claim INTEGER DEFAULT 0")
+            await db.commit()
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE withdrawals ADD COLUMN telegram_message_id INTEGER")
             await db.commit()
         except Exception:
             pass

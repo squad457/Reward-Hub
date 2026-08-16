@@ -554,13 +554,56 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
         if cur.rowcount == 0:
             raise HTTPException(400, "Insufficient balance")
 
-        await conn.execute(
+        cur = await conn.execute(
             """INSERT INTO withdrawals (user_id, amount_usdt, method, destination, status, created_at)
                VALUES (?, ?, ?, ?, 'pending', ?)""",
             (user["id"], body.amount_usdt, body.method, body.destination, now),
         )
+        wd_id = cur.lastrowid
         await conn.commit()
+
+    # Broadcast withdrawal request to payout proof channel
+    try:
+        async with db.get_db() as conn:
+            channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
+        
+        username_display = f"@{user['username']}" if user['username'] else f"ID: {user['telegram_id']}"
+        masked_dest = body.destination[:6] + "..." + body.destination[-4:] if len(body.destination) > 10 else body.destination
+        
+        caption = (
+            f"🚀 <b>NEW WITHDRAWAL REQUEST</b>\n\n"
+            f"👤 <b>User:</b> {username_display}\n"
+            f"🆔 <b>Telegram ID:</b> <code>{user['telegram_id']}</code>\n"
+            f"💵 <b>Amount:</b> <code>${body.amount_usdt:.2f} USDT</code>\n"
+            f"💳 <b>Method:</b> {body.method.replace('_', ' ').title()}\n"
+            f"🎯 <b>Destination:</b> <code>{masked_dest}</code>\n"
+            f"⏳ <b>Status:</b> <b>Pending Review</b>\n\n"
+            f"🏆 <i>Reward Hub Automated Payout System</i>"
+        )
+        msg = await bot.send_message(chat_id=channel_username, text=caption, parse_mode="HTML")
+        async with db.get_db() as conn:
+            await conn.execute("UPDATE withdrawals SET telegram_message_id = ? WHERE id = ?", (msg.message_id, wd_id))
+            await conn.commit()
+    except Exception as e:
+        print(f"Payout channel broadcast warning: {e}")
+
     return {"status": "pending"}
+
+
+@app.get("/api/channel/check")
+async def check_channel_membership(user=Depends(current_user)):
+    async with db.get_db() as conn:
+        channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
+    if not channel_username:
+        return {"joined": True}
+    try:
+        member = await bot.get_chat_member(chat_id=channel_username, user_id=user["telegram_id"])
+        if member.status in ["member", "administrator", "creator"]:
+            return {"joined": True}
+    except Exception as e:
+        print(f"Force join check warning: {e}")
+        return {"joined": True}
+    return {"joined": False, "channel": channel_username}
 
 
 @app.get("/api/withdraw/history")
@@ -960,4 +1003,32 @@ async def admin_update_withdrawal(withdrawal_id: int, body: WithdrawalUpdateBody
                                 (wd["amount_usdt"], wd["user_id"]))
         await conn.execute("UPDATE withdrawals SET status = ? WHERE id = ?", (body.status, withdrawal_id))
         await conn.commit()
+
+        if body.status == "paid":
+            try:
+                channel_username = await db.get_setting(conn, "payout_channel_username", "@rewardhubpayoutbot")
+                cur_u = await conn.execute("SELECT telegram_id, username FROM users WHERE id = ?", (wd["user_id"],))
+                u_info = await cur_u.fetchone()
+                u_disp = f"@{u_info['username']}" if (u_info and u_info['username']) else f"ID: {u_info['telegram_id'] if u_info else wd['user_id']}"
+
+                reply_text = (
+                    f"✅ <b>PAYOUT COMPLETED & APPROVED!</b> 🎉\n\n"
+                    f"👤 <b>User:</b> {u_disp}\n"
+                    f"💵 <b>Paid Amount:</b> <code>${wd['amount_usdt']:.2f} USDT</code>\n"
+                    f"💳 <b>Method:</b> {wd['method'].replace('_', ' ').title()}\n"
+                    f"🎉 <b>Status:</b> <b>Paid ✓ (Success)</b>\n\n"
+                    f"✨ <i>Thank you for using Reward Hub! Proof verified.</i>"
+                )
+                if wd["telegram_message_id"]:
+                    await bot.send_message(
+                        chat_id=channel_username,
+                        text=reply_text,
+                        parse_mode="HTML",
+                        reply_to_message_id=wd["telegram_message_id"]
+                    )
+                else:
+                    await bot.send_message(chat_id=channel_username, text=reply_text, parse_mode="HTML")
+            except Exception as e:
+                print(f"Payout completion channel reply warning: {e}")
+
     return {"ok": True}

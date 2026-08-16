@@ -306,6 +306,12 @@
           </div>
         </div>
         <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Payout Proof Channel Username / ID</label>
+            <input id="setPayoutChannel" placeholder="@rewardhubpayoutbot" />
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>Gems per 1 USDT</label>
             <input type="number" id="setGemsPerUsdt" placeholder="1000" />
@@ -715,6 +721,7 @@ async function loadSettings() {
   document.getElementById("setAdsgram").value = s.adsgram_block_id || "";
   document.getElementById("setBotUsername").value = s.bot_username || "";
   document.getElementById("setAppName").value = s.app_name || "";
+  document.getElementById("setPayoutChannel").value = s.payout_channel_username || "@rewardhubpayoutbot";
   document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "1000";
   document.getElementById("setMinWd").value = s.min_withdraw_usdt || "5.0";
   document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
@@ -728,6 +735,7 @@ document.getElementById("saveSettings").onclick = async () => {
     adsgram_block_id: document.getElementById("setAdsgram").value.trim(),
     bot_username: document.getElementById("setBotUsername").value.trim(),
     app_name: document.getElementById("setAppName").value.trim(),
+    payout_channel_username: document.getElementById("setPayoutChannel").value.trim(),
     gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),
     min_withdraw_usdt: document.getElementById("setMinWd").value.trim(),
     referral_reward_gems: document.getElementById("setRefGems").value.trim(),

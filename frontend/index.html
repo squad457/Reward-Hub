@@ -11,13 +11,14 @@
 <style>
   :root {
     --bg-0: #040907;
-    --bg-card: rgba(15, 27, 21, 0.75);
+    --bg-card: rgba(15, 27, 21, 0.85);
     --emerald: #00F59B;
     --purple: #8B5CF6;
     --gold: #FACC15;
     --ink: #FFFFFF;
     --ink-dim: #9CA3AF;
     --border: rgba(255, 255, 255, 0.08);
+    --border-emerald: rgba(0, 245, 155, 0.4);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -73,8 +74,19 @@
   <div class="loading-status" id="statusPercent">0%</div>
 </div>
 
+<!-- Force Join Modal -->
+<div id="forceJoinModal" style="display:none; position:fixed; inset:0; background:rgba(4,9,7,0.96); z-index:99999; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center;">
+  <div style="background:var(--bg-card); border:1px solid var(--border-emerald); border-radius:28px; padding:32px 24px; max-width:360px; width:100%; box-shadow:0 25px 50px rgba(0,0,0,0.9);">
+    <div style="font-size:42px; margin-bottom:12px;">📢</div>
+    <h2 style="font-size:20px; font-weight:800; color:#fff; margin:0 0 10px;">Mandatory Channel Join</h2>
+    <p style="font-size:13px; color:var(--ink-dim); margin:0 0 24px; line-height:1.5;">Please join our official Payout Proofs channel first to access Reward Hub and claim rewards.</p>
+    <a id="joinChannelBtn" href="https://t.me/rewardhubpayoutbot" target="_blank" style="display:block; background:linear-gradient(135deg, #2AABEE, #229ED9); color:#fff; text-decoration:none; padding:12px; border-radius:12px; font-weight:800; font-size:14px; margin-bottom:12px; box-shadow:0 4px 15px rgba(34,158,217,0.3);">📢 Join Payout Channel</a>
+    <button id="verifyJoinBtn" style="width:100%; background:linear-gradient(135deg, var(--emerald), #059669); color:#04100D; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer;">✓ I've Joined — Continue</button>
+  </div>
+</div>
+
 <script>
-(function() {
+(async function() {
   'use strict';
   const tg = window.Telegram?.WebApp;
   if (tg) {
@@ -95,11 +107,6 @@
     if (progress >= 100) {
       progress = 100;
       clearInterval(timer);
-      statusEl.textContent = "Launching Reward Hub...";
-      setTimeout(() => {
-        const searchParams = window.location.search || '';
-        window.location.replace(`app.html${searchParams}`);
-      }, 300);
     }
     bar.style.width = progress + "%";
     percentEl.textContent = progress + "%";
@@ -109,7 +116,56 @@
     } else if (progress > 30) {
       statusEl.textContent = "Connecting to secure server...";
     }
-  }, 200);
+  }, 150);
+
+  // Wait for progress to finish
+  while (progress < 100) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  statusEl.textContent = "Verifying channel subscription...";
+
+  // Check Force Join Membership
+  async function checkMembership() {
+    const initData = tg?.initData || '';
+    try {
+      const res = await fetch(`https://reward-hub-production.up.railway.app/api/channel/check`, {
+        headers: { "X-Init-Data": initData }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.joined === false) {
+          if (data.channel) {
+            document.getElementById("joinChannelBtn").href = `https://t.me/${data.channel.replace('@','')}`;
+          }
+          document.getElementById("forceJoinModal").style.display = "flex";
+          return false;
+        }
+      }
+    } catch (e) {}
+    return true;
+  }
+
+  const isJoined = await checkMembership();
+  if (isJoined) {
+    statusEl.textContent = "Launching Reward Hub...";
+    setTimeout(() => {
+      const searchParams = window.location.search || '';
+      window.location.replace(`app.html${searchParams}`);
+    }, 300);
+  }
+
+  document.getElementById("verifyJoinBtn").onclick = async () => {
+    try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}
+    const joined = await checkMembership();
+    if (joined) {
+      document.getElementById("forceJoinModal").style.display = "none";
+      const searchParams = window.location.search || '';
+      window.location.replace(`app.html${searchParams}`);
+    } else {
+      alert("⚠️ Please join the channel first before continuing!");
+    }
+  };
 })();
 </script>
 
