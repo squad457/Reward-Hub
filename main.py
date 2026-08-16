@@ -191,6 +191,7 @@ async def public_settings():
         "admin_broadcast": s["admin_broadcast"],
         "min_withdraw_usdt": s["min_withdraw_usdt"],
         "daily_rewards_ladder": s["daily_rewards_ladder"],
+        "payout_channel_link": s["payout_channel_link"],
     }
 
 
@@ -614,6 +615,7 @@ class SettingsBody(BaseModel):
     admin_broadcast: str | None = None
     min_withdraw_usdt: str | None = None
     daily_rewards_ladder: str | None = None
+    payout_channel_link: str | None = None
 
 
 @app.get("/api/admin/settings")
