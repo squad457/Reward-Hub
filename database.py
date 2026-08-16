@@ -154,6 +154,7 @@ DEFAULT_SETTINGS = {
     "payout_channel_link": "https://t.me/rewardhubpayout1",
     "payout_channel_username": "@rewardhubpayout1",
     "force_join_enabled": "1",
+    "webapp_url": "https://usdtreward.online",
 }
 
 # Fallback used only if the DB row is somehow missing.

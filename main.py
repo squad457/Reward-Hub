@@ -192,6 +192,7 @@ async def public_settings():
         "min_withdraw_usdt": s["min_withdraw_usdt"],
         "daily_rewards_ladder": s["daily_rewards_ladder"],
         "payout_channel_link": s["payout_channel_link"],
+        "webapp_url": s.get("webapp_url", "https://usdtreward.online"),
     }
 
 
@@ -662,6 +663,9 @@ class SettingsBody(BaseModel):
     min_withdraw_usdt: str | None = None
     daily_rewards_ladder: str | None = None
     payout_channel_link: str | None = None
+    payout_channel_username: str | None = None
+    force_join_enabled: str | None = None
+    webapp_url: str | None = None
 
 
 @app.get("/api/admin/settings")

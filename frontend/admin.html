@@ -325,6 +325,12 @@
           </div>
         </div>
         <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Mini App WebApp URL (https://usdtreward.online)</label>
+            <input id="setWebappUrl" placeholder="https://usdtreward.online" />
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label>Gems per 1 USDT</label>
             <input type="number" id="setGemsPerUsdt" placeholder="1000" />
@@ -741,6 +747,7 @@ async function loadSettings() {
   document.getElementById("setForceJoin").value = s.force_join_enabled !== undefined ? s.force_join_enabled : "1";
   document.getElementById("setPayoutChannel").value = s.payout_channel_username || "@rewardhubpayout1";
   document.getElementById("setPayoutChannelLink").value = s.payout_channel_link || "https://t.me/rewardhubpayout1";
+  document.getElementById("setWebappUrl").value = s.webapp_url || "https://usdtreward.online";
   document.getElementById("setGemsPerUsdt").value = s.gems_per_usdt || "1000";
   document.getElementById("setMinWd").value = s.min_withdraw_usdt || "5.0";
   document.getElementById("setRefGems").value = s.referral_reward_gems || "250";
@@ -757,6 +764,7 @@ document.getElementById("saveSettings").onclick = async () => {
     force_join_enabled: document.getElementById("setForceJoin").value,
     payout_channel_username: document.getElementById("setPayoutChannel").value.trim(),
     payout_channel_link: document.getElementById("setPayoutChannelLink").value.trim(),
+    webapp_url: document.getElementById("setWebappUrl").value.trim(),
     gems_per_usdt: document.getElementById("setGemsPerUsdt").value.trim(),
     min_withdraw_usdt: document.getElementById("setMinWd").value.trim(),
     referral_reward_gems: document.getElementById("setRefGems").value.trim(),
