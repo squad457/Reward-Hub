@@ -475,7 +475,7 @@
 
 <!-- Withdraw Modal -->
 <div class="modal-backdrop" id="withdrawModal">
-  <div class="modal">
+  <div class="modal" style="max-height:85vh; overflow-y:auto;">
     <span class="close" id="closeWithdraw">✕</span>
     <h3>Redeem Rewards</h3>
     <div id="modalMinWdLabel" style="font-size:12px; color:var(--gold); margin-bottom:14px; font-weight:700;">Minimum withdrawal: 5.00 USDT</div>
@@ -486,6 +486,17 @@
     </select>
     <input type="text" id="wdDestination" placeholder="Binance Pay ID or BEP-20 address" />
     <button class="primary" id="wdSubmit">Claim Reward</button>
+
+    <!-- Recent Withdrawals History -->
+    <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; text-align:left;">
+      <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Recent Withdrawals</span>
+        <span style="font-size:11px; color:var(--emerald); cursor:pointer;" id="wdRefreshHistory">Refresh</span>
+      </div>
+      <div id="wdHistoryList" style="max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; color:var(--ink-dim); text-align:center; padding:10px;">Loading history...</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1070,12 +1081,58 @@ document.getElementById("convertBtn").onclick = async () => {
   }
 };
 
+async function loadWithdrawHistory() {
+  const listEl = document.getElementById("wdHistoryList");
+  if (!listEl) return;
+  listEl.innerHTML = `<div style="font-size:12px; color:var(--ink-dim); text-align:center; padding:10px;">Loading history...</div>`;
+  try {
+    const res = await fetch(`${API_BASE}/api/withdraw/history`, { headers: authHeaders() });
+    if (!res.ok) {
+      listEl.innerHTML = `<div style="font-size:12px; color:#FCA5A5; text-align:center; padding:10px;">Failed to load history</div>`;
+      return;
+    }
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      listEl.innerHTML = `<div style="font-size:12px; color:var(--ink-dim); text-align:center; padding:10px;">No withdrawal requests yet</div>`;
+      return;
+    }
+    listEl.innerHTML = data.map(w => {
+      let badgeBg = "rgba(234,179,8,0.15)";
+      let badgeColor = "#FACC15";
+      let statusText = "Pending ⏳";
+      if (w.status === "approved" || w.status === "completed") {
+        badgeBg = "rgba(0,245,155,0.15)";
+        badgeColor = "#00F59B";
+        statusText = "Approved ✓";
+      } else if (w.status === "rejected") {
+        badgeBg = "rgba(239,68,68,0.15)";
+        badgeColor = "#F87171";
+        statusText = "Rejected ✕";
+      }
+      return `
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#fff;">$${Number(w.amount_usdt).toFixed(2)} USDT</div>
+            <div style="font-size:11px; color:var(--ink-dim); margin-top:2px;">${w.method.replace('_',' ').toUpperCase()} • ${w.destination.substring(0,8)}...</div>
+          </div>
+          <div style="background:${badgeBg}; color:${badgeColor}; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px;">
+            ${statusText}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div style="font-size:12px; color:#FCA5A5; text-align:center; padding:10px;">Network error</div>`;
+  }
+}
+
 document.getElementById("withdrawBtn").onclick = () => {
   try { tg?.HapticFeedback?.impactOccurred('light'); } catch(e){}
   document.getElementById("withdrawModal").classList.add("show");
+  loadWithdrawHistory();
 };
-document.getElementById("closeWithdraw").onclick = () => {
-  document.getElementById("withdrawModal").classList.remove("show");
+document.getElementById("wdRefreshHistory").onclick = () => {
+  loadWithdrawHistory();
 };
 document.getElementById("wdSubmit").onclick = async () => {
   try { tg?.HapticFeedback?.impactOccurred('medium'); } catch(e){}

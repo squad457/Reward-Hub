@@ -546,6 +546,17 @@ async def request_withdrawal(body: WithdrawBody, user=Depends(current_user)):
     return {"status": "pending"}
 
 
+@app.get("/api/withdraw/history")
+async def get_my_withdrawals(user=Depends(current_user)):
+    async with db.get_db() as conn:
+        cur = await conn.execute(
+            "SELECT id, amount_usdt, method, destination, status, created_at FROM withdrawals WHERE user_id = ? ORDER BY id DESC LIMIT 10",
+            (user["id"],)
+        )
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.post("/api/gems/convert")
 async def convert_gems_to_usdt(user=Depends(current_user)):
     """Convert all convertible gems into USDT balance at the admin-configured rate."""
